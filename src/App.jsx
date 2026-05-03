@@ -556,8 +556,8 @@ function GlobalFeedback() {
       </div>
       {confirmModal.isVisible && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-bold mb-2">{confirmModal.title}</h3>
+          <div role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 id="confirm-modal-title" className="text-lg font-bold mb-2">{confirmModal.title}</h3>
             <p className="text-sm text-gray-500 mb-6">{confirmModal.message}</p>
             <div className="flex gap-3 justify-end">
               <button onClick={closeConfirm} className="px-4 py-2 text-sm bg-gray-100 rounded-lg">Cancelar</button>
@@ -588,12 +588,12 @@ function PushNotificationEditor() {
             <textarea name="message" value={pushData.message} onChange={handlePushChange} rows={3} placeholder="Mensagem" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm resize-none" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div>
-                 <label className="block text-xs font-medium text-gray-500 mb-1">Imagem Anexa (Opcional)</label>
-                 <input type="file" accept="image/*" onChange={handlePushImageUpload} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-gray-100" />
+                 <label htmlFor="push-image" className="block text-xs font-medium text-gray-500 mb-1">Imagem Anexa (Opcional)</label>
+                 <input id="push-image" type="file" accept="image/*" onChange={handlePushImageUpload} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-gray-100" />
                </div>
                <div>
-                 <label className="block text-xs font-medium text-gray-500 mb-1">Programar Envio (Opcional)</label>
-                 <input type="datetime-local" name="scheduledDate" value={pushData.scheduledDate || ''} onChange={handlePushChange} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700" />
+                 <label htmlFor="push-scheduled-date" className="block text-xs font-medium text-gray-500 mb-1">Programar Envio (Opcional)</label>
+                 <input id="push-scheduled-date" type="datetime-local" name="scheduledDate" value={pushData.scheduledDate || ''} onChange={handlePushChange} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700" />
                </div>
             </div>
             {pushData.imageUrl && <div className="mt-2 w-full h-24 rounded-lg overflow-hidden border"><img src={pushData.imageUrl} className="w-full h-full object-cover" /></div>}
@@ -608,7 +608,7 @@ function PushNotificationEditor() {
             const isScheduled = post.status === 'scheduled' && new Date(post.scheduledDate) > new Date();
             return (
             <div key={post.id} className={`p-4 border rounded-xl mb-3 relative group transition-colors ${isScheduled ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
-              <button onClick={() => deleteFeedPost(post.id)} className="absolute top-3 right-3 text-gray-400 hover:text-red-500 bg-white p-1 rounded opacity-0 group-hover:opacity-100 shadow-sm"><Trash2 className="w-3 h-3" /></button>
+              <button aria-label="Excluir post do histórico" onClick={() => deleteFeedPost(post.id)} className="absolute top-3 right-3 text-gray-400 hover:text-red-500 bg-white p-1 rounded opacity-0 group-hover:opacity-100 shadow-sm"><Trash2 className="w-3 h-3" /></button>
               {post.imageUrl && <img src={post.imageUrl} className="w-full h-32 object-cover rounded-lg mb-3" />}
               <div className="flex items-center gap-2 pr-6">
                 {isScheduled && <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />}
@@ -659,15 +659,16 @@ function ModuleEditor({ modulo }) {
 
   return (
     <div className={`border rounded-xl p-6 bg-gray-50/50 shadow-sm relative group transition-all duration-300 ${isIframeInvalid || isCheckoutInvalid ? 'border-red-300 shadow-red-500/10' : 'border-gray-200 hover:border-gray-300'}`}>
-      <button onClick={() => deleteModulo(modulo.id)} className="absolute -top-3 -right-3 bg-white border border-gray-200 text-red-500 p-1.5 rounded-full shadow-sm opacity-0 group-hover:opacity-100 hover:bg-red-50" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+      <button aria-label="Excluir módulo" onClick={() => deleteModulo(modulo.id)} className="absolute -top-3 -right-3 bg-white border border-gray-200 text-red-500 p-1.5 rounded-full shadow-sm opacity-0 group-hover:opacity-100 hover:bg-red-50" title="Excluir"><Trash2 className="w-4 h-4" /></button>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="md:col-span-2">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Título do Módulo</label>
-          <input type="text" value={modulo.titulo} onChange={(e) => updateModulo(modulo.id, 'titulo', e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900" />
+          <label htmlFor={`module-title-${modulo.id}`} className="block text-xs font-medium text-gray-500 mb-1">Título do Módulo</label>
+          <input id={`module-title-${modulo.id}`} type="text" value={modulo.titulo} onChange={(e) => updateModulo(modulo.id, 'titulo', e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Estratégia</label>
+          <label htmlFor={`module-strategy-${modulo.id}`} className="block text-xs font-medium text-gray-500 mb-1">Estratégia</label>
           <select 
+            id={`module-strategy-${modulo.id}`}
             value={modulo.isDrip ? 'drip' : (modulo.isLocked ? 'upsell' : 'open')}
             onChange={(e) => {
               const val = e.target.value;
@@ -692,21 +693,21 @@ function ModuleEditor({ modulo }) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Capa do Módulo</label>
+          <label htmlFor={`module-cover-${modulo.id}`} className="block text-xs font-medium text-gray-500 mb-1">Capa do Módulo</label>
           <div className="flex items-center shadow-sm">
             <span className="p-2 border border-r-0 border-gray-300 rounded-l-lg bg-gray-50 text-gray-400"><ImageIcon className="w-4 h-4" /></span>
-            <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'coverImage', true, modulo.id)} className="w-full border border-gray-300 rounded-r-lg px-3 py-1.5 text-sm bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-gray-100 file:text-gray-700" />
+            <input id={`module-cover-${modulo.id}`} type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'coverImage', true, modulo.id)} className="w-full border border-gray-300 rounded-r-lg px-3 py-1.5 text-sm bg-white file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:bg-gray-100 file:text-gray-700" />
           </div>
           {modulo.coverImage && (
             <div className="mt-3 w-32 h-20 rounded-lg overflow-hidden border border-gray-200 relative group"><img src={modulo.coverImage} className="w-full h-full object-cover" />
-              <button onClick={() => updateModulo(modulo.id, 'coverImage', '')} className="absolute top-1 right-1 bg-white p-1.5 rounded-md opacity-0 group-hover:opacity-100 shadow"><Trash2 className="w-3 h-3 text-red-500" /></button>
+              <button aria-label="Remover capa do módulo" onClick={() => updateModulo(modulo.id, 'coverImage', '')} className="absolute top-1 right-1 bg-white p-1.5 rounded-md opacity-0 group-hover:opacity-100 shadow"><Trash2 className="w-3 h-3 text-red-500" /></button>
             </div>
           )}
         </div>
         {!modulo.isFolder && (
           <div>
-            <label className={`block text-xs font-medium mb-1 ${isIframeInvalid ? 'text-red-500' : 'text-green-600'}`}>Conteúdo (Link de Vídeo, Site ou PDF)</label>
-            <input type="text" value={modulo.iframeUrl || ''} onChange={(e) => updateModulo(modulo.id, 'iframeUrl', e.target.value)} className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${isIframeInvalid ? 'border-red-300 focus:border-red-500 text-red-600' : 'border-gray-300 focus:border-gray-900'}`} placeholder="Ex: https://youtube.com/watch?v=... ou https://seu-site.com/aula" />
+            <label htmlFor={`module-content-${modulo.id}`} className={`block text-xs font-medium mb-1 ${isIframeInvalid ? 'text-red-500' : 'text-green-600'}`}>Conteúdo (Link de Vídeo, Site ou PDF)</label>
+            <input id={`module-content-${modulo.id}`} type="text" value={modulo.iframeUrl || ''} onChange={(e) => updateModulo(modulo.id, 'iframeUrl', e.target.value)} className={`w-full border rounded-lg px-3 py-2 text-sm bg-white ${isIframeInvalid ? 'border-red-300 focus:border-red-500 text-red-600' : 'border-gray-300 focus:border-gray-900'}`} placeholder="Ex: https://youtube.com/watch?v=... ou https://seu-site.com/aula" />
           </div>
         )}
         {modulo.isFolder && (
@@ -720,27 +721,27 @@ function ModuleEditor({ modulo }) {
             <div className="space-y-3">
               {(modulo.subModulos || []).map(sub => (
                 <div key={sub.id} className="bg-white border border-gray-200 rounded-lg p-3 relative group shadow-sm">
-                  <button onClick={() => handleDeleteSub(sub.id)} className="absolute -top-2 -right-2 bg-white border border-gray-200 text-red-500 p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-opacity"><X className="w-3 h-3" /></button>
+                  <button aria-label="Excluir subaula" onClick={() => handleDeleteSub(sub.id)} className="absolute -top-2 -right-2 bg-white border border-gray-200 text-red-500 p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-opacity"><X className="w-3 h-3" /></button>
                   <div className="flex flex-col gap-3">
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase">Título da Aula</label>
-                        <input type="text" value={sub.titulo} onChange={(e) => handleUpdateSub(sub.id, 'titulo', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-1 focus:ring-gray-900 focus:outline-none" />
+                        <label htmlFor={`sub-title-${modulo.id}-${sub.id}`} className="block text-[10px] font-medium text-gray-500 mb-1 uppercase">Título da Aula</label>
+                        <input id={`sub-title-${modulo.id}-${sub.id}`} type="text" value={sub.titulo} onChange={(e) => handleUpdateSub(sub.id, 'titulo', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-1 focus:ring-gray-900 focus:outline-none" />
                       </div>
                       <div className="w-1/3">
                         <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase">Capa</label>
                         <div className="flex items-center gap-2">
-                           <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded border border-gray-300 flex items-center justify-center transition-colors">
+                           <label htmlFor={`sub-cover-${modulo.id}-${sub.id}`} className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-2 py-1.5 rounded border border-gray-300 flex items-center justify-center transition-colors">
                               <ImageIcon className="w-4 h-4 text-gray-500"/>
-                              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSubImageUpload(e, sub.id)} />
+                              <input id={`sub-cover-${modulo.id}-${sub.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => handleSubImageUpload(e, sub.id)} />
                            </label>
                            {sub.coverImage && <img src={sub.coverImage} className="w-10 h-7 object-cover rounded border" />}
                         </div>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-500 mb-1 uppercase">Link de Conteúdo</label>
-                      <input type="text" value={sub.iframeUrl || ''} onChange={(e) => handleUpdateSub(sub.id, 'iframeUrl', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-1 focus:ring-gray-900 focus:outline-none" placeholder="https://..." />
+                      <label htmlFor={`sub-content-${modulo.id}-${sub.id}`} className="block text-[10px] font-medium text-gray-500 mb-1 uppercase">Link de Conteúdo</label>
+                      <input id={`sub-content-${modulo.id}-${sub.id}`} type="text" value={sub.iframeUrl || ''} onChange={(e) => handleUpdateSub(sub.id, 'iframeUrl', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-1 focus:ring-gray-900 focus:outline-none" placeholder="https://..." />
                     </div>
                   </div>
                 </div>
@@ -755,14 +756,14 @@ function ModuleEditor({ modulo }) {
         )}
         {modulo.isLocked && !modulo.isDrip && (
           <div>
-            <label className="block text-xs font-medium mb-1 text-amber-600">URL de Checkout</label>
-            <input type="text" value={modulo.checkoutUrl || ''} onChange={(e) => updateModulo(modulo.id, 'checkoutUrl', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white border-amber-300 focus:border-amber-500" placeholder="https://pay..." />
+            <label htmlFor={`module-checkout-${modulo.id}`} className="block text-xs font-medium mb-1 text-amber-600">URL de Checkout</label>
+            <input id={`module-checkout-${modulo.id}`} type="text" value={modulo.checkoutUrl || ''} onChange={(e) => updateModulo(modulo.id, 'checkoutUrl', e.target.value)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white border-amber-300 focus:border-amber-500" placeholder="https://pay..." />
           </div>
         )}
         {modulo.isDrip && (
           <div>
-            <label className="block text-xs font-medium mb-1 text-blue-600">Liberar quantos dias após a compra?</label>
-            <input type="number" min="0" value={modulo.dripDays || 0} onChange={(e) => updateModulo(modulo.id, 'dripDays', parseInt(e.target.value) || 0)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white border-blue-300 focus:border-blue-500" placeholder="Ex: 8" />
+            <label htmlFor={`module-drip-${modulo.id}`} className="block text-xs font-medium mb-1 text-blue-600">Liberar quantos dias após a compra?</label>
+            <input id={`module-drip-${modulo.id}`} type="number" min="0" value={modulo.dripDays || 0} onChange={(e) => updateModulo(modulo.id, 'dripDays', parseInt(e.target.value) || 0)} className="w-full border rounded-lg px-3 py-2 text-sm bg-white border-blue-300 focus:border-blue-500" placeholder="Ex: 8" />
           </div>
         )}
       </div>
@@ -996,6 +997,7 @@ function ClientPWA({ isMockup = false }) {
                   onChange={(e) => { setLoginPassword(e.target.value); setLoginError(""); }}
                 />
                 <button 
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)} 
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -1024,15 +1026,15 @@ function ClientPWA({ isMockup = false }) {
         {/* Modal de Instalação sobreposto à tela de Login */}
         {showInstallPrompt && (
           <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-300">
-            <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 relative">
-              <button onClick={() => setShowInstallPrompt(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5 transition-colors">
+            <div role="dialog" aria-modal="true" aria-labelledby="install-login-title" className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 relative">
+              <button aria-label="Fechar instalação" onClick={() => setShowInstallPrompt(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5 transition-colors">
                 <X className="w-4 h-4" />
               </button>
               <div className="flex flex-col items-center text-center mt-2">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center shadow-sm border border-gray-100 mb-4">
                   {appData.logoUrl ? <img src={appData.logoUrl} className="w-full h-full object-cover" /> : <Smartphone className="w-10 h-10 text-gray-400"/>}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">{appData.pwaShortName || appData.nome}</h3>
+                <h3 id="install-login-title" className="text-xl font-bold text-gray-900 mb-1">{appData.pwaShortName || appData.nome}</h3>
                 <p className="text-sm text-gray-500 mb-6">{appData.dominio}</p>
                 
                 <button 
@@ -1070,7 +1072,7 @@ function ClientPWA({ isMockup = false }) {
       <div className={`flex flex-col bg-white ${isMockup ? 'flex-1 h-full w-full absolute inset-0 z-50' : 'min-h-screen'}`}>
         <header className="h-14 flex items-center justify-between px-4 gap-2" style={{ backgroundColor: appData.corPrimaria, color: appData.corTexto || '#ffffff' }}>
           <div className="flex items-center flex-1 min-w-0">
-            <button onClick={() => setActiveIframe(null)} className="p-2 -ml-2 rounded-full hover:bg-white/10 shrink-0"><ArrowLeft className="w-5 h-5" /></button>
+            <button aria-label="Voltar para conteúdos" onClick={() => setActiveIframe(null)} className="p-2 -ml-2 rounded-full hover:bg-white/10 shrink-0"><ArrowLeft className="w-5 h-5" /></button>
             <h1 className="ml-2 font-medium text-sm line-clamp-2 leading-tight break-words">{activeIframe.title}</h1>
           </div>
         </header>
@@ -1093,9 +1095,9 @@ function ClientPWA({ isMockup = false }) {
       {/* NATIVE NOTIFICATION MODAL (iOS Style) */}
       {showNotificationPrompt && (
         <div className="absolute inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#f2f2f6]/95 backdrop-blur-xl w-full max-w-[270px] rounded-[14px] overflow-hidden shadow-2xl flex flex-col text-center animate-in zoom-in-95">
+          <div role="dialog" aria-modal="true" aria-labelledby="notification-modal-title" className="bg-[#f2f2f6]/95 backdrop-blur-xl w-full max-w-[270px] rounded-[14px] overflow-hidden shadow-2xl flex flex-col text-center animate-in zoom-in-95">
             <div className="p-4 pt-5 pb-4">
-              <h3 className="text-black font-semibold text-[17px] leading-snug mb-1">
+              <h3 id="notification-modal-title" className="text-black font-semibold text-[17px] leading-snug mb-1">
                 "{appData.pwaShortName || appData.nome}" {t.notifyTitle}
               </h3>
               <p className="text-black/80 text-[13px] leading-tight px-1">
@@ -1123,15 +1125,15 @@ function ClientPWA({ isMockup = false }) {
       {/* NATIVE INSTALL MODAL */}
       {showInstallPrompt && (
         <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 relative">
-            <button onClick={() => setShowInstallPrompt(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5 transition-colors">
+          <div role="dialog" aria-modal="true" aria-labelledby="install-modal-title" className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 relative">
+            <button aria-label="Fechar instalação" onClick={() => setShowInstallPrompt(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5 transition-colors">
               <X className="w-4 h-4" />
             </button>
             <div className="flex flex-col items-center text-center mt-2">
               <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center shadow-sm border border-gray-100 mb-4">
                 {appData.logoUrl ? <img src={appData.logoUrl} className="w-full h-full object-cover" /> : <Smartphone className="w-10 h-10 text-gray-400"/>}
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-1">{appData.pwaShortName || appData.nome}</h3>
+              <h3 id="install-modal-title" className="text-xl font-bold text-gray-900 mb-1">{appData.pwaShortName || appData.nome}</h3>
               <p className="text-sm text-gray-500 mb-6">{appData.dominio}</p>
               
               <button 
@@ -1148,9 +1150,9 @@ function ClientPWA({ isMockup = false }) {
 
       {checkoutModal.isVisible && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
-          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 pb-safe animate-in slide-in-from-bottom-10">
+          <div role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title" className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 pb-safe animate-in slide-in-from-bottom-10">
             <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4"><Lock className="w-6 h-6" /></div>
-            <h3 className="text-lg font-bold text-center mb-2">{t.locked}</h3>
+            <h3 id="checkout-modal-title" className="text-lg font-bold text-center mb-2">{t.locked}</h3>
             <div className="space-y-3 mt-6">
               {checkoutModal.url ? <button onClick={() => { window.open(checkoutModal.url, '_blank'); setCheckoutModal({ isVisible: false, url: '' }); }} className="w-full py-3.5 bg-gray-900 text-white rounded-xl flex justify-center gap-2"><ExternalLink className="w-4 h-4" /> Checkout</button> : null}
               <button onClick={() => setCheckoutModal({ isVisible: false, url: '' })} className="w-full py-3.5 bg-gray-100 text-gray-600 rounded-xl">{t.cancel}</button>
@@ -1167,8 +1169,8 @@ function ClientPWA({ isMockup = false }) {
           <h2 className="font-semibold text-base leading-tight line-clamp-2 break-words">{appData.nome}</h2>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => setShowNotificationPrompt(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Bell className="w-5 h-5"/></button>
-          <button onClick={() => setShowInstallPrompt(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Download className="w-5 h-5"/></button>
+          <button aria-label="Abrir notificações" onClick={() => setShowNotificationPrompt(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Bell className="w-5 h-5"/></button>
+          <button aria-label="Abrir instalação do app" onClick={() => setShowInstallPrompt(true)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"><Download className="w-5 h-5"/></button>
         </div>
       </div>
 
@@ -1180,7 +1182,7 @@ function ClientPWA({ isMockup = false }) {
                 {/* Banner Carrossel Automático */}
                 {appData.banners?.length > 0 && (
                    <div className="w-full mb-6 relative">
-                      <div className="relative w-full rounded-2xl overflow-hidden shadow-sm aspect-[16/9] bg-black">
+                      <div className="relative w-full rounded-2xl overflow-hidden shadow-sm aspect-[16/9] bg-black" aria-live="polite" aria-atomic="true">
                          {appData.banners.map((banner, idx) => (
                             <div 
                               key={banner.id} 
@@ -1200,6 +1202,8 @@ function ClientPWA({ isMockup = false }) {
                                <button 
                                  key={idx}
                                  onClick={() => setCurrentBannerIndex(idx)}
+                                aria-label={`Próximo banner ${idx + 1}`}
+                                aria-current={idx === currentBannerIndex}
                                  className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentBannerIndex ? 'bg-white w-4' : 'bg-white/50 w-1.5'}`}
                                />
                              ))}
@@ -1254,7 +1258,7 @@ function ClientPWA({ isMockup = false }) {
               // EXIBIÇÃO DE PASTA ABERTA
               <div className="animate-in slide-in-from-right-4 duration-300">
                  <div className="flex items-center mb-6">
-                    <button onClick={() => setActiveFolder(null)} className="mr-3 p-2 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"><ArrowLeft className="w-4 h-4 text-gray-700"/></button>
+                    <button aria-label="Voltar para módulos" onClick={() => setActiveFolder(null)} className="mr-3 p-2 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"><ArrowLeft className="w-4 h-4 text-gray-700"/></button>
                     <div className="flex-1 overflow-hidden">
                        <h3 className="text-lg font-bold text-gray-900 leading-tight truncate">{activeFolder.titulo}</h3>
                        <p className="text-xs text-gray-500">{activeFolder.subModulos?.length || 0} Aulas nesta pasta</p>
@@ -1315,7 +1319,7 @@ function ClientPWA({ isMockup = false }) {
                 </div>
                 <div className="flex-1">
                   <textarea value={newCommPost} onChange={(e)=>setNewCommPost(e.target.value)} placeholder={t.whatAreYouThinking} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-400 min-h-[80px] resize-none" />
-                  {newCommImage && <div className="relative mt-2 w-24 h-24 rounded-lg overflow-hidden border"><img src={newCommImage} className="w-full h-full object-cover"/><button onClick={()=>setNewCommImage("")} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3"/></button></div>}
+                  {newCommImage && <div className="relative mt-2 w-24 h-24 rounded-lg overflow-hidden border"><img src={newCommImage} className="w-full h-full object-cover"/><button aria-label="Remover imagem da postagem" onClick={()=>setNewCommImage("")} className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"><X className="w-3 h-3"/></button></div>}
                   <div className="flex justify-between items-center mt-3">
                     <label className="text-gray-400 hover:text-gray-600 cursor-pointer p-1">
                       <ImagePlus className="w-5 h-5" />
@@ -1370,7 +1374,7 @@ function ClientPWA({ isMockup = false }) {
                   </div>
                 </div>
                 <div className="space-y-4 mb-6">
-                  <div><label className="block text-xs font-medium text-gray-500 mb-1">Nome Completo</label><input type="text" value={tempUserData.nome} onChange={(e) => setTempUserData({...tempUserData, nome: e.target.value})} className="w-full border rounded-lg px-3 py-2.5 text-sm bg-gray-50" /></div>
+                  <div><label htmlFor="profile-name" className="block text-xs font-medium text-gray-500 mb-1">Nome Completo</label><input id="profile-name" type="text" value={tempUserData.nome} onChange={(e) => setTempUserData({...tempUserData, nome: e.target.value})} className="w-full border rounded-lg px-3 py-2.5 text-sm bg-gray-50" /></div>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => { setTempUserData(userData); setIsEditingProfile(false); }} className="flex-1 py-2.5 text-sm font-medium bg-gray-100 rounded-xl">{t.cancel}</button>
@@ -1415,6 +1419,7 @@ function ClientPWA({ isMockup = false }) {
       <div className="absolute bottom-20 right-4 flex flex-col gap-3 z-40">
         {appData.supportEmail && appData.supportEmail.trim() !== '' && (
           <button 
+             aria-label="Abrir suporte por e-mail"
              onClick={() => setShowSupportEmailModal(true)} 
              className={`${!appData.whatsappNumber && appData.supportIconUrl ? 'p-0 bg-transparent' : 'bg-blue-500'} text-white w-14 h-14 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center justify-center overflow-hidden`}
           >
@@ -1431,10 +1436,10 @@ function ClientPWA({ isMockup = false }) {
       {/* MODAL DE SUPORTE POR EMAIL DINÂMICO */}
       {showSupportEmailModal && (
         <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
-          <div className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 pb-safe animate-in slide-in-from-bottom-10 relative">
-            <button onClick={() => setShowSupportEmailModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5"><X className="w-4 h-4" /></button>
+          <div role="dialog" aria-modal="true" aria-labelledby="support-email-modal-title" className="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 pb-safe animate-in slide-in-from-bottom-10 relative">
+            <button aria-label="Fechar suporte por e-mail" onClick={() => setShowSupportEmailModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5"><X className="w-4 h-4" /></button>
             <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><Mail className="w-6 h-6" /></div>
-            <h3 className="text-lg font-bold text-center text-gray-900 mb-2">{t.supportTitle}</h3>
+            <h3 id="support-email-modal-title" className="text-lg font-bold text-center text-gray-900 mb-2">{t.supportTitle}</h3>
             <p className="text-sm text-gray-500 text-center mb-6">{t.supportDesc}</p>
             
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3 mb-6">
@@ -1554,7 +1559,7 @@ function DashboardScreen() {
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center border bg-gray-50 overflow-hidden">
                     {project.logoUrl ? <img src={project.logoUrl} className="w-full h-full object-cover" /> : <ImageIcon className="w-5 h-5 text-gray-400" />}
                   </div>
-                  <button onClick={(e) => deleteProject(project.id, e)} className="text-gray-300 hover:text-red-500 p-2"><Trash2 className="w-4 h-4" /></button>
+                  <button aria-label="Excluir projeto" onClick={(e) => deleteProject(project.id, e)} className="text-gray-300 hover:text-red-500 p-2"><Trash2 className="w-4 h-4" /></button>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-1 truncate">{project.nome}</h3>
                 <p className="text-xs text-gray-400 mb-4 font-mono truncate">{project.dominio}</p>
@@ -1583,7 +1588,7 @@ function AdminScreen() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <div className="bg-white border-b px-8 py-4 flex justify-between items-center sticky top-0 z-10">
         <div className="flex items-center">
-          <button onClick={() => setViewMode('dashboard')} className="mr-4 p-2 text-gray-400 hover:text-gray-900"><ArrowLeft className="w-5 h-5" /></button>
+          <button aria-label="Voltar para dashboard" onClick={() => setViewMode('dashboard')} className="mr-4 p-2 text-gray-400 hover:text-gray-900"><ArrowLeft className="w-5 h-5" /></button>
           <div className="w-8 h-8 bg-gray-900 rounded-lg flex justify-center items-center mr-3"><LayoutTemplate className="w-4 h-4 text-white" /></div>
           <div>
             <h1 className="text-lg font-bold leading-none">{appData.nome || 'Sem Nome'}</h1>
@@ -1603,11 +1608,11 @@ function AdminScreen() {
             <section className="mb-12">
               <h2 className="text-sm font-semibold mb-6 flex items-center border-b pb-2"><Settings className="w-4 h-4 mr-2" /> 1. Identidade & Idioma</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div><label className="block text-sm font-medium mb-1.5">Nome do App</label><input type="text" name="nome" value={appData.nome} onChange={handleAppChange} className={`w-full border rounded-lg px-4 py-2.5 text-sm ${isNameEmpty?'border-red-300':'border-gray-300'}`} /></div>
-                <div><label className="block text-sm font-medium mb-1.5">Domínio</label><input type="text" name="dominio" value={appData.dominio} onChange={handleAppChange} className={`w-full border rounded-lg px-4 py-2.5 text-sm ${isDomainInvalid?'border-red-300':'border-gray-300'}`} /></div>
+                <div><label htmlFor="app-name" className="block text-sm font-medium mb-1.5">Nome do App</label><input id="app-name" type="text" name="nome" value={appData.nome} onChange={handleAppChange} className={`w-full border rounded-lg px-4 py-2.5 text-sm ${isNameEmpty?'border-red-300':'border-gray-300'}`} /></div>
+                <div><label htmlFor="app-domain" className="block text-sm font-medium mb-1.5">Domínio</label><input id="app-domain" type="text" name="dominio" value={appData.dominio} onChange={handleAppChange} className={`w-full border rounded-lg px-4 py-2.5 text-sm ${isDomainInvalid?'border-red-300':'border-gray-300'}`} /></div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1.5">Idioma (PWA)</label>
-                  <select name="idioma" value={appData.idioma || 'pt-BR'} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
+                  <label htmlFor="app-language" className="block text-sm font-medium mb-1.5">Idioma (PWA)</label>
+                  <select id="app-language" name="idioma" value={appData.idioma || 'pt-BR'} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm">
                     <option value="pt-BR">Português (Brasil)</option>
                     <option value="en-US">English (US)</option>
                     <option value="es-ES">Español</option>
@@ -1616,9 +1621,9 @@ function AdminScreen() {
                   </select>
                 </div>
                 <div className="flex gap-6 md:col-span-2">
-                  <div className="flex-1"><label className="block text-sm font-medium mb-1.5">Logo</label><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'logoUrl')} className="w-full text-sm" /></div>
-                  <div><label className="block text-sm font-medium mb-1.5">Cor Primária</label><input type="color" name="corPrimaria" value={appData.corPrimaria || '#111827'} onChange={handleAppChange} className="w-12 h-10 p-1 border border-gray-300 rounded cursor-pointer bg-white" /></div>
-                  <div><label className="block text-sm font-medium mb-1.5">Cor do Texto</label><input type="color" name="corTexto" value={appData.corTexto || '#ffffff'} onChange={handleAppChange} className="w-full h-10 p-1 border border-gray-300 rounded cursor-pointer bg-white" /></div>
+                  <div className="flex-1"><label htmlFor="app-logo" className="block text-sm font-medium mb-1.5">Logo</label><input id="app-logo" type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'logoUrl')} className="w-full text-sm" /></div>
+                  <div><label htmlFor="app-primary-color" className="block text-sm font-medium mb-1.5">Cor Primária</label><input id="app-primary-color" type="color" name="corPrimaria" value={appData.corPrimaria || '#111827'} onChange={handleAppChange} className="w-12 h-10 p-1 border border-gray-300 rounded cursor-pointer bg-white" /></div>
+                  <div><label htmlFor="app-text-color" className="block text-sm font-medium mb-1.5">Cor do Texto</label><input id="app-text-color" type="color" name="corTexto" value={appData.corTexto || '#ffffff'} onChange={handleAppChange} className="w-full h-10 p-1 border border-gray-300 rounded cursor-pointer bg-white" /></div>
                 </div>
               </div>
             </section>
@@ -1629,12 +1634,12 @@ function AdminScreen() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border rounded-xl bg-gray-50">
                 <div className="space-y-4">
                   <div>
-                     <label className="block text-sm font-medium mb-1.5">WhatsApp Suporte (Opcional)</label>
-                     <input type="text" name="whatsappNumber" value={appData.whatsappNumber || ''} onChange={handleAppChange} placeholder="Ex: 5511999999999" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white" />
+                     <label htmlFor="support-whatsapp" className="block text-sm font-medium mb-1.5">WhatsApp Suporte (Opcional)</label>
+                     <input id="support-whatsapp" type="text" name="whatsappNumber" value={appData.whatsappNumber || ''} onChange={handleAppChange} placeholder="Ex: 5511999999999" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white" />
                   </div>
                   <div>
-                     <label className="block text-sm font-medium mb-1.5">E-mail de Suporte (Opcional)</label>
-                     <input type="email" name="supportEmail" value={appData.supportEmail || ''} onChange={handleAppChange} placeholder="Ex: suporte@meusite.com" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white" />
+                     <label htmlFor="support-email" className="block text-sm font-medium mb-1.5">E-mail de Suporte (Opcional)</label>
+                     <input id="support-email" type="email" name="supportEmail" value={appData.supportEmail || ''} onChange={handleAppChange} placeholder="Ex: suporte@meusite.com" className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm bg-white" />
                   </div>
                 </div>
                 <div className="flex flex-col justify-center">
@@ -1681,7 +1686,7 @@ function AdminScreen() {
                     <div className="flex-1">
                        <input type="text" placeholder="Link de redirecionamento (opcional)" value={banner.link || ''} onChange={(e) => updateBannerLink(banner.id, e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 focus:outline-none" />
                     </div>
-                    <button onClick={() => removeBanner(banner.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                    <button aria-label="Remover banner" onClick={() => removeBanner(banner.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 ))}
                 {(!appData.banners || appData.banners.length < 3) && (
@@ -1709,20 +1714,20 @@ function AdminScreen() {
             <section className="mt-12">
               <h2 className="text-sm font-semibold mb-6 flex items-center border-b pb-2"><Smartphone className="w-4 h-4 mr-2" /> 5. PWA Meta & Privacidade</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 p-6 border rounded-xl bg-gray-50">
-                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Nome Curto (App)</label><input type="text" name="pwaShortName" value={appData.pwaShortName || ''} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-gray-900" placeholder="Fórmula" /></div>
-                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Descrição PWA</label><input type="text" name="pwaDescription" value={appData.pwaDescription || ''} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-gray-900" placeholder="Aprenda a engajar seu público..." /></div>
+                <div><label htmlFor="pwa-short-name" className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Nome Curto (App)</label><input id="pwa-short-name" type="text" name="pwaShortName" value={appData.pwaShortName || ''} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-gray-900" placeholder="Fórmula" /></div>
+                <div><label htmlFor="pwa-description" className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Descrição PWA</label><input id="pwa-description" type="text" name="pwaDescription" value={appData.pwaDescription || ''} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-gray-900" placeholder="Aprenda a engajar seu público..." /></div>
                 
                 <div className="md:col-span-1 border-t md:border-t-0 md:border-l border-gray-200 pt-4 md:pt-0 md:pl-6 space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Cor de Abertura (Splash)</label>
+                    <label htmlFor="pwa-bg-color" className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Cor de Abertura (Splash)</label>
                     <div className="flex items-center gap-3">
-                      <input type="color" name="pwaBgColor" value={appData.pwaBgColor || '#ffffff'} onChange={handleAppChange} className="w-12 h-10 p-1 border border-gray-300 rounded cursor-pointer bg-white" />
+                      <input id="pwa-bg-color" type="color" name="pwaBgColor" value={appData.pwaBgColor || '#ffffff'} onChange={handleAppChange} className="w-12 h-10 p-1 border border-gray-300 rounded cursor-pointer bg-white" />
                       <span className="text-xs text-gray-500 font-mono uppercase">{appData.pwaBgColor || '#ffffff'}</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Modo de Exibição</label>
-                    <select name="pwaDisplay" value={appData.pwaDisplay || 'standalone'} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-gray-900">
+                    <label htmlFor="pwa-display" className="block text-xs font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Modo de Exibição</label>
+                    <select id="pwa-display" name="pwaDisplay" value={appData.pwaDisplay || 'standalone'} onChange={handleAppChange} className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-gray-900">
                       <option value="standalone">Padrão (Sem barra URL)</option>
                       <option value="fullscreen">Tela Cheia (Imersivo)</option>
                     </select>
