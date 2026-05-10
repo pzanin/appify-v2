@@ -30,6 +30,8 @@ interface AppStore extends AppState {
   moveSubmodule: (payload: { fromModId: number; subId: number; toModId: number }) => void;
   setLocale: (locale: SupportedLocale) => void;
   setSplash: (active: boolean) => void;
+  isNewProjectModalOpen: boolean;
+  setIsNewProjectModalOpen: (open: boolean) => void;
 }
 
 const initialState: AppState = { 
@@ -50,8 +52,10 @@ export const useAppStore = create<AppStore>()(
     ...initialState,
     isLoading: true,
     currentProjectId: null,
+    isNewProjectModalOpen: false,
 
     setIsLoading: (loading) => set({ isLoading: loading }),
+    setIsNewProjectModalOpen: (open) => set({ isNewProjectModalOpen: open }),
 
     loadProject: async (id) => {
       set({ isLoading: true, currentProjectId: id });

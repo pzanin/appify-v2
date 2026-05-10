@@ -13,6 +13,8 @@ export const projectService = {
       return [];
     }
 
+    console.log('Projetos carregados:', data);
+
     // Mapeando snake_case do DB para camelCase no app
     return data.map(p => ({
       id: p.id,
@@ -42,7 +44,9 @@ export const projectService = {
     if (error) console.error('Error saving projects:', error);
   },
 
-  createProject: async (currentProjects: Project[], newProjectName: string): Promise<Project[]> => {
+  createProject: async (currentProjects: Project[], newProjectName: string): Promise<any> => {
+    console.log("Tentando criar projeto:", newProjectName);
+    
     const newProject = {
       name: newProjectName,
       status: 'Rascunho',
@@ -51,26 +55,34 @@ export const projectService = {
       url: `${newProjectName.toLowerCase().replace(/\s+/g, '')}.appify.com`
     };
 
-    const { data, error } = await supabase
-      .from('projects')
-      .insert(newProject)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert(newProject)
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error creating project:', error);
-      return currentProjects;
+      if (error) {
+        console.error("ERRO AO SALVAR NO SUPABASE:", error);
+        throw error;
+      }
+
+      const newlyCreated = {
+        id: data.id,
+        name: data.name,
+        status: data.status,
+        lastEdited: data.last_edited,
+        users: 0,
+        color: data.color,
+        url: data.url
+      };
+
+      console.log("Projeto salvo no banco com sucesso:", newlyCreated);
+      return { projects: [...currentProjects, newlyCreated], newlyCreated };
+    } catch (err) {
+      console.error("ERRO AO SALVAR NO SUPABASE (try/catch):", err);
+      throw err;
     }
-
-    return [...currentProjects, {
-      id: data.id,
-      name: data.name,
-      status: data.status,
-      lastEdited: data.last_edited, // Corrigido
-      users: 0,
-      color: data.color,
-      url: data.url
-    }];
   },
 
   getAppState: async (initialState: AppState, projectId?: number): Promise<AppState> => {

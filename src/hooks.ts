@@ -21,18 +21,29 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
   const loadProject = useAppStore(state => state.loadProject);
   const initializeProjects = useAppStore(state => state.initializeProjects);
   const setIsLoading = useAppStore(state => state.setIsLoading);
+  const currentView = useAppStore(state => state.currentView);
   
   const [projects, setProjects] = useState<Project[]>([]);
+
+  const fetchProjects = async () => {
+    const data = await projectService.getProjects();
+    setProjects(data);
+  };
 
   useEffect(() => {
     async function init() {
       setIsLoading(true);
-      const data = await projectService.getProjects();
-      setProjects(data);
+      await fetchProjects();
       await initializeProjects();
     }
     init();
   }, []);
+
+  useEffect(() => {
+    if (currentView === 'projects') {
+      fetchProjects();
+    }
+  }, [currentView]);
 
   useEffect(() => {
     if (projects.length > 0) {
@@ -42,16 +53,22 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
 
   const handleOpenProject = async (projectId: number, projectName: string) => { 
     showToast('Carregando projeto...', 'loading');
-    if (projectName === 'Novo App') {
-      const newProjects = await projectService.createProject(projects, 'Novo App Supabase');
-      setProjects(newProjects);
-      const newlyCreated = newProjects[newProjects.length - 1];
-      await loadProject(newlyCreated.id);
+    if (projectId === 0) {
+      try {
+        const result = await projectService.createProject(projects, projectName || 'Novo App');
+        setProjects(result.projects);
+        await loadProject(result.newlyCreated.id);
+        setView('builder'); 
+        showToast('Projeto criado com sucesso!', 'success');
+      } catch (err: any) {
+        showToast(`Erro ao criar: ${err.message || 'Verifique o Supabase'}`, 'error');
+        return;
+      }
     } else { 
       await loadProject(projectId);
+      setView('builder'); 
+      showToast('Projeto pronto!', 'success');
     }
-    setView('builder'); 
-    showToast('Projeto pronto!', 'success');
   };
 
   const handleToggleProjectStatus = (projectId: number) => {

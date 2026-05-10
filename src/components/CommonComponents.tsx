@@ -17,6 +17,7 @@ export function Header({ handleOpenProject, handleExportZip, handlePublish, show
   const currentView = useAppStore(state => state.currentView);
   const setView = useAppStore(state => state.setView);
   const setSplash = useAppStore(state => state.setSplash);
+  const setIsNewProjectModalOpen = useAppStore(state => state.setIsNewProjectModalOpen);
 
   return (
     <header className="header">
@@ -45,7 +46,15 @@ export function Header({ handleOpenProject, handleExportZip, handlePublish, show
             <button className="btn-primary" onClick={handlePublish}><Sparkles size={16} /> Publicar</button>
           </>
         ) : (
-          <button className="btn-primary" onClick={() => handleOpenProject(0, 'Novo App')}><Plus size={16} /> Novo Projeto</button>
+          <button 
+            className="btn-primary" 
+            onClick={() => {
+              console.log("Botão do Header clicado!");
+              setIsNewProjectModalOpen(true);
+            }}
+          >
+            <Plus size={16} /> Novo Projeto
+          </button>
         )}
       </div>
     </header>
