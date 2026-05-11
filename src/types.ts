@@ -32,7 +32,8 @@ export interface PwaConfig {
   changelogNotes: string;
   supabaseUrl: string;
   supabaseAnonKey: string;
-  banners: Array<{ id: number; colorA: string; colorB: string; link: string }>;
+  carouselInterval?: number;
+  banners: Array<{ id: number; imageUrl: string; link: string }>;
 }
 
 export interface Version {
@@ -140,6 +141,7 @@ export interface Project {
   users: number;
   color: string;
   url: string;
+  logoBase64?: string;
 }
 
 export interface SubModule {
@@ -148,6 +150,8 @@ export interface SubModule {
   type: string;
   content_html?: string;
   builder_data?: BuilderBlock[];
+  coverImageUrl?: string;
+  externalLink?: string;
 }
 
 export interface Module {

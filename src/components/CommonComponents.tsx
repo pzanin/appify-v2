@@ -78,8 +78,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProjec
       tabIndex={0}
     >
       <div className="project-card-header">
-        <div className="project-icon" style={{background: proj.color}}>
-          {proj.name.charAt(0).toUpperCase()}
+        <div className="project-icon" style={{ background: proj.logoBase64 ? 'var(--surface2)' : proj.color, overflow: 'hidden', padding: 0 }}>
+          {proj.logoBase64 ? (
+            <img 
+              src={proj.logoBase64} 
+              alt={proj.name} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
+            />
+          ) : (
+            proj.name.charAt(0).toUpperCase()
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span className={`project-status ${proj.status === 'Publicado' ? 'status-pub' : 'status-draft'}`}>

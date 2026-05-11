@@ -7,11 +7,13 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { GOOGLE_FONTS } from '../constants';
 import { SupportedLocale } from '../types';
+import { useTranslation } from 'react-i18next';
 
 export function IdentityConfigurator() {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const updatePwaConfig = useAppStore(state => state.updatePwaConfig);
   const setLocale = useAppStore(state => state.setLocale);
+  const { i18n } = useTranslation();
 
   const fileInputLogo = useRef<HTMLInputElement>(null);
   const fileInputIcon = useRef<HTMLInputElement>(null);
@@ -78,18 +80,9 @@ export function IdentityConfigurator() {
     const banners = pwaConfig.banners || [];
     if (banners.length >= 3) return;
     
-    const presets = [
-      ['#7c6fff', '#4facfe'],
-      ['#f953c6', '#b91d73'],
-      ['#f7971e', '#ffd200'],
-      ['#6bffb8', '#00c9ff'],
-      ['#ff6b6b', '#ffa07a']
-    ];
-    const randomPreset = presets[Math.floor(Math.random() * presets.length)];
     const newBanner = { 
       id: Date.now(), 
-      colorA: randomPreset[0], 
-      colorB: randomPreset[1], 
+      imageUrl: '', 
       link: '' 
     };
     updateConfig({ banners: [...banners, newBanner] });
@@ -165,6 +158,7 @@ export function IdentityConfigurator() {
                 const lang = e.target.value;
                 updatePwaConfig({ language: lang });
                 setLocale(lang as SupportedLocale);
+                i18n.changeLanguage(lang.split('-')[0]);
               }}
             >
               <option value="pt-BR">🇧🇷 Português (BR)</option>
@@ -421,30 +415,58 @@ export function IdentityConfigurator() {
           </div>
         </div>
         <div className="eng-card-body" style={{ padding: '24px' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <label className="vpb-label">Tempo de transição (segundos)</label>
+            <input 
+              type="number" 
+              className="vpb-input" 
+              min={1} max={15}
+              value={pwaConfig.carouselInterval || 5}
+              onChange={(e) => updateConfig({ carouselInterval: Number(e.target.value) })}
+            />
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
             {(pwaConfig.banners || []).map((banner) => (
               <div key={banner.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'var(--surface2)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <div style={{ 
-                  width: '100%', height: '56px', 
-                  background: `linear-gradient(135deg, ${banner.colorA} 0%, ${banner.colorB} 100%)`, 
-                  borderRadius: '8px', flexShrink: 0 
-                }}></div>
+                <div 
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e: any) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          updateBanner(banner.id, { imageUrl: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                  style={{ 
+                    width: '100%', aspectRatio: '3 / 1', 
+                    background: banner.imageUrl ? `url(${banner.imageUrl}) center/cover` : 'var(--surface1)', 
+                    border: banner.imageUrl ? 'none' : '2px dashed var(--border)',
+                    borderRadius: '8px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', overflow: 'hidden'
+                  }}
+                >
+                  {!banner.imageUrl && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--muted)', gap: '4px' }}>
+                      <ImageIcon size={20} />
+                      <span style={{ fontSize: '11px', fontWeight: 600 }}>Enviar Imagem</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '-8px', textAlign: 'center' }}>
+                  Tamanho recomendado: 1200x400 pixels (Proporção 3:1)
+                </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      <input 
-                        type="color" 
-                        value={banner.colorA} 
-                        onChange={(e) => updateBanner(banner.id, { colorA: e.target.value })} 
-                        style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer', outline: 'none', padding: 0 }} 
-                      />
-                      <input 
-                        type="color" 
-                        value={banner.colorB} 
-                        onChange={(e) => updateBanner(banner.id, { colorB: e.target.value })} 
-                        style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer', outline: 'none', padding: 0 }} 
-                      />
-                   </div>
                    
                    <div style={{ position: 'relative', flex: 1 }}>
                      <LinkIcon size={12} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Settings, Trash2, Layers, Plus, GripVertical, Pencil, Eye, 
-  MoreHorizontal, Copy, Edit2, Move, ChevronRight, X, Check, BookOpen
+  MoreHorizontal, Copy, Edit2, Move, ChevronRight, X, Check, BookOpen,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
@@ -21,6 +22,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
   const moveSubmodule = useAppStore(state => state.moveSubmodule);
   const reorderSubmodule = useAppStore(state => state.reorderSubmodule);
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
+  const updateSubmoduleCover = useAppStore(state => state.updateSubmoduleCover);
 
   const selectedModule = modules.find(m => m.id === selectedModuleId);
   
@@ -34,7 +36,38 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
   const [showConfig, setShowConfig] = useState(false);
   const [isRenamingModule, setIsRenamingModule] = useState(false);
   const [newModuleName, setNewModuleName] = useState('');
-  const [showIconGrid, setShowIconGrid] = useState(false);
+  const [showCoverSettings, setShowCoverSettings] = useState(false);
+  const [tempCoverUrl, setTempCoverUrl] = useState('');
+  const [tempExternalLink, setTempExternalLink] = useState('');
+
+  const updateModuleCover = useAppStore(state => state.updateModuleCover);
+  const fileInputCoverRef = useRef<HTMLInputElement>(null);
+
+  // Sub-module cover edit state
+  const [subCoverEditId, setSubCoverEditId] = useState<number | null>(null);
+  const [tempSubCoverUrl, setTempSubCoverUrl] = useState('');
+  const [tempSubExternalLink, setTempSubExternalLink] = useState('');
+  const fileInputSubCoverRef = useRef<HTMLInputElement>(null);
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setTempCoverUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleSubCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setTempSubCoverUrl(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
 
   const dropdownItemStyle: React.CSSProperties = {
     display: 'flex',
@@ -113,7 +146,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
 
           {showConfig && (
             <>
-              <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => { setShowConfig(false); setShowIconGrid(false); }} />
+              <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => { setShowConfig(false); setShowCoverSettings(false); }} />
               <div style={{
                 position: 'absolute',
                 top: '100%',
@@ -155,15 +188,19 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                   <button 
                     className="dropdown-item" 
                     style={{ ...dropdownItemStyle, justifyContent: 'space-between' }} 
-                    onClick={() => setShowIconGrid(!showIconGrid)}
+                    onClick={() => {
+                      setTempCoverUrl(selectedModule.coverImageUrl || '');
+                      setTempExternalLink(selectedModule.externalLink || '');
+                      setShowCoverSettings(!showCoverSettings);
+                    }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <BookOpen size={12} /> Alterar Capa (Imagem) / Link
+                      <ImageIcon size={12} /> Alterar Capa (Imagem) / Link
                     </div>
                     <ChevronRight size={12} />
                   </button>
                   
-                  {showIconGrid && (
+                  {showCoverSettings && (
                     <div style={{
                       position: 'absolute',
                       right: '100%',
@@ -171,37 +208,74 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                       marginRight: '8px',
                       background: 'var(--surface)',
                       border: '1px solid var(--border)',
-                      borderRadius: '10px',
-                      padding: '10px',
-                      width: '200px',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(5, 1fr)',
-                      gap: '4px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                      borderRadius: '12px',
+                      padding: '16px',
+                      width: '240px',
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                      zIndex: 102
                     }}>
-                      {Object.keys(ICON_MAP).map(iconName => (
-                        <button
-                          key={iconName}
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Configurar Capa</div>
+                      
+                      {/* Hidden persistent file input */}
+                      <input 
+                        ref={fileInputCoverRef}
+                        type="file" 
+                        accept="image/*" 
+                        hidden 
+                        onChange={handleCoverFileChange}
+                      />
+
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputCoverRef.current?.click();
+                        }}
+                        style={{ 
+                          width: '100%', aspectRatio: '16/9', 
+                          background: tempCoverUrl ? `url(${tempCoverUrl}) center/cover` : 'var(--surface2)', 
+                          border: '1px dashed var(--border)',
+                          borderRadius: '8px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', overflow: 'hidden'
+                        }}
+                      >
+                        {!tempCoverUrl && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: 'var(--muted)', fontSize: '10px' }}><ImageIcon size={16} /> Enviar Imagem</div>}
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)' }}>LINK EXTERNO (OPCIONAL)</label>
+                        <input 
+                          className="vpb-input" 
+                          placeholder="https://..." 
+                          style={{ marginBottom: 0, fontSize: '12px', height: '32px' }}
+                          value={tempExternalLink}
+                          onChange={(e) => setTempExternalLink(e.target.value)}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                        <button 
+                          className="btn-primary" 
+                          style={{ flex: 1, padding: '6px', fontSize: '12px' }}
                           onClick={() => {
-                            setModuleIcon({ id: selectedModule.id, iconName });
-                            setShowIconGrid(false);
+                            updateModuleCover({ id: selectedModule.id, coverImageUrl: tempCoverUrl, externalLink: tempExternalLink });
+                            setShowCoverSettings(false);
                             setShowConfig(false);
                           }}
-                          style={{
-                            padding: '6px',
-                            borderRadius: '4px',
-                            background: selectedModule.iconName === iconName ? 'var(--accent)' : 'transparent',
-                            color: selectedModule.iconName === iconName ? 'white' : 'var(--text)',
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
                         >
-                          <RenderDynamicIcon name={iconName} size={16} />
+                          Salvar Capa
                         </button>
-                      ))}
+                        <button 
+                          className="btn-ghost" 
+                          style={{ padding: '6px', fontSize: '12px' }}
+                          onClick={() => setShowCoverSettings(false)}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -229,6 +303,8 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
         <div className="detail-tab active">Sub-módulos</div>
         <div className="detail-tab">Conteúdo HTML</div>
       </div>
+
+
       
       <div className="module-detail-body" style={{ paddingBottom: '160px' }}>
         {selectedModule.subs.length === 0 ? (
@@ -244,6 +320,12 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
               {selectedModule.subs.map(sub => (
                 <div key={sub.id} className={`submodule-item ${draggedSubId === sub.id ? 'dragging' : ''} ${dragOverSubId === sub.id && draggedSubId !== sub.id ? 'drag-over' : ''}`} draggable onDragStart={(e) => onDragStart(e, sub.id)} onDragOver={onDragOver} onDragEnter={(e) => onDragEnter(sub.id)} onDragEnd={onDrop}>
                   <GripVertical size={14} className="drag-handle" />
+                  {/* Submodule Cover Thumbnail */}
+                  {sub.coverImageUrl && (
+                    <div style={{ width: '36px', height: '28px', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={sub.coverImageUrl} alt="capa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
                   {renamingId === sub.id ? (
                     <input 
                       className="vpb-input" 
@@ -336,6 +418,101 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                             >
                               <Copy size={12} /> Duplicar
                             </button>
+
+                            {/* Submodule Cover */}
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                className="dropdown-item"
+                                style={{ ...dropdownItemStyle, justifyContent: 'space-between' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTempSubCoverUrl(sub.coverImageUrl || '');
+                                  setTempSubExternalLink(sub.externalLink || '');
+                                  setSubCoverEditId(subCoverEditId === sub.id ? null : sub.id);
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <ImageIcon size={12} /> Alterar Capa / Link
+                                </div>
+                                <ChevronRight size={12} />
+                              </button>
+
+                              {subCoverEditId === sub.id && (
+                                <div style={{
+                                  position: 'absolute',
+                                  right: '100%',
+                                  bottom: 0,
+                                  marginRight: '8px',
+                                  background: 'var(--surface)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '12px',
+                                  padding: '16px',
+                                  width: '220px',
+                                  boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '10px',
+                                  zIndex: 20
+                                }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Capa da Aula</div>
+
+                                  <input
+                                    ref={fileInputSubCoverRef}
+                                    type="file"
+                                    accept="image/*"
+                                    hidden
+                                    onChange={handleSubCoverFileChange}
+                                  />
+
+                                  <div
+                                    onClick={(e) => { e.stopPropagation(); fileInputSubCoverRef.current?.click(); }}
+                                    style={{
+                                      width: '100%', aspectRatio: '16/9',
+                                      background: tempSubCoverUrl ? `url(${tempSubCoverUrl}) center/cover` : 'var(--surface2)',
+                                      border: '1px dashed var(--border)',
+                                      borderRadius: '8px',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      cursor: 'pointer', overflow: 'hidden'
+                                    }}
+                                  >
+                                    {!tempSubCoverUrl && <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: 'var(--muted)', fontSize: '10px' }}><ImageIcon size={14} /> Enviar Imagem</div>}
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <label style={{ fontSize: '10px', fontWeight: 600, color: 'var(--muted)' }}>LINK EXTERNO (OPCIONAL)</label>
+                                    <input
+                                      className="vpb-input"
+                                      placeholder="https://..."
+                                      style={{ marginBottom: 0, fontSize: '12px', height: '30px' }}
+                                      value={tempSubExternalLink}
+                                      onChange={(e) => setTempSubExternalLink(e.target.value)}
+                                    />
+                                  </div>
+
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                      className="btn-primary"
+                                      style={{ flex: 1, padding: '5px', fontSize: '12px' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateSubmoduleCover({ modId: selectedModule.id, subId: sub.id, coverImageUrl: tempSubCoverUrl, externalLink: tempSubExternalLink });
+                                        setSubCoverEditId(null);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      Salvar
+                                    </button>
+                                    <button
+                                      className="btn-ghost"
+                                      style={{ padding: '5px', fontSize: '12px' }}
+                                      onClick={(e) => { e.stopPropagation(); setSubCoverEditId(null); }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                             
                             <div style={{ position: 'relative' }}>
                               <button 

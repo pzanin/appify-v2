@@ -14,7 +14,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
   const handleStepClick = (stepId: number) => { setStep(stepId); if (onClose) onClose(); };
-  const handleModuleClick = (modId: number) => { setStep(1); setSelectedModule(modId); if (onClose) onClose(); };
+  const handleModuleClick = (modId: number) => { setStep(2); setSelectedModule(modId); if (onClose) onClose(); };
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
@@ -36,7 +36,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div className="step-info">
               <div className="step-name">{step.label}</div>
-              <div className="step-meta">{step.id === 1 ? `${modules.length} módulos criados` : step.desc}</div>
+              <div className="step-meta">{step.id === 2 ? `${modules.length} módulos criados` : step.desc}</div>
             </div>
           </div>
           {index < PIPELINE_STEPS.length - 1 && <div className={`step-connector ${step.id < activeStep ? 'done' : ''}`}></div>}
@@ -48,16 +48,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {modules.map(mod => (
           <React.Fragment key={mod.id}>
             <div 
-              className={`module-item ${selectedModuleId === mod.id && activeStep === 1 ? 'active' : ''}`} 
+              className={`module-item ${selectedModuleId === mod.id && activeStep === 2 ? 'active' : ''}`} 
               onClick={() => handleModuleClick(mod.id)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleModuleClick(mod.id); }}
               role="button"
               tabIndex={0}
-              aria-pressed={selectedModuleId === mod.id && activeStep === 1}
+              aria-pressed={selectedModuleId === mod.id && activeStep === 2}
             >
               <div className="module-dot"></div> <RenderDynamicIcon name={mod.iconName} size={14} /> {mod.name}
             </div>
-              {selectedModuleId === mod.id && activeStep === 1 && mod.subs.map(sub => (
+              {selectedModuleId === mod.id && activeStep === 2 && mod.subs.map(sub => (
                 <div 
                   key={sub.id} 
                   className="module-item sub"

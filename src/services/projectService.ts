@@ -5,8 +5,8 @@ export const projectService = {
   getProjects: async (): Promise<Project[]> => {
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
-      .order('last_edited', { ascending: false }); // Corrigido para last_edited
+      .select('id, name, status, last_edited, color, url, pwa_config')
+      .order('last_edited', { ascending: false });
 
     if (error) {
       console.error('Error fetching projects:', error);
@@ -20,10 +20,11 @@ export const projectService = {
       id: p.id,
       name: p.name,
       status: p.status,
-      lastEdited: p.last_edited, // Corrigido
-      users: 0, // Mockado por enquanto, já que não temos a coluna users no DB
+      lastEdited: p.last_edited,
+      users: 0,
       color: p.color,
-      url: p.url
+      url: p.url,
+      logoBase64: p.pwa_config?.logoBase64 || null
     }));
   },
 
@@ -107,17 +108,21 @@ export const projectService = {
           iconName:icon_name,
           status,
           position,
+          coverImageUrl:cover_image_url,
+          externalLink:external_link,
           subs:submodules (
             id,
             name,
             type,
             content_html,
             builder_data,
-            position
+            position,
+            coverImageUrl:cover_image_url,
+            externalLink:external_link
           )
         `)
         .eq('project_id', projectId)
-        .order('position', { foreignTable: 'modules' }); // Corrigido de order_index para position
+        .order('position', { foreignTable: 'modules' });
 
       if (modError) throw modError;
 
@@ -129,7 +134,6 @@ export const projectService = {
         translations: project.translations || initialState.translations,
         modules: (modulesData || []).map((m: any) => ({
           ...m,
-          // Corrigido de order_index para position
           subs: (m.subs || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0))
         }))
       };
@@ -143,6 +147,7 @@ export const projectService = {
     if (!projectId) return;
 
     try {
+      // 1. Save project-level config
       await supabase
         .from('projects')
         .update({
@@ -150,11 +155,68 @@ export const projectService = {
           pwa_config: state.pwaConfig,
           active_locale: state.activeLocale,
           translations: state.translations,
-          last_edited: new Date().toISOString() // Corrigido para o DB
+          last_edited: new Date().toISOString()
         })
         .eq('id', projectId);
-      
-      console.log('[SUPABASE] App state updated for project', projectId);
+
+      // 2. Upsert all modules
+      if (state.modules && state.modules.length > 0) {
+        const modulesPayload = state.modules.map((m, index) => ({
+          id: m.id,
+          project_id: projectId,
+          name: m.name,
+          icon_name: m.iconName || 'BookOpen',
+          status: m.status || 'Ativo',
+          position: index,
+          cover_image_url: m.coverImageUrl || null,
+          external_link: m.externalLink || null,
+        }));
+
+        const { error: modError } = await supabase
+          .from('modules')
+          .upsert(modulesPayload, { onConflict: 'id' });
+
+        if (modError) console.error('[SUPABASE] Error saving modules:', modError);
+
+        // 3. Upsert all submodules
+        const subsPayload = state.modules.flatMap(m =>
+          (m.subs || []).map((s, index) => ({
+            id: s.id,
+            module_id: m.id,
+            name: s.name,
+            type: s.type || 'HTML Nativo',
+            content_html: s.content_html || '',
+            builder_data: s.builder_data || [],
+            position: index,
+            cover_image_url: (s as any).coverImageUrl || null,
+            external_link: (s as any).externalLink || null,
+          }))
+        );
+
+        if (subsPayload.length > 0) {
+          const { error: subError } = await supabase
+            .from('submodules')
+            .upsert(subsPayload, { onConflict: 'id' });
+
+          if (subError) console.error('[SUPABASE] Error saving submodules:', subError);
+        }
+
+        // 4. Delete modules removed from state
+        const { data: dbModules } = await supabase
+          .from('modules')
+          .select('id')
+          .eq('project_id', projectId);
+
+        if (dbModules) {
+          const stateModuleIds = state.modules.map(m => m.id);
+          const toDeleteMods = dbModules.filter(m => !stateModuleIds.includes(m.id)).map(m => m.id);
+          if (toDeleteMods.length > 0) {
+            await supabase.from('modules').delete().in('id', toDeleteMods);
+          }
+        }
+      }
+
+      console.log('[SUPABASE] Full app state saved for project', projectId);
     } catch (e) {
       console.error('Error saving app state:', e);
     }

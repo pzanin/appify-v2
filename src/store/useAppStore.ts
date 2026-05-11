@@ -21,6 +21,8 @@ interface AppStore extends AppState {
   renameModule: (payload: { id: number; name: string }) => void;
   toggleModuleStatus: (id: number) => void;
   setModuleIcon: (payload: { id: number; iconName: string }) => void;
+  updateModuleCover: (payload: { id: number; coverImageUrl: string; externalLink?: string }) => void;
+  updateSubmoduleCover: (payload: { modId: number; subId: number; coverImageUrl: string; externalLink?: string }) => void;
   addSubmodule: (modId: number) => void;
   deleteSubmodule: (payload: { modId: number; subId: number }) => void;
   renameSubmodule: (payload: { modId: number; subId: number; name: string }) => void;
@@ -104,6 +106,23 @@ export const useAppStore = create<AppStore>()(
     setModuleIcon: (payload) => set((state) => ({
       modules: state.modules.map(m => m.id === payload.id ? { ...m, iconName: payload.iconName } : m)
     })),
+    
+    updateModuleCover: (payload) => set((state) => ({
+      modules: state.modules.map(m => m.id === payload.id 
+        ? { ...m, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink } 
+        : m
+      )
+    })),
+
+    updateSubmoduleCover: (payload) => set((state) => ({
+      modules: state.modules.map(m => m.id === payload.modId
+        ? { ...m, subs: m.subs.map(s => s.id === payload.subId 
+            ? { ...s, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink }
+            : s
+          )}
+        : m
+      )
+    })),
 
     addSubmodule: (modId) => set((state) => ({
       modules: state.modules.map(mod => mod.id === modId 
@@ -178,11 +197,14 @@ export const useAppStore = create<AppStore>()(
   }))
 );
 
-// Subscribe to state changes to save app state
+// Subscribe to state changes to save app state (debounced 1.5s)
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
 useAppStore.subscribe(
   (state) => state,
-  async (state) => {
-    if (state.currentProjectId && !state.isLoading) {
+  (state) => {
+    if (!state.currentProjectId || state.isLoading) return;
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
       const appState: AppState = {
         currentView: state.currentView,
         activeStep: state.activeStep,
@@ -195,8 +217,8 @@ useAppStore.subscribe(
         translations: state.translations,
         splashActive: state.splashActive,
       };
-      await projectService.saveAppState(appState, state.currentProjectId);
-    }
+      await projectService.saveAppState(appState, state.currentProjectId!);
+    }, 1500);
   },
   { fireImmediately: false }
 );

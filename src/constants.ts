@@ -17,7 +17,7 @@ export const DEFAULT_TRANSLATIONS: Record<SupportedLocale, AppTranslations> = {
       "app.login.emailPlaceholder": "Digite seu e-mail",
       "app.login.button": "ENTRAR",
       "onboarding.install.title": "Instalar na tela inicial?",
-      "onboarding.install.subtitle": "Acesse o app com um toque, sem precisar do navegador.",
+      "onboarding.install.subtitle": "Acesse o app com um toque",
       "onboarding.install.confirm": "Sim, instalar",
       "onboarding.install.skip": "Agora não",
       "onboarding.push.title": "Ativar notificações?",
@@ -140,15 +140,16 @@ export const INITIAL_PWA_CONFIG: PwaConfig = {
   changelogNotes: '',
   supabaseUrl: '',
   supabaseAnonKey: '',
+  carouselInterval: 5,
   banners: [
-    { id: 1, colorA: '#6bffb8', colorB: '#00c9ff', link: '' }
+    { id: 1, imageUrl: '', link: '' }
   ]
 };
 
 export const PIPELINE_STEPS: PipelineStep[] = [
   { id: 0, label: 'Identidade', desc: 'Nome, cores, logo', status: 'done' },
-  { id: 1, label: 'Módulos & Conteúdo', desc: 'Estrutura do app', status: 'active' },
-  { id: 2, label: 'Configurações', desc: 'Manifest, ícones, offline', status: 'todo' },
+  { id: 1, label: 'Configurações', desc: 'Manifest, ícones, offline', status: 'todo' },
+  { id: 2, label: 'Módulos & Conteúdo', desc: 'Estrutura do app', status: 'active' },
   { id: 3, label: 'Engajamento', desc: 'Push & Comunidade', status: 'todo' },
   { id: 4, label: 'Publicação', desc: 'Deploy & domínio', status: 'todo' },
   { id: 5, label: 'Analytics', desc: 'Métricas & crescimento', status: 'todo' },

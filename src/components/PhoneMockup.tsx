@@ -6,9 +6,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
+import { useTranslation } from 'react-i18next';
 
 interface PhoneMockupProps { isPhoneDark: boolean; setIsPhoneDark: (val: boolean) => void; }
 export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
+  const { t } = useTranslation();
   const appName = useAppStore(state => state.appName);
   const modules = useAppStore(state => state.modules);
   const activeStep = useAppStore(state => state.activeStep);
@@ -21,7 +23,11 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState('inicio');
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const onboardingShown = useRef(false);
+  const carouselTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const selectedMockupModule = modules.find(m => m.id === selectedMockupModuleId) || null;
   
   const progressPercent = Math.round((activeStep / PIPELINE_STEPS.length) * 100);
   const themeColor = pwaConfig?.themeColor || '#6b8af0';
@@ -54,6 +60,25 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
       return () => clearTimeout(timer);
     }
   }, [currentView]);
+
+  // Carousel auto-advance
+  useEffect(() => {
+    const banners = pwaConfig.banners || [];
+    if (banners.length <= 1) return;
+    const interval = (pwaConfig.carouselInterval || 5) * 1000;
+    if (carouselTimerRef.current) clearInterval(carouselTimerRef.current);
+    carouselTimerRef.current = setInterval(() => {
+      setCarouselIndex(prev => (prev + 1) % banners.length);
+    }, interval);
+    return () => {
+      if (carouselTimerRef.current) clearInterval(carouselTimerRef.current);
+    };
+  }, [pwaConfig.banners, pwaConfig.carouselInterval]);
+
+  // Reset index when banners change
+  useEffect(() => {
+    setCarouselIndex(0);
+  }, [(pwaConfig.banners || []).length]);
 
   const handleNextStep = () => {
     if (onboardingStep === 1) {
@@ -161,14 +186,14 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                   {onboardingStep === 1 ? <Download size={28} color="#4b5563" /> : <Bell size={28} color="#4b5563" />}
                 </div>
 
-                <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '12px', color: '#111' }}>
-                  {onboardingStep === 1 ? 'Instalar na tela inicial?' : 'Ativar notificações?'}
+                <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '12px', color: pwaConfig.titleColor || '#111', fontFamily: pwaConfig.fontFamily || 'inherit' }}>
+                  {onboardingStep === 1 ? t('onboarding.install.title') : t('onboarding.push.title')}
                 </h3>
                 
-                <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.5, marginBottom: '28px' }}>
+                <p style={{ fontSize: '14px', color: pwaConfig.bodyColor || '#666', lineHeight: 1.5, marginBottom: '28px' }}>
                   {onboardingStep === 1 
-                    ? 'Acesse o app com um toque, sem precisar do navegador.'
-                    : 'Fique por dentro de novidades, lembretes e conteúdo exclusivo.'}
+                    ? t('onboarding.install.subtitle')
+                    : t('onboarding.push.subtitle')}
                 </p>
 
                 <button 
@@ -185,7 +210,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     cursor: 'pointer'
                   }}
                 >
-                  {onboardingStep === 1 ? 'Sim, instalar' : 'Sim, quero!'}
+                  {onboardingStep === 1 ? t('onboarding.install.confirm') : t('onboarding.push.confirm')}
                 </button>
 
                 <button 
@@ -201,7 +226,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     fontWeight: 500
                   }}
                 >
-                  Agora não
+                  {t('onboarding.install.skip')}
                 </button>
               </motion.div>
             </motion.div>
@@ -253,37 +278,34 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             </div>
           </div>
         </div>
-        <div className="phone-body">
+        <div className="phone-body" style={{ fontFamily: pwaConfig.fontFamily || 'inherit', color: pwaConfig.bodyColor || 'inherit' }}>
           {activeStep === 0 ? (
             <div className="phone-login-preview" style={{ padding: '80px 24px', textAlign: 'center', animation: 'fadeIn 0.5s ease' }}>
-              <div style={{ 
-                width: '80px', 
-                height: '80px', 
-                background: themeColor, 
-                borderRadius: '22px', 
-                margin: '0 auto 24px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: pwaConfig.textColor || 'white',
-                boxShadow: '0 10px 20px -5px rgba(0,0,0,0.2)'
-              }}>
-                <Smartphone size={40} />
-              </div>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>Acesse sua conta</h2>
-              <p style={{ fontSize: '13px', color: isPhoneDark ? '#999' : '#666', marginBottom: '32px' }}>{pwaConfig.tagline}</p>
+              {pwaConfig.logoBase64 ? (
+                <img 
+                  src={pwaConfig.logoBase64} 
+                  alt="Logo" 
+                  className="w-24 h-24 object-contain mb-8 mx-auto rounded-2xl" 
+                />
+              ) : (
+                <div className="w-24 h-24 flex items-center justify-center bg-[var(--surface2)] rounded-2xl mb-8 mx-auto text-sm text-[var(--muted)] font-bold border-2 border-dashed border-[var(--border)]">
+                  Sua Logo
+                </div>
+              )}
+              <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: pwaConfig.titleColor || (isPhoneDark ? '#fff' : '#111'), fontFamily: pwaConfig.fontFamily || 'inherit' }}>{t('app.login.title')}</h2>
               
               <div style={{ 
-                background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6', 
+                background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', 
                 padding: '14px', 
                 borderRadius: '12px', 
                 textAlign: 'left', 
-                color: isPhoneDark ? '#666' : '#999', 
+                color: pwaConfig.bodyColor || (isPhoneDark ? '#999' : '#4b5563'), 
                 fontSize: '13px',
-                border: '1px solid var(--border)',
+                border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb',
+                boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)',
                 marginBottom: '12px'
               }}>
-                Digite seu e-mail
+                {t('app.login.emailPlaceholder')}
               </div>
               
               <button 
@@ -300,55 +322,198 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                   fontSize: '15px'
                 }}
               >
-                ENTRAR
+                {t('app.login.button')}
               </button>
             </div>
           ) : (
             <>
-              <div className="phone-hero"></div>
+              {/* Banner Carousel */}
+              {(() => {
+                const banners = (pwaConfig.banners || []).filter(b => b.imageUrl);
+                if (banners.length === 0) {
+                  return <div className="phone-hero"></div>;
+                }
+                const currentBanner = banners[carouselIndex % banners.length];
+                return (
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      aspectRatio: '3 / 1',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentBanner.id}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -30 }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
+                        onClick={() => currentBanner.link && window.open(currentBanner.link, '_blank')}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundImage: `url(${currentBanner.imageUrl})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          cursor: currentBanner.link ? 'pointer' : 'default',
+                        }}
+                      />
+                    </AnimatePresence>
+                    {/* Dots */}
+                    {banners.length > 1 && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '6px',
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '5px',
+                      }}>
+                        {banners.map((_, i) => (
+                          <div
+                            key={i}
+                            onClick={() => setCarouselIndex(i)}
+                            style={{
+                              width: i === carouselIndex % banners.length ? '16px' : '6px',
+                              height: '6px',
+                              borderRadius: '3px',
+                              background: i === carouselIndex % banners.length ? 'white' : 'rgba(255,255,255,0.5)',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="phone-progress-card">
                 <div className="phone-progress-header"><span>Progresso</span><span>{progressPercent}%</span></div>
                 <div className="phone-progress-track"><div className="phone-progress-fill" style={{ width: `${progressPercent}%` }}></div></div>
               </div>
-              <div>
-                <div className="phone-modules-header">
-                  <div className="text-lg font-semibold text-[var(--p-text)] transition-colors duration-300">Módulos</div>
-                  <div className="phone-modules-actions">
-                    <button className={`phone-modules-btn ${viewMode === 'list' ? 'inactive' : ''}`} title="Grid" onClick={() => setViewMode('grid')}><LayoutGrid size={14} /></button>
-                    <button className={`phone-modules-btn ${viewMode === 'grid' ? 'inactive' : ''}`} title="Lista" onClick={() => setViewMode('list')}><Grid size={14} /></button>
-                  </div>
-                </div>
-                {modules.length === 0 ? (
-                  <div className="phone-empty-state" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--p-muted)', fontSize: '13px', fontWeight: 500, border: 'none', background: 'transparent' }}>
-                    Nenhum módulo criado
-                  </div>
-                ) : (
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
-                    {modules.map((mod) => (
-                      <div key={mod.id} className="phone-module-wrapper">
-                        <div className="phone-card">
-                          <div style={{ position: 'absolute', inset: 0, background: 'var(--p-card-empty)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.3s' }}>
-                            <div style={{ color: 'var(--p-card-icon)', transition: 'color 0.3s', opacity: mod.status === 'Rascunho' ? 0.4 : 1 }}>
-                              <RenderDynamicIcon name={mod.iconName} size={48} />
-                            </div>
-                          </div>
-                          {mod.status === 'Rascunho' && (<><div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1, borderRadius: '18px' }}></div><div className="phone-card-lock"><Lock size={20} /></div></>)}
-                          <div className="phone-card-badge">{mod.subs.length} Aulas</div>
-                        </div>
-                        <div className="phone-card-title-outside" style={{ opacity: mod.status === 'Rascunho' ? 0.6 : 1 }}>{mod.name}</div>
+              <div style={{ position: 'relative', overflow: 'hidden' }}>
+                <AnimatePresence mode="wait" initial={false}>
+                  {selectedMockupModule ? (
+                    /* ── Sub-module detail view ── */
+                    <motion.div
+                      key={`mod-${selectedMockupModule.id}`}
+                      initial={{ x: '100%', opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: '100%', opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                    >
+                      {/* Sub-module header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 0 8px' }}>
+                        <button
+                          onClick={() => setSelectedMockupModuleId(null)}
+                          style={{ background: 'transparent', border: 'none', color: pwaConfig.titleColor || 'var(--p-text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '12px', fontWeight: 600 }}
+                        >
+                          <ArrowLeft size={14} /> Voltar
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      {/* Module cover */}
+                      {selectedMockupModule.coverImageUrl ? (
+                        <div style={{ width: '100%', aspectRatio: '16/6', backgroundImage: `url(${selectedMockupModule.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }} />
+                      ) : null}
+                      <div style={{ fontFamily: pwaConfig.fontFamily || 'inherit', fontWeight: 700, fontSize: '15px', color: pwaConfig.titleColor || 'var(--p-text)', marginBottom: '4px' }}>{selectedMockupModule.name}</div>
+                      <div style={{ fontSize: '11px', color: pwaConfig.bodyColor || 'var(--p-muted)', marginBottom: '12px' }}>{selectedMockupModule.subs.length} aula{selectedMockupModule.subs.length !== 1 ? 's' : ''}</div>
+                      {/* Sub-module list */}
+                      {selectedMockupModule.subs.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '24px 0', color: pwaConfig.bodyColor || 'var(--p-muted)', fontSize: '12px' }}>Nenhuma aula adicionada</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {selectedMockupModule.subs.map((sub, index) => (
+                            <div key={sub.id} style={{
+                              display: 'flex', alignItems: 'center', gap: '10px',
+                              background: isPhoneDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                              borderRadius: '10px', padding: '10px 12px',
+                              border: isPhoneDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.07)'
+                            }}>
+                              {/* Thumbnail or number */}
+                              {sub.coverImageUrl ? (
+                                <div style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0, backgroundImage: `url(${sub.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                              ) : (
+                                <div style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0, background: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '13px', fontWeight: 700 }}>
+                                  {index + 1}
+                                </div>
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '12px', fontWeight: 600, color: pwaConfig.titleColor || 'var(--p-text)', fontFamily: pwaConfig.fontFamily || 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.name}</div>
+                                <div style={{ fontSize: '10px', color: pwaConfig.bodyColor || 'var(--p-muted)', marginTop: '2px' }}>{sub.type}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  ) : (
+                    /* ── Home modules grid ── */
+                    <motion.div
+                      key="home"
+                      initial={{ x: '-30%', opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: '-30%', opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                    >
+                      <div className="phone-modules-header">
+                        <div className="text-lg font-semibold transition-colors duration-300" style={{ color: pwaConfig.titleColor || 'var(--p-text)', fontFamily: pwaConfig.fontFamily || 'inherit' }}>Módulos</div>
+                        <div className="phone-modules-actions">
+                          <button className={`phone-modules-btn ${viewMode === 'list' ? 'inactive' : ''}`} title="Grid" onClick={() => setViewMode('grid')}><LayoutGrid size={14} /></button>
+                          <button className={`phone-modules-btn ${viewMode === 'grid' ? 'inactive' : ''}`} title="Lista" onClick={() => setViewMode('list')}><Grid size={14} /></button>
+                        </div>
+                      </div>
+                      {modules.length === 0 ? (
+                        <div className="phone-empty-state" style={{ padding: '40px 20px', textAlign: 'center', color: pwaConfig.bodyColor || 'var(--p-muted)', fontSize: '13px', fontWeight: 500, border: 'none', background: 'transparent' }}>
+                          Nenhum módulo criado
+                        </div>
+                      ) : (
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+                          {modules.map((mod) => (
+                            <div
+                              key={mod.id}
+                              className="phone-module-wrapper"
+                              onClick={() => mod.status !== 'Rascunho' && setSelectedMockupModuleId(mod.id)}
+                              style={{ cursor: mod.status !== 'Rascunho' ? 'pointer' : 'default' }}
+                            >
+                              <div className="phone-card">
+                                <div style={{ 
+                                  position: 'absolute', inset: 0, 
+                                  background: mod.coverImageUrl ? `url(${mod.coverImageUrl}) center/cover no-repeat` : 'var(--p-card-empty)', 
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                  transition: 'background 0.3s',
+                                  borderRadius: '18px'
+                                }}>
+                                  {!mod.coverImageUrl && (
+                                    <div style={{ color: 'var(--p-card-icon)', transition: 'color 0.3s', opacity: mod.status === 'Rascunho' ? 0.4 : 1 }}>
+                                      <RenderDynamicIcon name={mod.iconName} size={48} />
+                                    </div>
+                                  )}
+                                </div>
+                                {mod.status === 'Rascunho' && (<><div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1, borderRadius: '18px' }}></div><div className="phone-card-lock"><Lock size={20} /></div></>)}
+                                <div className="phone-card-badge">{mod.subs.length} Aulas</div>
+                              </div>
+                              <div className="phone-card-title-outside" style={{ opacity: mod.status === 'Rascunho' ? 0.6 : 1, color: pwaConfig.titleColor || 'var(--p-text)', fontFamily: pwaConfig.fontFamily || 'inherit' }}>{mod.name}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </>
           )}
         </div>
         <div className="phone-bottom-nav">
-          <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => setActiveTab('inicio')}><Home size={20} /><span>Início</span></div>
-          <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => setActiveTab('conteudo')}><Rss size={20} /><span>Conteúdo</span></div>
-          <div className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} onClick={() => setActiveTab('comunidade')}><Users size={20} /><span>Comunidade</span></div>
-          <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>Perfil</span></div>
+          <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => setActiveTab('inicio')}><Home size={20} /><span>{t('nav.home')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => setActiveTab('conteudo')}><Rss size={20} /><span>{t('nav.content')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} onClick={() => setActiveTab('comunidade')}><Users size={20} /><span>{t('nav.community')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>{t('nav.profile')}</span></div>
         </div>
       </div>
     </div>

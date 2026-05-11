@@ -8,8 +8,8 @@ import { useAppStore } from '../store/useAppStore';
 
 export function AnalyticsDashboard() {
   const modules = useAppStore(state => state.modules);
-  const [gamificationActive, setGamificationActive] = useState(true);
-  const [leaderboardActive, setLeaderboardActive] = useState(true);
+  const [gamificationActive, setGamificationActive] = useState(false);
+  const [leaderboardActive, setLeaderboardActive] = useState(false);
 
   // Seeding functions for consistent mock data
   const getModuleViews = (id: number) => Math.floor(50 + ((id * 733) % 451));
@@ -42,18 +42,16 @@ export function AnalyticsDashboard() {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '20px', borderRadius: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Usuários Ativos</span>
-            <div style={{ background: 'rgba(107,255,184,0.1)', color: 'var(--accent3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>+12%</div>
           </div>
-          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>247</div>
+          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>0</div>
           <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>esta semana</div>
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '20px', borderRadius: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Sessões Hoje</span>
-            <div style={{ background: 'rgba(107,255,184,0.1)', color: 'var(--accent3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>+5%</div>
           </div>
-          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>89</div>
+          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>0</div>
           <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>total de acessos</div>
         </div>
 
@@ -62,16 +60,15 @@ export function AnalyticsDashboard() {
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Consumo</span>
             <div style={{ display: 'flex', alignItems: 'center', color: 'var(--muted)' }}><Clock size={12} /></div>
           </div>
-          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>4.2h</div>
+          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>-</div>
           <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>média por usuário</div>
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', padding: '20px', borderRadius: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Retenção</span>
-            <div style={{ background: 'rgba(255,107,107,0.1)', color: 'var(--accent2)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>-3pp</div>
           </div>
-          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>73%</div>
+          <div style={{ fontFamily: 'Syne', fontSize: '28px', fontWeight: 800 }}>-</div>
           <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>taxa média</div>
         </div>
       </div>
@@ -221,30 +218,30 @@ export function AnalyticsDashboard() {
 
             {leaderboardActive && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[
-                  { pos: '🥇', name: 'Ana Silva', pts: 2450, color: '#6b8af0' },
-                  { pos: '🥈', name: 'Marco Polo', pts: 2120, color: '#2dc4b6' },
-                  { pos: '🥉', name: 'Julia Reis', pts: 1980, color: '#ff6b6b' },
-                  { pos: '4', name: 'Carlos D.', pts: 1450, color: '#ffd166' },
-                  { pos: '5', name: 'Luiza M.', pts: 1220, color: '#7c6fff' }
-                ].map((user, idx) => (
-                  <div key={idx} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '12px', 
-                    padding: '12px', 
-                    background: idx < 3 ? 'var(--accent-glow)' : 'transparent',
-                    borderRadius: '10px',
-                    border: idx < 3 ? '1px solid var(--accent)' : '1px solid transparent'
-                  }}>
-                    <div style={{ width: '24px', textAlign: 'center', fontSize: '14px', fontWeight: 800 }}>{user.pos}</div>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: user.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', color: 'white' }}>
-                      {user.name.charAt(0)}
-                    </div>
-                    <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{user.name}</div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)' }}>{user.pts} pts</div>
+                {([].length === 0) ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
+                    Placar vazio ou recurso desativado
                   </div>
-                ))}
+                ) : (
+                  [].map((user: any, idx: number) => (
+                    <div key={idx} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      padding: '12px', 
+                      background: idx < 3 ? 'var(--accent-glow)' : 'transparent',
+                      borderRadius: '10px',
+                      border: idx < 3 ? '1px solid var(--accent)' : '1px solid transparent'
+                    }}>
+                      <div style={{ width: '24px', textAlign: 'center', fontSize: '14px', fontWeight: 800 }}>{user.pos}</div>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: user.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', color: 'white' }}>
+                        {user.name.charAt(0)}
+                      </div>
+                      <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{user.name}</div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)' }}>{user.pts} pts</div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -258,10 +255,10 @@ export function AnalyticsDashboard() {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {[
-                { label: 'Instalaram o app', val: 1240, pc: 100, op: 1 },
-                { label: 'Completaram onboarding', val: 967, pc: 78, op: 0.8 },
-                { label: 'Acessaram conteúdo', val: 756, pc: 61, op: 0.6 },
-                { label: 'Compraram plano', val: 298, pc: 24, op: 0.4 }
+                { label: 'Instalaram o app', val: 0, pc: 0, op: 1 },
+                { label: 'Completaram onboarding', val: 0, pc: 0, op: 0.8 },
+                { label: 'Acessaram conteúdo', val: 0, pc: 0, op: 0.6 },
+                { label: 'Compraram plano', val: 0, pc: 0, op: 0.4 }
               ].map((stage, idx) => (
                 <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>

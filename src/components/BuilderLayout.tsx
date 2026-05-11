@@ -57,7 +57,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
             <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}><Menu size={16} /></button>
             <div className="breadcrumb">
               <span>Meu Projeto</span><span className="sep">/</span><span>{PIPELINE_STEPS.find(s => s.id === activeStep)?.label}</span>
-              {activeStep === 1 && selectedModuleId && <><span className="sep">/</span><span className="crumb-active">{modules.find(m => m.id === selectedModuleId)?.name}</span></>}
+              {activeStep === 2 && selectedModuleId && <><span className="sep">/</span><span className="crumb-active">{modules.find(m => m.id === selectedModuleId)?.name}</span></>}
             </div>
             
             <div 
@@ -87,7 +87,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
               
               {activeStep === 0 && <IdentityConfigurator />}
 
-              {activeStep === 1 && (
+              {activeStep === 2 && (
                 <>
                   <div className="section-header" style={{ marginBottom: '24px' }}><div><h2 className="section-title">Módulos & Conteúdo</h2></div></div>
                   <div>
@@ -104,10 +104,28 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
                           role="button"
                           tabIndex={0}
                           aria-pressed={selectedModuleId === mod.id}
+                          style={{ display: 'flex', alignItems: 'stretch', gap: 0, padding: 0, overflow: 'hidden' }}
                         >
-                          <div className="module-card-icon"><RenderDynamicIcon name={mod.iconName} size={18} /></div>
-                          <div className="module-card-name">{mod.name}</div>
-                          <div className="module-card-desc">{mod.subs.length} sub-módulos · {mod.status}</div>
+                          {/* Left: icon + text */}
+                          <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                            <div className="module-card-icon">
+                              <RenderDynamicIcon name={mod.iconName} size={18} />
+                            </div>
+                            <div className="module-card-name">{mod.name}</div>
+                            <div className="module-card-desc">{mod.subs.length} sub-módulos · {mod.status}</div>
+                          </div>
+                          {/* Right: cover thumbnail */}
+                          {mod.coverImageUrl && (
+                            <div style={{
+                              width: '90px',
+                              flexShrink: 0,
+                              backgroundImage: `url(${mod.coverImageUrl})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              borderLeft: '1px solid var(--border)',
+                              borderRadius: '0 12px 12px 0'
+                            }} />
+                          )}
                         </div>
                       ))}
                       <button 
@@ -129,7 +147,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
                 </>
               )}
 
-              {activeStep === 2 && <AppConfigurator />}
+              {activeStep === 1 && <AppConfigurator />}
               {activeStep === 3 && <EngagementHub showToast={showToast} />}
               {activeStep === 4 && <PublicationHub showToast={showToast} />}
               {activeStep === 5 && <AnalyticsDashboard />}
