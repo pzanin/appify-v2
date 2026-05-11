@@ -156,6 +156,8 @@ export interface Module {
   iconName: string;
   status: ModuleStatus;
   subs: SubModule[];
+  coverImageUrl?: string;
+  externalLink?: string;
 }
 
 export interface PipelineStep {

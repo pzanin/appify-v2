@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Check, LayoutGrid, Columns, Grid, Image as ImageIcon, Quote, Zap, Type, AlignLeft, Link as LinkIcon, Minus, SeparatorHorizontal, Trash2, Layers } from 'lucide-react';
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
+import { useAppStore } from '../store/useAppStore';
 
 interface VisualPageBuilderProps { submodule: SubModule; onSave: (html: string, builderData: BuilderBlock[]) => void; onClose: () => void; }
 
@@ -37,8 +38,13 @@ function sanitizeHtml(html: string): string {
 }
 
 export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuilderProps) {
+  const updateSubmoduleContent = useAppStore(state => state.updateSubmoduleContent);
+  const editingSubmodule = useAppStore(state => state.editingSubmodule);
+  
   const [blocks, setBlocks] = useState<BuilderBlock[]>(submodule.builder_data || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
+  const [rawHtml, setRawHtml] = useState(submodule.content_html || '');
 
   const generateId = () => 'mod_' + Math.random().toString(36).substr(2, 9);
 
@@ -120,173 +126,239 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
           <button className="btn-ghost" onClick={onClose}><ArrowLeft size={16} /> Voltar</button>
           <span style={{ fontFamily: 'Syne', fontWeight: 600, fontSize: '15px' }}>{submodule.name}</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-primary" onClick={() => onSave(generateHTML(), blocks)}><Check size={16} /> Salvar & Injetar HTML</button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ background: 'var(--surface)', padding: '4px', borderRadius: '8px', display: 'flex', gap: '4px', marginRight: '16px' }}>
+            <button 
+              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', border: 'none', background: viewMode === 'visual' ? 'var(--accent)' : 'transparent', color: viewMode === 'visual' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}
+              onClick={() => {
+                if (viewMode === 'code') setViewMode('visual');
+              }}
+            >
+              Visual
+            </button>
+            <button 
+              style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', border: 'none', background: viewMode === 'code' ? 'var(--accent)' : 'transparent', color: viewMode === 'code' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}
+              onClick={() => {
+                if (viewMode === 'visual') {
+                  setRawHtml(generateHTML());
+                  setViewMode('code');
+                }
+              }}
+            >
+              Código HTML
+            </button>
+          </div>
+          <button className="btn-primary" onClick={() => {
+            const finalHtml = viewMode === 'code' ? rawHtml : generateHTML();
+            const finalBlocks = viewMode === 'visual' ? blocks : [];
+            
+            if (editingSubmodule) {
+              updateSubmoduleContent({
+                modId: editingSubmodule.modId,
+                subId: editingSubmodule.subId,
+                content: finalHtml,
+                builderData: finalBlocks
+              });
+            }
+            
+            onSave(finalHtml, finalBlocks);
+          }}>
+            <Check size={16} /> Salvar & Injetar HTML
+          </button>
         </div>
       </header>
       
       <div className="vpb-body">
-        <aside className="vpb-sidebar">
-          <div className="vpb-sidebar-title">Adicionar Bloco</div>
-          
-          <div className="vpb-lib-group">
-            <div className="vpb-lib-label">Containers</div>
-            <button className="vpb-module-btn" onClick={() => addBlock('container', 'hero')}><LayoutGrid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Hero</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Destaque com fundo</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('container', 'twoColumn')}><Columns className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>2 Colunas</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Layout lado a lado</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('container', 'threeColumn')}><Grid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>3 Colunas</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Grade com 3 cards</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('container', 'imageText')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem + Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Img descritiva</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('container', 'testimonial')}><Quote className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Depoimento</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Card citação</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('container', 'cta')}><Zap className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>CTA</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Call to action</div></div></button>
-          </div>
+        {viewMode === 'visual' ? (
+          <>
+            <aside className="vpb-sidebar">
+              <div className="vpb-sidebar-title">Adicionar Bloco</div>
+              
+              <div className="vpb-lib-group">
+                <div className="vpb-lib-label">Containers</div>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'hero')}><LayoutGrid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Hero</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Destaque com fundo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'twoColumn')}><Columns className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>2 Colunas</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Layout lado a lado</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'threeColumn')}><Grid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>3 Colunas</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Grade com 3 cards</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'imageText')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem + Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Img descritiva</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'testimonial')}><Quote className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Depoimento</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Card citação</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'cta')}><Zap className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>CTA</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Call to action</div></div></button>
+              </div>
 
-          <div className="vpb-lib-group">
-            <div className="vpb-lib-label">Elementos</div>
-            <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('spacer')}><Minus className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Espaçador</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Espaço invisível</div></div></button>
-            <button className="vpb-module-btn" onClick={() => addBlock('divider')}><SeparatorHorizontal className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Divisor</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Linha horizontal</div></div></button>
-          </div>
-        </aside>
+              <div className="vpb-lib-group">
+                <div className="vpb-lib-label">Elementos</div>
+                <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('spacer')}><Minus className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Espaçador</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Espaço invisível</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('divider')}><SeparatorHorizontal className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Divisor</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Linha horizontal</div></div></button>
+              </div>
+            </aside>
 
-        <main 
-          className="vpb-canvas-area" 
-          onClick={() => setSelectedBlockId(null)}
-          style={{ 
-            background: '#ffffff',
-            minHeight: '100%',
-            position: 'relative'
-          }}
-        >
-          {blocks.length === 0 ? (
-            <div className="empty-state" style={{ margin: 'auto' }}>
-              <Layers size={48} color="var(--muted)" style={{ marginBottom: 16 }} />
-              <div style={{ fontSize: 16, fontWeight: 600 }}>Comece a construir</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Clique num módulo à esquerda para adicionar.</div>
-            </div>
-          ) : (
-            <div className="vpb-canvas-paper">
-              {blocks.map(mod => {
-                const p = mod.props;
-                const baseStyle = {
-                  background: p.bgColor, padding: `${p.padding}px`, textAlign: p.align as any,
-                  fontFamily: `'${p.fontFamily}', sans-serif`, color: p.color, fontSize: `${p.fontSize}px`,
-                  fontWeight: p.fontWeight || '400', fontStyle: p.fontStyle || 'normal', lineHeight: p.lineHeight || 1.6,
-                  letterSpacing: `${p.letterSpacing || 0}px`, marginTop: `${p.marginTop || 0}px`, marginBottom: `${p.marginBottom || 0}px`
-                };
-                return (
-                  <div 
-                    key={mod.id} 
-                    className={`vpb-block-wrapper ${mod.id === selectedBlockId ? 'selected' : ''}`} 
-                    style={baseStyle} 
-                    onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setSelectedBlockId(mod.id); } }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(getBlockInnerHtml(mod)) }} />
-                    <div className="vpb-block-actions">
+            <main 
+              className="vpb-canvas-area" 
+              onClick={() => setSelectedBlockId(null)}
+              style={{ 
+                background: '#ffffff',
+                minHeight: '100%',
+                position: 'relative'
+              }}
+            >
+              {blocks.length === 0 ? (
+                <div className="empty-state" style={{ margin: 'auto' }}>
+                  <Layers size={48} color="var(--muted)" style={{ marginBottom: 16 }} />
+                  <div style={{ fontSize: 16, fontWeight: 600 }}>Comece a construir</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>Clique num módulo à esquerda para adicionar.</div>
+                </div>
+              ) : (
+                <div className="vpb-canvas-paper">
+                  {blocks.map(mod => {
+                    const p = mod.props;
+                    const baseStyle = {
+                      background: p.bgColor, padding: `${p.padding}px`, textAlign: p.align as any,
+                      fontFamily: `'${p.fontFamily}', sans-serif`, color: p.color, fontSize: `${p.fontSize}px`,
+                      fontWeight: p.fontWeight || '400', fontStyle: p.fontStyle || 'normal', lineHeight: p.lineHeight || 1.6,
+                      letterSpacing: `${p.letterSpacing || 0}px`, marginTop: `${p.marginTop || 0}px`, marginBottom: `${p.marginBottom || 0}px`
+                    };
+                    return (
                       <div 
-                        className="vpb-action-btn" 
-                        onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, -1); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); moveBlock(mod.id, -1); } }}
+                        key={mod.id} 
+                        className={`vpb-block-wrapper ${mod.id === selectedBlockId ? 'selected' : ''}`} 
+                        style={baseStyle} 
+                        onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setSelectedBlockId(mod.id); } }}
                         role="button"
                         tabIndex={0}
-                        aria-label="Mover bloco para cima"
-                      >↑</div>
-                      <div 
-                        className="vpb-action-btn" 
-                        onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, 1); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); moveBlock(mod.id, 1); } }}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Mover bloco para baixo"
-                      >↓</div>
-                      <div 
-                        className="vpb-action-btn delete" 
-                        onClick={(e) => { e.stopPropagation(); deleteBlock(mod.id); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); deleteBlock(mod.id); } }}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Deletar bloco"
-                      ><Trash2 size={14}/></div>
-                    </div>
+                      >
+                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(getBlockInnerHtml(mod)) }} />
+                        <div className="vpb-block-actions">
+                          <div 
+                            className="vpb-action-btn" 
+                            onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, -1); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); moveBlock(mod.id, -1); } }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Mover bloco para cima"
+                          >↑</div>
+                          <div 
+                            className="vpb-action-btn" 
+                            onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, 1); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); moveBlock(mod.id, 1); } }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Mover bloco para baixo"
+                          >↓</div>
+                          <div 
+                            className="vpb-action-btn delete" 
+                            onClick={(e) => { e.stopPropagation(); deleteBlock(mod.id); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); deleteBlock(mod.id); } }}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Deletar bloco"
+                          ><Trash2 size={14}/></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </main>
+
+            <aside className="vpb-sidebar-right">
+              <div className="vpb-sidebar-title">Propriedades</div>
+              {!selectedBlock ? (
+                <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
+                  Selecione um bloco no canvas para editar as suas propriedades.
+                </div>
+              ) : (
+                <div style={{ paddingBottom: '40px' }}>
+                  <div className="vpb-prop-group">
+                    <span className="vpb-lib-label">Conteúdo</span>
+                    
+                    {selectedBlock.type === 'header' && (
+                      <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Subtítulo</label><input className="vpb-input" value={selectedBlock.props.subtitle} onChange={e => updateProp('subtitle', e.target.value)} /></>
+                    )}
+                    {selectedBlock.type === 'text' && (
+                      <><label className="vpb-label">Texto</label><textarea className="vpb-textarea" value={selectedBlock.props.content} onChange={e => updateProp('content', e.target.value)} /></>
+                    )}
+                    {selectedBlock.type === 'image' && (
+                      <><label className="vpb-label">Upload de Imagem</label><input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'src')} />
+                      <label className="vpb-label">Largura (%)</label><input type="range" min="10" max="100" className="vpb-input" value={selectedBlock.props.width} onChange={e => updateProp('width', e.target.value)} /></>
+                    )}
+                    {selectedBlock.type === 'link' && (
+                      <><label className="vpb-label">Texto</label><input className="vpb-input" value={selectedBlock.props.text} onChange={e => updateProp('text', e.target.value)} />
+                      <label className="vpb-label">URL</label><input className="vpb-input" value={selectedBlock.props.url} onChange={e => updateProp('url', e.target.value)} />
+                      <label className="vpb-label">Estilo</label><select className="vpb-input" value={selectedBlock.props.style} onChange={e => updateProp('style', e.target.value)}><option value="button">Botão</option><option value="link">Link Simples</option></select></>
+                    )}
+                    {selectedBlock.type === 'container' && selectedBlock.subtype === 'hero' && (
+                      <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Subtítulo</label><input className="vpb-input" value={selectedBlock.props.subtitle} onChange={e => updateProp('subtitle', e.target.value)} /></>
+                    )}
+                    {selectedBlock.type === 'container' && selectedBlock.subtype === 'imageText' && (
+                      <><label className="vpb-label">Upload Imagem</label><input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'imageSrc')} />
+                      <label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Texto</label><textarea className="vpb-textarea" value={selectedBlock.props.text} onChange={e => updateProp('text', e.target.value)} /></>
+                    )}
+                    {selectedBlock.type === 'container' && selectedBlock.subtype === 'cta' && (
+                      <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Botão</label><input className="vpb-input" value={selectedBlock.props.buttonText} onChange={e => updateProp('buttonText', e.target.value)} /></>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </main>
 
-        <aside className="vpb-sidebar-right">
-          <div className="vpb-sidebar-title">Propriedades</div>
-          {!selectedBlock ? (
-            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
-              Selecione um bloco no canvas para editar as suas propriedades.
-            </div>
-          ) : (
-            <div style={{ paddingBottom: '40px' }}>
-              <div className="vpb-prop-group">
-                <span className="vpb-lib-label">Conteúdo</span>
-                
-                {selectedBlock.type === 'header' && (
-                  <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
-                  <label className="vpb-label">Subtítulo</label><input className="vpb-input" value={selectedBlock.props.subtitle} onChange={e => updateProp('subtitle', e.target.value)} /></>
-                )}
-                {selectedBlock.type === 'text' && (
-                  <><label className="vpb-label">Texto</label><textarea className="vpb-textarea" value={selectedBlock.props.content} onChange={e => updateProp('content', e.target.value)} /></>
-                )}
-                {selectedBlock.type === 'image' && (
-                  <><label className="vpb-label">Upload de Imagem</label><input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'src')} />
-                  <label className="vpb-label">Largura (%)</label><input type="range" min="10" max="100" className="vpb-input" value={selectedBlock.props.width} onChange={e => updateProp('width', e.target.value)} /></>
-                )}
-                {selectedBlock.type === 'link' && (
-                  <><label className="vpb-label">Texto</label><input className="vpb-input" value={selectedBlock.props.text} onChange={e => updateProp('text', e.target.value)} />
-                  <label className="vpb-label">URL</label><input className="vpb-input" value={selectedBlock.props.url} onChange={e => updateProp('url', e.target.value)} />
-                  <label className="vpb-label">Estilo</label><select className="vpb-input" value={selectedBlock.props.style} onChange={e => updateProp('style', e.target.value)}><option value="button">Botão</option><option value="link">Link Simples</option></select></>
-                )}
-                {selectedBlock.type === 'container' && selectedBlock.subtype === 'hero' && (
-                  <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
-                  <label className="vpb-label">Subtítulo</label><input className="vpb-input" value={selectedBlock.props.subtitle} onChange={e => updateProp('subtitle', e.target.value)} /></>
-                )}
-                {selectedBlock.type === 'container' && selectedBlock.subtype === 'imageText' && (
-                  <><label className="vpb-label">Upload Imagem</label><input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'imageSrc')} />
-                  <label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
-                  <label className="vpb-label">Texto</label><textarea className="vpb-textarea" value={selectedBlock.props.text} onChange={e => updateProp('text', e.target.value)} /></>
-                )}
-                {selectedBlock.type === 'container' && selectedBlock.subtype === 'cta' && (
-                  <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
-                  <label className="vpb-label">Botão</label><input className="vpb-input" value={selectedBlock.props.buttonText} onChange={e => updateProp('buttonText', e.target.value)} /></>
-                )}
-              </div>
+                  <div className="vpb-prop-group">
+                    <span className="vpb-lib-label">Estilos & Cores</span>
+                    <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.bgColor} onChange={e => updateProp('bgColor', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Fundo</span></div>
+                    <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.color} onChange={e => updateProp('color', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Texto</span></div>
+                    {(selectedBlock.type === 'header' || selectedBlock.subtype === 'hero' || selectedBlock.subtype === 'cta') && (
+                      <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.titleColor} onChange={e => updateProp('titleColor', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Cor do Título</span></div>
+                    )}
+                    {(selectedBlock.type === 'link' || selectedBlock.subtype === 'cta') && (
+                      <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.buttonColor} onChange={e => updateProp('buttonColor', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Cor do Botão</span></div>
+                    )}
+                  </div>
 
-              <div className="vpb-prop-group">
-                <span className="vpb-lib-label">Estilos & Cores</span>
-                <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.bgColor} onChange={e => updateProp('bgColor', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Fundo</span></div>
-                <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.color} onChange={e => updateProp('color', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Texto</span></div>
-                {(selectedBlock.type === 'header' || selectedBlock.subtype === 'hero' || selectedBlock.subtype === 'cta') && (
-                  <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.titleColor} onChange={e => updateProp('titleColor', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Cor do Título</span></div>
-                )}
-                {(selectedBlock.type === 'link' || selectedBlock.subtype === 'cta') && (
-                  <div className="vpb-color-row"><input type="color" className="vpb-color-picker" value={selectedBlock.props.buttonColor} onChange={e => updateProp('buttonColor', e.target.value)} /><span className="vpb-label" style={{margin:0}}>Cor do Botão</span></div>
-                )}
+                  <div className="vpb-prop-group">
+                    <span className="vpb-lib-label">Tipografia & Espaçamento</span>
+                    <label className="vpb-label">Fonte</label>
+                    <select className="vpb-input" value={selectedBlock.props.fontFamily} onChange={e => updateProp('fontFamily', e.target.value)}>
+                      {GOOGLE_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                    <label className="vpb-label">Tamanho (px)</label>
+                    <input type="range" min="10" max="72" className="vpb-input" value={selectedBlock.props.fontSize} onChange={e => updateProp('fontSize', e.target.value)} />
+                    <label className="vpb-label">Padding Interno (px)</label>
+                    <input type="range" min="0" max="100" className="vpb-input" value={selectedBlock.props.padding} onChange={e => updateProp('padding', e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </aside>
+          </>
+        ) : (
+          <main className="vpb-canvas-area" style={{ width: '100%', padding: '24px', background: 'var(--bg)' }}>
+            <div style={{ background: '#1e1e1e', borderRadius: '8px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '12px 16px', background: '#2d2d2d', color: '#fff', fontSize: '13px', fontWeight: 600, borderBottom: '1px solid #444' }}>
+                Editor de Código HTML (Avançado)
               </div>
-
-              <div className="vpb-prop-group">
-                <span className="vpb-lib-label">Tipografia & Espaçamento</span>
-                <label className="vpb-label">Fonte</label>
-                <select className="vpb-input" value={selectedBlock.props.fontFamily} onChange={e => updateProp('fontFamily', e.target.value)}>
-                  {GOOGLE_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-                <label className="vpb-label">Tamanho (px)</label>
-                <input type="range" min="10" max="72" className="vpb-input" value={selectedBlock.props.fontSize} onChange={e => updateProp('fontSize', e.target.value)} />
-                <label className="vpb-label">Padding Interno (px)</label>
-                <input type="range" min="0" max="100" className="vpb-input" value={selectedBlock.props.padding} onChange={e => updateProp('padding', e.target.value)} />
-              </div>
+              <textarea 
+                value={rawHtml}
+                onChange={(e) => setRawHtml(e.target.value)}
+                style={{ 
+                  flex: 1, 
+                  background: 'transparent', 
+                  color: '#d4d4d4', 
+                  fontFamily: 'monospace', 
+                  fontSize: '14px', 
+                  padding: '16px', 
+                  border: 'none', 
+                  outline: 'none', 
+                  resize: 'none',
+                  lineHeight: 1.5
+                }}
+                placeholder="<html>...</html>"
+              />
             </div>
-          )}
-        </aside>
+          </main>
+        )}
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Ho
 import { motion, AnimatePresence } from 'motion/react';
 // Se der erro no build, trocar para:
 // import { motion, AnimatePresence } from 'motion';
-import { useAppStore, useTranslation } from '../store/useAppStore';
+import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 
@@ -15,10 +15,12 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const currentView = useAppStore(state => state.currentView);
   const splashActive = useAppStore(state => state.splashActive);
+  const activeLocale = useAppStore(state => state.activeLocale);
   
-  const { t, locale } = useTranslation();
-  const [onboardingStep, setOnboardingStep] = useState<number>(0); // 0: none, 1: Install, 2: Notifications
+  const [onboardingStep, setOnboardingStep] = useState<number>(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState('inicio');
   const onboardingShown = useRef(false);
   
   const progressPercent = Math.round((activeStep / PIPELINE_STEPS.length) * 100);
@@ -43,7 +45,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
     setIsTransitioning(true);
     const timer = setTimeout(() => setIsTransitioning(false), 300);
     return () => clearTimeout(timer);
-  }, [locale]);
+  }, [activeLocale]);
 
   useEffect(() => {
     if (currentView === 'builder' && !onboardingShown.current) {
@@ -160,13 +162,13 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 </div>
 
                 <h3 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '12px', color: '#111' }}>
-                  {onboardingStep === 1 ? t('onboarding.install.title') : t('onboarding.push.title')}
+                  {onboardingStep === 1 ? 'Instalar na tela inicial?' : 'Ativar notificações?'}
                 </h3>
                 
                 <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.5, marginBottom: '28px' }}>
                   {onboardingStep === 1 
-                    ? t('onboarding.install.subtitle')
-                    : t('onboarding.push.subtitle')}
+                    ? 'Acesse o app com um toque, sem precisar do navegador.'
+                    : 'Fique por dentro de novidades, lembretes e conteúdo exclusivo.'}
                 </p>
 
                 <button 
@@ -183,7 +185,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     cursor: 'pointer'
                   }}
                 >
-                  {onboardingStep === 1 ? t('onboarding.install.confirm') : t('onboarding.push.confirm')}
+                  {onboardingStep === 1 ? 'Sim, instalar' : 'Sim, quero!'}
                 </button>
 
                 <button 
@@ -199,38 +201,17 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     fontWeight: 500
                   }}
                 >
-                  {t('onboarding.install.skip')}
+                  Agora não
                 </button>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Preview Modais Switcher */}
-        <button 
-          onClick={() => setOnboardingStep(1)}
-          style={{ 
-            position: 'absolute', 
-            top: '50px', 
-            right: '15px', 
-            zIndex: 30, 
-            background: 'rgba(255,255,255,0.15)', 
-            backdropFilter: 'blur(4px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '20px',
-            padding: '4px 10px',
-            fontSize: '9px',
-            color: isPhoneDark ? '#fff' : '#333',
-            cursor: 'pointer',
-            fontWeight: 600
-          }}
-        >
-          {t('preview.modals') || 'Preview modais'}
-        </button>
-
+        {/* Preview Modais Switcher & Icons */}
         <div className="phone-notch"></div>
         <div className="phone-header-bg">
-          <div className="phone-logo" style={{ color: pwaConfig.textColor || '#FFFFFF' }}>
+          <div className="flex items-center gap-2 text-xl font-bold" style={{ color: pwaConfig.textColor || '#FFFFFF' }}>
             <div className="phone-logo-icon">
               {pwaConfig.logoBase64 ? (
                 <img src={pwaConfig.logoBase64} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain' }} />
@@ -240,20 +221,36 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             </div>
             {displayAppName}
           </div>
-          <div className="phone-header-icons">
+          <div className="flex items-center gap-2">
             <div 
               className="phone-header-icon" 
               onClick={() => setIsPhoneDark(!isPhoneDark)} 
               onKeyDown={(e) => { if (e.key === 'Enter') setIsPhoneDark(!isPhoneDark); }}
               role="button"
               tabIndex={0}
-              title={t('preview.theme.toggle') || "Mudar Tema"}
+              title="Mudar Tema"
               aria-label="Alternar tema do preview"
             >
               {isPhoneDark ? <Sun size={15} /> : <Moon size={15} />}
             </div>
-            <div className="phone-header-icon"><Bell size={15} /></div>
-            <div className="phone-header-icon"><Download size={15} /></div>
+            <div 
+              className="phone-header-icon" 
+              onClick={() => setOnboardingStep(2)}
+              title="Testar Modal de Notificações"
+              role="button"
+              tabIndex={0}
+            >
+              <Bell size={15} />
+            </div>
+            <div 
+              className="phone-header-icon" 
+              onClick={() => setOnboardingStep(1)}
+              title="Testar Modal de Instalação (PWA)"
+              role="button"
+              tabIndex={0}
+            >
+              <Download size={15} />
+            </div>
           </div>
         </div>
         <div className="phone-body">
@@ -273,7 +270,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
               }}>
                 <Smartphone size={40} />
               </div>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>{t('app.login.title')}</h2>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>Acesse sua conta</h2>
               <p style={{ fontSize: '13px', color: isPhoneDark ? '#999' : '#666', marginBottom: '32px' }}>{pwaConfig.tagline}</p>
               
               <div style={{ 
@@ -286,7 +283,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 border: '1px solid var(--border)',
                 marginBottom: '12px'
               }}>
-                {t('app.login.emailPlaceholder')}
+                Digite seu e-mail
               </div>
               
               <button 
@@ -303,33 +300,30 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                   fontSize: '15px'
                 }}
               >
-                {t('app.login.button')}
+                ENTRAR
               </button>
             </div>
           ) : (
             <>
               <div className="phone-hero"></div>
               <div className="phone-progress-card">
-                <div className="phone-progress-header"><span>{t('preview.progress')}</span><span>{progressPercent}%</span></div>
+                <div className="phone-progress-header"><span>Progresso</span><span>{progressPercent}%</span></div>
                 <div className="phone-progress-track"><div className="phone-progress-fill" style={{ width: `${progressPercent}%` }}></div></div>
               </div>
               <div>
                 <div className="phone-modules-header">
-                  <div className="phone-modules-title">{t('preview.modules')}</div>
+                  <div className="text-lg font-semibold text-[var(--p-text)] transition-colors duration-300">Módulos</div>
                   <div className="phone-modules-actions">
-                    <button className="phone-modules-btn inactive" title="Grid de 2"><LayoutGrid size={14} /></button>
-                    <button className="phone-modules-btn" title="Grid de 3"><Grid size={14} /></button>
+                    <button className={`phone-modules-btn ${viewMode === 'list' ? 'inactive' : ''}`} title="Grid" onClick={() => setViewMode('grid')}><LayoutGrid size={14} /></button>
+                    <button className={`phone-modules-btn ${viewMode === 'grid' ? 'inactive' : ''}`} title="Lista" onClick={() => setViewMode('list')}><Grid size={14} /></button>
                   </div>
                 </div>
                 {modules.length === 0 ? (
-                  <div className="phone-empty-state">
-                    <div className="phone-empty-icon"><PackageOpen size={24} /></div>
-                    <h4 className="phone-empty-title">{t('preview.empty.title') || 'Nenhum Módulo'}</h4>
-                    <p className="phone-empty-desc">{t('preview.empty.desc') || 'Seu catálogo está vazio. Adicione módulos no construtor à esquerda para ver a mágica acontecer aqui.'}</p>
-                    <div style={{ marginTop: '16px', fontSize: '10px', color: 'var(--dynamic-theme)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}><ArrowLeft size={12} /> {t('preview.empty.cta') || 'COMEÇAR A CRIAR'}</div>
+                  <div className="phone-empty-state" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--p-muted)', fontSize: '13px', fontWeight: 500, border: 'none', background: 'transparent' }}>
+                    Nenhum módulo criado
                   </div>
                 ) : (
-                  <div className="phone-grid">
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                     {modules.map((mod) => (
                       <div key={mod.id} className="phone-module-wrapper">
                         <div className="phone-card">
@@ -339,7 +333,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                             </div>
                           </div>
                           {mod.status === 'Rascunho' && (<><div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1, borderRadius: '18px' }}></div><div className="phone-card-lock"><Lock size={20} /></div></>)}
-                          <div className="phone-card-badge">{mod.subs.length} {t('preview.lessons')}</div>
+                          <div className="phone-card-badge">{mod.subs.length} Aulas</div>
                         </div>
                         <div className="phone-card-title-outside" style={{ opacity: mod.status === 'Rascunho' ? 0.6 : 1 }}>{mod.name}</div>
                       </div>
@@ -351,10 +345,10 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
           )}
         </div>
         <div className="phone-bottom-nav">
-          <div className="phone-nav-item active"><Home size={20} /><span>{t('nav.home')}</span></div>
-          <div className="phone-nav-item"><Rss size={20} /><span>{t('nav.content')}</span></div>
-          <div className="phone-nav-item"><Users size={20} /><span>{t('nav.community')}</span></div>
-          <div className="phone-nav-item"><User size={20} /><span>{t('nav.profile')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => setActiveTab('inicio')}><Home size={20} /><span>Início</span></div>
+          <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => setActiveTab('conteudo')}><Rss size={20} /><span>Conteúdo</span></div>
+          <div className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} onClick={() => setActiveTab('comunidade')}><Users size={20} /><span>Comunidade</span></div>
+          <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>Perfil</span></div>
         </div>
       </div>
     </div>

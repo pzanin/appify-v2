@@ -158,7 +158,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                     onClick={() => setShowIconGrid(!showIconGrid)}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <BookOpen size={12} /> Alterar ícone
+                      <BookOpen size={12} /> Alterar Capa (Imagem) / Link
                     </div>
                     <ChevronRight size={12} />
                   </button>
@@ -228,8 +228,6 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
       <div className="module-detail-tabs">
         <div className="detail-tab active">Sub-módulos</div>
         <div className="detail-tab">Conteúdo HTML</div>
-        <div className="detail-tab">Permissões</div>
-        <div className="detail-tab">Métricas</div>
       </div>
       
       <div className="module-detail-body" style={{ paddingBottom: '160px' }}>
@@ -273,7 +271,14 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                   ) : (
                     <span className="submodule-name">{sub.name}</span>
                   )}
-                  <span className="submodule-type">{sub.type}</span>
+                  {(() => {
+                    const hasData = (sub.content_html && sub.content_html.trim().length > 0) || (sub.builder_data && sub.builder_data.length > 0);
+                    return (
+                      <span className="submodule-type" style={hasData ? { color: 'var(--step-done)', background: 'rgba(107,255,184,0.1)' } : {}}>
+                        {sub.type}
+                      </span>
+                    );
+                  })()}
                   <div className="submodule-actions">
                     <button className="icon-btn" title="Editar Conteúdo Visualmente" onClick={() => setEditingSubmodule({ modId: selectedModule.id, subId: sub.id })}><Pencil size={14} /></button>
                     <button className="icon-btn" title="Visualizar/Editar" onClick={() => setEditingSubmodule({ modId: selectedModule.id, subId: sub.id })}><Eye size={14} /></button>

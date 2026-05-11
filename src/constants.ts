@@ -110,11 +110,7 @@ export const MOCK_PROJECTS: Project[] = [
   { id: 3, name: 'Comunidade Fit', status: 'Publicado', lastEdited: '12 Nov, 2023', users: 85, color: '#ff6b6b', url: 'fit.appify.com' }
 ];
 
-export const INITIAL_MODULES: Module[] = [
-  { id: 1, name: 'Onboarding', iconName: 'BookOpen', status: 'Ativo', subs: [{id: 101, name: 'Boas-vindas', type: 'HTML Nativo', content_html: '', builder_data: []}, {id: 102, name: 'Configuração Inicial', type: 'HTML Nativo', content_html: '', builder_data: []}] },
-  { id: 2, name: 'Treinamento', iconName: 'GraduationCap', status: 'Rascunho', subs: [] },
-  { id: 3, name: 'Dashboard', iconName: 'BarChart3', status: 'Ativo', subs: [{id: 301, name: 'Métricas Gerais', type: 'React Component', content_html: '', builder_data: []}] },
-];
+export const INITIAL_MODULES: Module[] = [];
 
 export const INITIAL_PWA_CONFIG: PwaConfig = {
   appName: 'Meu App',
