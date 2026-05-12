@@ -110,6 +110,9 @@ export const projectService = {
           position,
           coverImageUrl:cover_image_url,
           externalLink:external_link,
+          releaseType:release_type,
+          dripDays:drip_days,
+          checkoutUrl:checkout_url,
           subs:submodules (
             id,
             name,
@@ -170,6 +173,9 @@ export const projectService = {
           position: index,
           cover_image_url: m.coverImageUrl || null,
           external_link: m.externalLink || null,
+          release_type: m.releaseType || 'immediate',
+          drip_days: m.dripDays || 0,
+          checkout_url: m.checkoutUrl || null,
         }));
 
         const { error: modError } = await supabase
@@ -244,5 +250,17 @@ export const projectService = {
       })
       .eq('id', subId);
     if (error) console.error('Error updating submodule:', error);
+  },
+
+  deleteProject: async (projectId: number): Promise<void> => {
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+
+    if (error) {
+      console.error('Error deleting project:', error);
+      throw error;
+    }
   }
 };

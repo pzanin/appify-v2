@@ -22,6 +22,7 @@ interface AppStore extends AppState {
   toggleModuleStatus: (id: number) => void;
   setModuleIcon: (payload: { id: number; iconName: string }) => void;
   updateModuleCover: (payload: { id: number; coverImageUrl: string; externalLink?: string }) => void;
+  updateModule: (id: number, payload: Partial<Module>) => void;
   updateSubmoduleCover: (payload: { modId: number; subId: number; coverImageUrl: string; externalLink?: string }) => void;
   addSubmodule: (modId: number) => void;
   deleteSubmodule: (payload: { modId: number; subId: number }) => void;
@@ -38,7 +39,7 @@ interface AppStore extends AppState {
 
 const initialState: AppState = { 
   currentView: 'projects', 
-  activeStep: 1, 
+  activeStep: 0, 
   appName: 'Meu App', 
   modules: INITIAL_MODULES, 
   selectedModuleId: 1, 
@@ -67,7 +68,7 @@ export const useAppStore = create<AppStore>()(
 
     initializeProjects: async () => {
       // This is basically to just ensure we start in 'projects' view
-      set({ isLoading: false, currentView: 'projects' });
+      set({ isLoading: false, currentView: 'projects', activeStep: 0 });
     },
 
     setView: (view) => set({ currentView: view }),
@@ -83,7 +84,8 @@ export const useAppStore = create<AppStore>()(
         name: payload.name,
         iconName: payload.iconName || 'BookOpen',
         status: 'Ativo',
-        subs: []
+        subs: [],
+        releaseType: 'immediate'
       }]
     })),
 
@@ -112,6 +114,10 @@ export const useAppStore = create<AppStore>()(
         ? { ...m, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink } 
         : m
       )
+    })),
+
+    updateModule: (id, payload) => set((state) => ({
+      modules: state.modules.map(m => m.id === id ? { ...m, ...payload } : m)
     })),
 
     updateSubmoduleCover: (payload) => set((state) => ({

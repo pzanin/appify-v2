@@ -35,7 +35,7 @@ function AppContent() {
   const [isPhoneDark, setIsPhoneDark] = useState<boolean>(true);
 
   const { toasts, showToast } = useToast();
-  const { projects, handleOpenProject, handleToggleProjectStatus } = useProjects(showToast);
+  const { projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject } = useProjects(showToast);
   const builderActions = useBuilderActions(showToast);
 
   if (isLoading) {
@@ -76,6 +76,7 @@ function AppContent() {
           projects={projects} 
           handleOpenProject={handleOpenProject} 
           handleToggleProjectStatus={handleToggleProjectStatus} 
+          handleDeleteProject={handleDeleteProject}
         />
       ) : (
         <BuilderLayout 

@@ -41,7 +41,21 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
   const [tempExternalLink, setTempExternalLink] = useState('');
 
   const updateModuleCover = useAppStore(state => state.updateModuleCover);
+  const updateModule = useAppStore(state => state.updateModule);
   const fileInputCoverRef = useRef<HTMLInputElement>(null);
+
+  // Release Rules state
+  const [releaseType, setReleaseType] = useState<'immediate' | 'drip' | 'locked'>('immediate');
+  const [dripDays, setDripDays] = useState(0);
+  const [checkoutUrl, setCheckoutUrl] = useState('');
+
+  React.useEffect(() => {
+    if (showConfig && selectedModule) {
+      setReleaseType(selectedModule.releaseType || 'immediate');
+      setDripDays(selectedModule.dripDays || 0);
+      setCheckoutUrl(selectedModule.checkoutUrl || '');
+    }
+  }, [showConfig, selectedModule]);
 
   // Sub-module cover edit state
   const [subCoverEditId, setSubCoverEditId] = useState<number | null>(null);
@@ -84,16 +98,33 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
     transition: 'background 0.2s',
   };
 
-  if (!selectedModule) return null;
+  // --- Drag & Drop handlers (simples e estáveis) ---
+  const onDragStart = (e: React.DragEvent, subId: number) => {
+    setDraggedSubId(subId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
 
-  const onDragStart = (e: React.DragEvent, subId: number) => { setDraggedSubId(subId); e.dataTransfer.effectAllowed = "move"; };
-  const onDragOver = (e: React.DragEvent) => e.preventDefault();
-  const onDragEnter = (subId: number) => setDragOverSubId(subId);
-  const onDrop = () => {
+  const onDragEnter = (subId: number) => {
+    if (draggedSubId !== null && draggedSubId !== subId) {
+      setDragOverSubId(subId);
+    }
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
     if (draggedSubId !== null && dragOverSubId !== null && draggedSubId !== dragOverSubId && selectedModuleId !== null) {
       reorderSubmodule({ modId: selectedModuleId, dragId: draggedSubId, overId: dragOverSubId });
-    } setDraggedSubId(null); setDragOverSubId(null);
+    }
+    setDraggedSubId(null);
+    setDragOverSubId(null);
   };
+
+  const onDragEnd = () => {
+    setDraggedSubId(null);
+    setDragOverSubId(null);
+  };
+
+  if (!selectedModule) return null;
 
   return (
     <div className="module-detail">
@@ -281,6 +312,72 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                 </div>
 
                 <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
+
+                <div style={{ padding: '8px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '10px' }}>Regra de Acesso</div>
+                  
+                  <div className="flex gap-1 p-1 bg-[var(--surface2)] rounded-lg mb-4">
+                    {[
+                      { id: 'immediate', label: 'Imediato' },
+                      { id: 'drip', label: 'Drip' },
+                      { id: 'locked', label: 'Upsell' }
+                    ].map(opt => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setReleaseType(opt.id as any)}
+                        className={`flex-1 py-2 px-1 rounded-md text-[10px] font-bold transition-all ${
+                          releaseType === opt.id 
+                            ? 'bg-[var(--accent)] text-white shadow-sm' 
+                            : 'text-[var(--muted)] hover:bg-[var(--surface)]'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {releaseType === 'drip' && (
+                    <div className="mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Dias após a compra</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        className="vpb-input !mb-0 !h-9 text-xs" 
+                        placeholder="Ex: 7" 
+                        value={dripDays}
+                        onChange={(e) => setDripDays(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                  )}
+
+                  {releaseType === 'locked' && (
+                    <div className="mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Link de Vendas / Checkout</label>
+                      <input 
+                        type="text"
+                        className="vpb-input !mb-0 !h-9 text-xs" 
+                        placeholder="https://..." 
+                        value={checkoutUrl}
+                        onChange={(e) => setCheckoutUrl(e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  <button 
+                    className="btn-primary w-full py-2.5 text-xs font-bold"
+                    onClick={() => {
+                      if (selectedModule) {
+                        updateModule(selectedModule.id, { releaseType, dripDays, checkoutUrl });
+                      }
+                      setShowConfig(false);
+                    }}
+                  >
+                    Salvar Regras
+                  </button>
+                </div>
+
+                <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
                 
                 <button 
                   className="dropdown-item" 
@@ -299,10 +396,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
           <button className="btn-ghost" style={{fontSize: '12px', padding: '6px', color: 'var(--accent2)', borderColor: 'transparent'}} onClick={() => handleDeleteModule(selectedModule.id)} title="Deletar Módulo"><Trash2 size={16} /></button>
         </div>
       </div>
-      <div className="module-detail-tabs">
-        <div className="detail-tab active">Sub-módulos</div>
-        <div className="detail-tab">Conteúdo HTML</div>
-      </div>
+
 
 
       
@@ -316,9 +410,13 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
           </div>
         ) : (
           <>
-            <div className="submodule-list">
+            <div
+              className="submodule-list"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onDrop}
+            >
               {selectedModule.subs.map(sub => (
-                <div key={sub.id} className={`submodule-item ${draggedSubId === sub.id ? 'dragging' : ''} ${dragOverSubId === sub.id && draggedSubId !== sub.id ? 'drag-over' : ''}`} draggable onDragStart={(e) => onDragStart(e, sub.id)} onDragOver={onDragOver} onDragEnter={(e) => onDragEnter(sub.id)} onDragEnd={onDrop}>
+                <div key={sub.id} className={`submodule-item ${draggedSubId === sub.id ? 'dragging' : ''} ${dragOverSubId === sub.id && draggedSubId !== sub.id ? 'drag-over' : ''}`} draggable onDragStart={(e) => onDragStart(e, sub.id)} onDragOver={(e) => e.preventDefault()} onDragEnter={() => onDragEnter(sub.id)} onDragEnd={onDragEnd}>
                   <GripVertical size={14} className="drag-handle" />
                   {/* Submodule Cover Thumbnail */}
                   {sub.coverImageUrl && (
@@ -580,6 +678,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                 </div>
               ))}
             </div>
+
             <div style={{marginTop: '12px'}}>
               <button className="add-module-btn" onClick={() => handleAddSubmodule(selectedModuleId!)} style={{minHeight: '48px', flexDirection: 'row', gap: '8px', padding: '12px', width: 'fit-content'}}><Plus size={18} /><span>Adicionar Sub-módulo</span></button>
             </div>

@@ -4,9 +4,9 @@ import { Project } from '../types';
 import { ProjectCard } from './CommonComponents';
 import { useAppStore } from '../store/useAppStore';
 
-interface ProjectsDashboardProps { projects: Project[]; handleOpenProject: (id: number, name: string) => void; handleToggleProjectStatus: (id: number) => void; }
+interface ProjectsDashboardProps { projects: Project[]; handleOpenProject: (id: number, name: string) => void; handleToggleProjectStatus: (id: number) => void; handleDeleteProject: (id: number) => void; }
 
-export function ProjectsDashboard({ projects, handleOpenProject, handleToggleProjectStatus }: ProjectsDashboardProps) {
+export function ProjectsDashboard({ projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject }: ProjectsDashboardProps) {
   const isNewProjectModalOpen = useAppStore(state => state.isNewProjectModalOpen);
   const setIsNewProjectModalOpen = useAppStore(state => state.setIsNewProjectModalOpen);
   const safeProjects = Array.isArray(projects) ? projects : [];
@@ -39,7 +39,15 @@ export function ProjectsDashboard({ projects, handleOpenProject, handleTogglePro
             <span style={{fontFamily: 'Syne', fontWeight: 600}}>Criar Novo App</span>
             <span style={{fontSize: 12}}>Comece do zero ou use a nossa IA</span>
           </div>
-          {safeProjects.map(proj => <ProjectCard key={proj.id} proj={proj} handleOpenProject={handleOpenProject} handleToggleProjectStatus={handleToggleProjectStatus} />)}
+          {safeProjects.map(proj => (
+            <ProjectCard 
+              key={proj.id} 
+              proj={proj} 
+              handleOpenProject={handleOpenProject} 
+              handleToggleProjectStatus={handleToggleProjectStatus} 
+              handleDeleteProject={handleDeleteProject}
+            />
+          ))}
         </div>
       )}
 

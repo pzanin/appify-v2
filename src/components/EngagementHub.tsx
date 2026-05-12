@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Send, Image as ImageIcon, Calendar, Rss, Users, User, Trash2, MessageSquare, Megaphone, LayoutGrid, Check, BarChart3, Settings, Pencil } from 'lucide-react';
+import { Bell, Send, Image as ImageIcon, Calendar, Rss, Users, User, Trash2, MessageSquare, Megaphone, LayoutGrid, Check, BarChart3, Settings, Pencil, ImagePlus, X as XIcon } from 'lucide-react';
 import { ToastType } from '../types';
 
 interface EngagementHubProps {
@@ -10,6 +10,7 @@ interface Post {
   id: number;
   author: string;
   content: string;
+  imageUrl?: string;
   timestamp: string;
 }
 
@@ -20,8 +21,28 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   const [pushTitle, setPushTitle] = useState('');
   const [pushMsg, setPushMsg] = useState('');
   const [pushImg, setPushImg] = useState('');
+  const [pushImgFile, setPushImgFile] = useState<File | null>(null);
+  const [pushImgPreview, setPushImgPreview] = useState<string | null>(null);
   const [pushDate, setPushDate] = useState('');
   const [pushHistoryTab, setPushHistoryTab] = useState<'history' | 'scheduled'>('history');
+  
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (pushImgPreview) URL.revokeObjectURL(pushImgPreview);
+      setPushImgFile(file);
+      setPushImgPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    if (pushImgPreview) URL.revokeObjectURL(pushImgPreview);
+    setPushImgFile(null);
+    setPushImgPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   // Feed States
   const [posts, setPosts] = useState<Post[]>([
@@ -29,6 +50,27 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   ]);
   const [authorName, setAuthorName] = useState('');
   const [postContent, setPostContent] = useState('');
+  const [feedImageFile, setFeedImageFile] = useState<File | null>(null);
+  const [feedImagePreview, setFeedImagePreview] = useState<string | null>(null);
+  const [feedDate, setFeedDate] = useState('');
+  
+  const feedFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFeedFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (feedImagePreview) URL.revokeObjectURL(feedImagePreview);
+      setFeedImageFile(file);
+      setFeedImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeFeedImage = () => {
+    if (feedImagePreview) URL.revokeObjectURL(feedImagePreview);
+    setFeedImageFile(null);
+    setFeedImagePreview(null);
+    if (feedFileInputRef.current) feedFileInputRef.current.value = '';
+  };
 
   // Community States
   const [moderation, setModeration] = useState({
@@ -36,6 +78,7 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
     allowComments: true,
     offensiveFilter: true
   });
+  const [badWords, setBadWords] = useState('');
 
   const handleSendPush = () => {
     if (!pushTitle || !pushMsg) {
@@ -45,7 +88,7 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
     showToast('Push agendado com sucesso!', 'success');
     setPushTitle('');
     setPushMsg('');
-    setPushImg('');
+    removeImage();
     setPushDate('');
   };
 
@@ -58,11 +101,17 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
       id: Date.now(),
       author: authorName,
       content: postContent,
+      imageUrl: feedImagePreview || undefined,
       timestamp: 'Agora'
     };
     setPosts([newPost, ...posts]);
     setAuthorName('');
     setPostContent('');
+    // Clear image but DON'T revoke yet as the post now uses it in the list (if we were using a real server, we'd upload and get a real URL)
+    setFeedImageFile(null);
+    setFeedImagePreview(null);
+    setFeedDate('');
+    if (feedFileInputRef.current) feedFileInputRef.current.value = '';
     showToast('Post publicado no feed!', 'success');
   };
 
@@ -85,19 +134,19 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
           className={`eng-tab ${activeTab === 'push' ? 'active' : ''}`} 
           onClick={() => setActiveTab('push')}
         >
-          <Megaphone size={16} /> 📣 Push
+          <Megaphone size={16} /> Push
         </div>
         <div 
           className={`eng-tab ${activeTab === 'feed' ? 'active' : ''}`} 
           onClick={() => setActiveTab('feed')}
         >
-          <Rss size={16} /> 📰 Feed
+          <Rss size={16} /> Feed
         </div>
         <div 
           className={`eng-tab ${activeTab === 'community' ? 'active' : ''}`} 
           onClick={() => setActiveTab('community')}
         >
-          <Users size={16} /> 👥 Comunidade
+          <Users size={16} /> Comunidade
         </div>
       </div>
 
@@ -127,21 +176,57 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                 onChange={(e) => setPushMsg(e.target.value)}
               />
               
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ flex: 1 }}>
-                  <label className="vpb-label">IMAGEM (URL OPCIONAL)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="vpb-label">IMAGEM DA NOTIFICAÇÃO</label>
+                  
                   <input 
-                    className="vpb-input" 
-                    placeholder="https://..." 
-                    value={pushImg}
-                    onChange={(e) => setPushImg(e.target.value)}
+                    type="file" 
+                    ref={fileInputRef} 
+                    hidden 
+                    accept="image/png, image/jpeg, image/webp, image/gif"
+                    onChange={handleFileChange}
                   />
+
+                  {pushImgPreview ? (
+                    <div style={{ position: 'relative', width: '100%', height: '80px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                      <img src={pushImgPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button 
+                        onClick={removeImage}
+                        style={{ 
+                          position: 'absolute', top: '4px', right: '4px', 
+                          background: 'rgba(255, 75, 75, 0.9)', color: 'white', 
+                          border: 'none', borderRadius: '50%', width: '20px', height: '20px', 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        <XIcon size={12} strokeWidth={3} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="group"
+                      style={{ 
+                        width: '100%', height: '80px', border: '1px dashed var(--border)', 
+                        borderRadius: '10px', display: 'flex', flexDirection: 'column', 
+                        alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                        background: 'var(--surface2)', transition: 'all 0.2s'
+                      }}
+                    >
+                      <ImagePlus size={20} className="text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
+                      <span style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '4px', fontWeight: 600 }}>UPLOAD IMAGE</span>
+                    </div>
+                  )}
                 </div>
-                <div style={{ flex: 1 }}>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label className="vpb-label">PROGRAMAR ENVIO</label>
                   <input 
                     type="datetime-local"
                     className="vpb-input" 
+                    style={{ height: '80px', padding: '12px' }}
                     value={pushDate}
                     onChange={(e) => setPushDate(e.target.value)}
                   />
@@ -210,10 +295,59 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
               <textarea 
                 className="vpb-textarea" 
                 placeholder="Escreva algo..." 
-                style={{ minHeight: '100px', marginBottom: '20px' }} 
+                style={{ minHeight: '100px', marginBottom: '12px' }} 
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
               />
+
+              <div style={{ marginBottom: '20px' }}>
+                <input 
+                  type="file" 
+                  ref={feedFileInputRef} 
+                  hidden 
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={handleFeedFileChange}
+                />
+                
+                {!feedImagePreview ? (
+                  <button 
+                    className="btn-ghost" 
+                    style={{ width: '100%', borderStyle: 'dashed', gap: '10px', height: '44px' }}
+                    onClick={() => feedFileInputRef.current?.click()}
+                  >
+                    <ImagePlus size={16} /> Adicionar Imagem
+                  </button>
+                ) : (
+                  <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <img src={feedImagePreview} alt="Preview" className="w-full aspect-square object-cover" />
+                    <button 
+                      onClick={removeFeedImage}
+                      style={{ 
+                        position: 'absolute', top: '8px', right: '8px', 
+                        background: 'rgba(255, 75, 75, 0.9)', color: 'white', 
+                        border: 'none', borderRadius: '50%', width: '24px', height: '24px', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                      }}
+                    >
+                      <XIcon size={14} strokeWidth={3} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label className="vpb-label">AGENDAR PUBLICAÇÃO (OPCIONAL)</label>
+                <input 
+                  type="datetime-local"
+                  className="vpb-input" 
+                  style={{ marginBottom: '4px' }}
+                  value={feedDate}
+                  onChange={(e) => setFeedDate(e.target.value)}
+                />
+                <p style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 500 }}>
+                  Deixe em branco para publicar imediatamente.
+                </p>
+              </div>
               
               <button className="btn-primary" style={{ width: '100%' }} onClick={handleCreatePost}>
                 <MessageSquare size={16}/> Publicar no Feed
@@ -246,9 +380,16 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                         <Trash2 size={14} />
                       </button>
                     </div>
-                    <div style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--text)', paddingLeft: '42px' }}>
+                    <div style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--text)', paddingLeft: '42px', marginBottom: post.imageUrl ? '12px' : 0 }}>
                       {post.content}
                     </div>
+                    {post.imageUrl && (
+                      <div style={{ paddingLeft: '42px' }}>
+                        <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                          <img src={post.imageUrl} alt="Post content" className="w-full aspect-square object-cover" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -258,16 +399,16 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
       )}
 
       {activeTab === 'community' && (
-        <div className="eng-layout" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <div className="eng-card">
+        <div className="eng-layout" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="eng-card" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
             <div className="eng-card-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                <Settings size={16} color="var(--accent)"/> Moderação
+                <Settings size={16} color="var(--accent)"/> Moderação de Comunidade
               </div>
             </div>
-            <div className="eng-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="eng-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '13px' }}>Aprovar posts antes de publicar</div>
+                <div style={{ fontSize: '13px', fontWeight: 500 }}>Aprovar posts antes de publicar</div>
                 <label className="toggle-switch">
                   <input 
                     type="checkbox" 
@@ -278,7 +419,7 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                 </label>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '13px' }}>Permitir comentários</div>
+                <div style={{ fontSize: '13px', fontWeight: 500 }}>Permitir comentários nos posts</div>
                 <label className="toggle-switch">
                   <input 
                     type="checkbox" 
@@ -288,40 +429,41 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                   <span className="toggle-slider"></span>
                 </label>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '13px' }}>Filtro de palavras ofensivas</div>
-                <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    checked={moderation.offensiveFilter} 
-                    onChange={() => setModeration({...moderation, offensiveFilter: !moderation.offensiveFilter})}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div className="eng-card">
-            <div className="eng-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                <BarChart3 size={16} color="var(--accent3)"/> Estatísticas Mock
-              </div>
-            </div>
-            <div className="eng-card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                <div style={{ padding: '12px', background: 'var(--surface2)', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent)' }}>247</div>
-                  <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Membros ativos</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Filtro de palavras ofensivas</div>
+                  <label className="toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      checked={moderation.offensiveFilter} 
+                      onChange={() => setModeration({...moderation, offensiveFilter: !moderation.offensiveFilter})}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
-                <div style={{ padding: '12px', background: 'var(--surface2)', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent)' }}>89</div>
-                  <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Posts este mês</div>
-                </div>
-                <div style={{ padding: '12px', background: 'var(--surface2)', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent)' }}>12</div>
-                  <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase' }}>Aguardando aprovação</div>
-                </div>
+                
+                {moderation.offensiveFilter && (
+                  <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                    <textarea 
+                      className="vpb-textarea"
+                      placeholder="Digite as palavras proibidas separadas por vírgula (ex: lixo, idiota, spam)..."
+                      value={badWords}
+                      onChange={(e) => setBadWords(e.target.value)}
+                      style={{ 
+                        minHeight: '120px', 
+                        fontSize: '13px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border)',
+                        background: 'var(--surface2)',
+                        width: '100%'
+                      }}
+                    />
+                    <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '6px' }}>
+                      As palavras acima serão automaticamente bloqueadas ou enviadas para revisão.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User } from 'lucide-react';
+import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2 } from 'lucide-react';
 import { Project, ToastType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
@@ -66,9 +66,10 @@ export interface ProjectCardProps {
   proj: Project;
   handleOpenProject: (id: number, name: string) => void;
   handleToggleProjectStatus: (id: number) => void;
+  handleDeleteProject: (id: number) => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProject, handleToggleProjectStatus }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProject, handleToggleProjectStatus, handleDeleteProject }) => {
   return (
     <div 
       className="project-card" 
@@ -89,7 +90,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProjec
             proj.name.charAt(0).toUpperCase()
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="icon-btn delete-project-btn" 
+            title="Excluir Projeto"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteProject(proj.id);
+            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleDeleteProject(proj.id); } }}
+          >
+            <Trash2 size={16} />
+          </button>
           <span className={`project-status ${proj.status === 'Publicado' ? 'status-pub' : 'status-draft'}`}>
             {proj.status}
           </span>
@@ -116,6 +128,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProjec
           <span className="project-meta-item"><Users size={14} /> {proj.users.toLocaleString('pt-BR')} usuários</span>
         </div>
       </div>
+      <style>{`
+        .delete-project-btn {
+          opacity: 0.6;
+          transition: all 0.2s ease;
+          color: var(--text-muted);
+        }
+        .delete-project-btn:hover {
+          opacity: 1;
+          color: #ff4d4d;
+          background: rgba(255, 77, 77, 0.1);
+          transform: scale(1.1);
+        }
+      `}</style>
     </div>
   );
 }

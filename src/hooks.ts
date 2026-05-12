@@ -85,7 +85,21 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
     });
   };
 
-  return { projects, handleOpenProject, handleToggleProjectStatus };
+  const handleDeleteProject = async (projectId: number) => {
+    const confirmed = window.confirm("Tem certeza que deseja excluir este app? Esta ação não pode ser desfeita.");
+    if (!confirmed) return;
+
+    try {
+      showToast('Excluindo projeto...', 'loading');
+      await projectService.deleteProject(projectId);
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+      showToast('Projeto excluído com sucesso!', 'success');
+    } catch (err: any) {
+      showToast(`Erro ao excluir: ${err.message}`, 'error');
+    }
+  };
+
+  return { projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject };
 }
 
 export function useBuilderActions(showToast: (msg: string, type?: ToastType) => void) {

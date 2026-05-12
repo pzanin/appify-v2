@@ -162,6 +162,9 @@ export interface Module {
   subs: SubModule[];
   coverImageUrl?: string;
   externalLink?: string;
+  releaseType?: 'immediate' | 'drip' | 'locked';
+  dripDays?: number;
+  checkoutUrl?: string;
 }
 
 export interface PipelineStep {

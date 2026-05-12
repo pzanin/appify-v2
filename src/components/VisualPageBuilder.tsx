@@ -11,11 +11,30 @@ function sanitizeHtml(html: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
-  // Remove dangerous tags
-  const forbiddenTags = ['script', 'iframe', 'object', 'embed', 'link', 'style'];
+  // Remove dangerous tags but allow safe iframes
+  const forbiddenTags = ['script', 'object', 'embed', 'link', 'style'];
   forbiddenTags.forEach(tag => {
     const elements = doc.querySelectorAll(tag);
     elements.forEach(el => el.remove());
+  });
+
+  // Specifically allow and sanitize iframes from trusted sources
+  const iframes = doc.querySelectorAll('iframe');
+  iframes.forEach(iframe => {
+    const src = iframe.getAttribute('src') || '';
+    const isTrusted = src.includes('youtube.com') || 
+                      src.includes('youtu.be') || 
+                      src.includes('vimeo.com') || 
+                      src.includes('google.com/maps') ||
+                      src.includes('player.vimeo.com');
+    
+    if (!isTrusted) {
+      iframe.remove();
+    } else {
+      // Ensure iframes are wrapped or have responsive attributes
+      iframe.setAttribute('width', '100%');
+      iframe.style.maxWidth = '100%';
+    }
   });
 
   // Remove event handlers and sensitive attributes
@@ -108,7 +127,7 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
       const inner = sanitizeHtml(getBlockInnerHtml(mod)).replace(/href="#"/g, ''); 
       return `<section style="${wrapStyle}">${inner}</section>`;
     }).join('\n');
-    return `<div class="appify-generated-content">\n${bodyHTML}\n</div>`;
+    return `<div class="appify-generated-content custom-html-container">\n${bodyHTML}\n</div>`;
   };
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
@@ -230,7 +249,17 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
                         role="button"
                         tabIndex={0}
                       >
-                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(getBlockInnerHtml(mod)) }} />
+                        {mod.type === 'HTML Nativo' ? (
+                          <iframe 
+                            srcDoc={p.content || ''} 
+                            title="Preview HTML"
+                            className="w-full border-none bg-transparent"
+                            sandbox="allow-scripts allow-same-origin"
+                            style={{ width: '100%', minHeight: '300px', border: 'none' }}
+                          />
+                        ) : (
+                          <div className="custom-html-container" dangerouslySetInnerHTML={{ __html: sanitizeHtml(getBlockInnerHtml(mod)) }} />
+                        )}
                         <div className="vpb-block-actions">
                           <div 
                             className="vpb-action-btn" 
