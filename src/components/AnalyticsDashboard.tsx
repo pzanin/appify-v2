@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, TrendingDown, Users, Clock, Target, 
-  Sparkles, CheckCircle2, Calendar, Rss, Star, GraduationCap,
   ChevronRight, BarChart, Info, Trophy, User as UserIcon
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
 export function AnalyticsDashboard() {
   const modules = useAppStore(state => state.modules);
-  const [gamificationActive, setGamificationActive] = useState(false);
-  const [leaderboardActive, setLeaderboardActive] = useState(false);
 
   // Seeding functions for consistent mock data
   const getModuleViews = (id: number) => Math.floor(50 + ((id * 733) % 451));
@@ -147,105 +144,10 @@ export function AnalyticsDashboard() {
             </div>
           </div>
 
-          {/* GAMIFICAÇÃO */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: 'var(--accent-glow)', color: 'var(--accent)', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Trophy size={18} />
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: 800 }}>Sistema de Conquistas</h3>
-                    <p style={{ fontSize: '12px', color: 'var(--muted)' }}>Engaje usuários com badges e recompensas.</p>
-                  </div>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" checked={gamificationActive} onChange={() => setGamificationActive(!gamificationActive)} />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-
-              {gamificationActive && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', animation: 'fadeIn 0.3s' }}>
-                  {[
-                    { name: 'Primeiro Acesso', icon: Sparkles, pts: 10, color: '#ffd166' },
-                    { name: 'Módulo Completo', icon: CheckCircle2, pts: 50, color: '#6bffb8' },
-                    { name: '7 Dias Seguidos', icon: Calendar, pts: 100, color: '#ff6b6b' },
-                    { name: 'Compartilhou o App', icon: Rss, pts: 30, color: '#7c6fff' },
-                    { name: 'Avaliou o App', icon: Star, pts: 20, color: '#06d6a0' },
-                    { name: 'Top Estudante', icon: GraduationCap, pts: 200, color: '#118ab2' }
-                  ].map((badge, idx) => (
-                    <div key={idx} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ color: badge.color }}><badge.icon size={24} /></div>
-                        <input type="checkbox" defaultChecked style={{ accentColor: 'var(--accent)' }} />
-                      </div>
-                      <input 
-                        defaultValue={badge.name} 
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text)', fontSize: '12px', fontWeight: 700, padding: 0 }}
-                      />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '10px', color: 'var(--muted)', textTransform: 'uppercase' }}>Pontos</span>
-                        <input 
-                          type="number" 
-                          defaultValue={badge.pts} 
-                          style={{ width: '40px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '11px', padding: '2px 4px' }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           
-          {/* PLACAR DE LÍDERES */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Users size={18} style={{ color: 'var(--accent)' }} />
-                <h3 style={{ fontSize: '15px', fontWeight: 700 }}>Placar de Líderes</h3>
-              </div>
-              <label className="toggle-switch">
-                <input type="checkbox" checked={leaderboardActive} onChange={() => setLeaderboardActive(!leaderboardActive)} />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-
-            {leaderboardActive && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {([].length === 0) ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
-                    Placar vazio ou recurso desativado
-                  </div>
-                ) : (
-                  [].map((user: any, idx: number) => (
-                    <div key={idx} style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      padding: '12px', 
-                      background: idx < 3 ? 'var(--accent-glow)' : 'transparent',
-                      borderRadius: '10px',
-                      border: idx < 3 ? '1px solid var(--accent)' : '1px solid transparent'
-                    }}>
-                      <div style={{ width: '24px', textAlign: 'center', fontSize: '14px', fontWeight: 800 }}>{user.pos}</div>
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: user.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px', color: 'white' }}>
-                        {user.name.charAt(0)}
-                      </div>
-                      <div style={{ flex: 1, fontSize: '13px', fontWeight: 600 }}>{user.name}</div>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)' }}>{user.pts} pts</div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
           {/* RETENÇÃO FUNNEL */}
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>

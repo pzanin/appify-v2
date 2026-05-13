@@ -64,6 +64,40 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
   const [rawHtml, setRawHtml] = useState(submodule.content_html || '');
+  const [submoduleName, setSubmoduleName] = useState(submodule.name || '');
+  
+  // Gamification & Anti-Cheat local state
+  const [timeGateSeconds, setTimeGateSeconds] = useState(submodule.gamificationConfig?.timeGateSeconds || 0);
+  const [enableCelebration, setEnableCelebration] = useState(submodule.gamificationConfig?.enableCelebration ?? true);
+
+  // Sync state with submodule prop when it changes
+  React.useEffect(() => {
+    setSubmoduleName(submodule.name || '');
+    setBlocks(submodule.builder_data || []);
+    setRawHtml(submodule.content_html || '');
+    setTimeGateSeconds(submodule.gamificationConfig?.timeGateSeconds || 0);
+    setEnableCelebration(submodule.gamificationConfig?.enableCelebration ?? true);
+  }, [submodule]);
+
+  const handleSave = () => {
+    const finalHtml = viewMode === 'visual' ? generateHTML() : rawHtml;
+    const finalBlocks = viewMode === 'visual' ? blocks : [];
+    
+    if (editingSubmodule) {
+      updateSubmoduleContent({
+        modId: editingSubmodule.modId,
+        subId: editingSubmodule.subId,
+        content: finalHtml,
+        builderData: finalBlocks,
+        name: submoduleName,
+        gamificationConfig: {
+          timeGateSeconds,
+          enableCelebration
+        }
+      });
+      onSave(finalHtml, finalBlocks);
+    }
+  };
 
   const generateId = () => 'mod_' + Math.random().toString(36).substr(2, 9);
 
@@ -167,23 +201,12 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
               Código HTML
             </button>
           </div>
-          <button className="btn-primary" onClick={() => {
-            const finalHtml = viewMode === 'code' ? rawHtml : generateHTML();
-            const finalBlocks = viewMode === 'visual' ? blocks : [];
-            
-            if (editingSubmodule) {
-              updateSubmoduleContent({
-                modId: editingSubmodule.modId,
-                subId: editingSubmodule.subId,
-                content: finalHtml,
-                builderData: finalBlocks
-              });
-            }
-            
-            onSave(finalHtml, finalBlocks);
-          }}>
-            <Check size={16} /> Salvar & Injetar HTML
-          </button>
+          <div className="vpb-header-actions">
+            <button className="btn-primary" onClick={handleSave}>
+              <Check size={16} /> Salvar Aula
+            </button>
+            <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          </div>
         </div>
       </header>
       
@@ -296,8 +319,75 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
             <aside className="vpb-sidebar-right">
               <div className="vpb-sidebar-title">Propriedades</div>
               {!selectedBlock ? (
-                <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
-                  Selecione um bloco no canvas para editar as suas propriedades.
+                <div style={{ padding: '24px 16px' }}>
+                  <div style={{ marginBottom: '20px' }}>
+                    <label className="vpb-label">Título da Aula</label>
+                    <input 
+                      type="text" 
+                      className="vpb-input" 
+                      value={submoduleName}
+                      onChange={(e) => setSubmoduleName(e.target.value)}
+                      placeholder="Ex: Introdução ao Módulo"
+                    />
+                  </div>
+
+                  <div className="vpb-lib-label">Biblioteca de Blocos</div>
+                  <div className="vpb-lib-group" style={{ padding: 0, border: 'none' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '16px' }}>Arraste e solte para construir sua aula visualmente.</p>
+                    <button className="vpb-module-btn" onClick={() => addBlock('text')}>
+                      <div className="vpb-module-icon"><Type size={18} /></div>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700 }}>Bloco de Texto</div>
+                        <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Parágrafos e títulos</div>
+                      </div>
+                    </button>
+                    <button className="vpb-module-btn" onClick={() => addBlock('video')}>
+                      <div className="vpb-module-icon"><Video size={18} /></div>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700 }}>Vídeo Aula</div>
+                        <div style={{ fontSize: '10px', color: 'var(--muted)' }}>YouTube ou Vimeo</div>
+                      </div>
+                    </button>
+                    <button className="vpb-module-btn" onClick={() => addBlock('image')}>
+                      <div className="vpb-module-icon"><Image size={18} /></div>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700 }}>Imagem</div>
+                        <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Banner ou foto</div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="mt-6 border-t border-[var(--border)] pt-6">
+                    <div className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Configurações de Acesso e Gamificação (Anti-Cheat)</div>
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Trava de Tempo (Segundos)</label>
+                        <input 
+                          type="number" 
+                          className="w-full bg-[var(--surface2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                          placeholder="Ex: 30"
+                          value={timeGateSeconds}
+                          onChange={(e) => setTimeGateSeconds(parseInt(e.target.value) || 0)}
+                        />
+                        <p className="text-[10px] text-[var(--muted)] mt-1">Tempo mínimo que o aluno deve permanecer na aula para liberar o progresso.</p>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Habilitar Celebração</label>
+                          <p className="text-[10px] text-[var(--muted)]">Disparar confetes ao concluir a aula.</p>
+                        </div>
+                        <label className="toggle-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={enableCelebration}
+                            onChange={(e) => setEnableCelebration(e.target.checked)}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div style={{ paddingBottom: '40px' }}>
@@ -364,27 +454,57 @@ export function VisualPageBuilder({ submodule, onSave, onClose }: VisualPageBuil
           </>
         ) : (
           <main className="vpb-canvas-area" style={{ width: '100%', padding: '24px', background: 'var(--bg)' }}>
-            <div style={{ background: '#1e1e1e', borderRadius: '8px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '12px 16px', background: '#2d2d2d', color: '#fff', fontSize: '13px', fontWeight: 600, borderBottom: '1px solid #444' }}>
-                Editor de Código HTML (Avançado)
+            <div className="vpb-lib-group">
+              <div style={{ marginBottom: '20px' }}>
+                <label className="vpb-label">Título da Aula</label>
+                <input 
+                  type="text" 
+                  className="vpb-input" 
+                  value={submoduleName}
+                  onChange={(e) => setSubmoduleName(e.target.value)}
+                  placeholder="Ex: Introdução ao Módulo"
+                />
               </div>
+
+              <div className="vpb-lib-label">Conteúdo (HTML)</div>
+              <p style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '12px' }}>Personalize o conteúdo da aula diretamente via código.</p>
               <textarea 
+                className="vpb-textarea" 
+                style={{ height: '300px', fontFamily: 'monospace', fontSize: '12px' }}
                 value={rawHtml}
                 onChange={(e) => setRawHtml(e.target.value)}
-                style={{ 
-                  flex: 1, 
-                  background: 'transparent', 
-                  color: '#d4d4d4', 
-                  fontFamily: 'monospace', 
-                  fontSize: '14px', 
-                  padding: '16px', 
-                  border: 'none', 
-                  outline: 'none', 
-                  resize: 'none',
-                  lineHeight: 1.5
-                }}
-                placeholder="<html>...</html>"
+                placeholder="<div>Seu código aqui...</div>"
               />
+
+              <div className="mt-6 border-t border-[var(--border)] pt-6">
+                <div className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Configurações de Acesso e Gamificação (Anti-Cheat)</div>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>Trava de Tempo (Segundos)</label>
+                    <input 
+                      type="number" 
+                      className="w-full bg-[var(--surface2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
+                      placeholder="Ex: 30"
+                      value={timeGateSeconds}
+                      onChange={(e) => setTimeGateSeconds(parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Habilitar Celebração</label>
+                    </div>
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={enableCelebration}
+                        onChange={(e) => setEnableCelebration(e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           </main>
         )}

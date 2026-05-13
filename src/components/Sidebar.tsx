@@ -32,7 +32,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             tabIndex={0}
           >
             <div className={`step-indicator ${step.id < activeStep ? 'done' : step.id === activeStep ? 'active' : 'todo'}`}>
-              {step.id < activeStep ? <Check size={14} /> : step.id + 1}
+              {step.id < activeStep ? <Check size={14} /> : step.icon ? <RenderDynamicIcon name={step.icon} size={14} /> : step.id + 1}
             </div>
             <div className="step-info">
               <div className="step-name">{step.label}</div>

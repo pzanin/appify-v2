@@ -1,0 +1,18 @@
+{
+  "nav": { "home": "Accueil", "content": "Contenu", "community": "Communauté", "profile": "Profil", "support": "Support" },
+  "app": {
+    "login": { "title": "Accédez à votre compte", "emailPlaceholder": "Entrez votre email", "button": "SE CONNECTER" },
+    "profile": { "title": "Mon Profil", "fileFormat": "Uniquement .JPG ou .JPEG", "namePlaceholder": "Nom Complet", "nameDefault": "Nom de l'Étudiant", "emailPlaceholder": "Email (Clé d'Accès)", "saveButton": "Enregistrer" },
+    "community": { "title": "Communauté", "admin": "Admin", "justNow": "À l'instant", "welcomeMessage": "Bienvenue dans notre communauté ! Voici votre espace premium pour échanger, poser des questions et partager vos résultats. 🎉" },
+    "content": { "title": "Contenu", "badge": "NOUVEAU", "newLesson": "Nouvelle leçon débloquée !", "newLessonDesc": "Nous venons de publier un contenu exclusif sur les stratégies. Allez dans l'onglet accueil pour découvrir le nouveau module !" },
+    "modules": { "title": "Modules", "emptyState": "Aucun module créé", "back": "Retour", "lessonSingle": "leçon", "lessonPlural": "leçons", "noLessons": "Aucune leçon ajoutée" },
+    "upsell": { "lockedTitle": "Contenu Verrouillé", "lockedMessagePart1": "Pour accéder au module", "lockedMessagePart2": "vous devez acheter cette mise à niveau.", "checkoutButton": "Aller au Paiement", "cancelButton": "Annuler" },
+    "header": { "theme": "Changer le Thème", "notifications": "Notifications", "install": "Installer" },
+    "support": { "title": "Comment pouvons-nous aider?", "description": "Notre équipe est prête à répondre à vos questions et à résoudre tout problème.", "copyEmail": "Copier l'e-mail", "openWa": "Ouvrir WhatsApp", "copied": "Copié!", "emailLabel": "E-MAIL DE CONTACT" },
+    "gamification": { "streak": "Série", "days": "jours", "completed": "Terminé", "keepGoing": "Continuez!" }
+  },
+  "onboarding": {
+    "install": { "title": "Installer l'App", "subtitle": "Ajoutez notre app à votre écran d'accueil.", "confirm": "Installer", "skip": "Plus Tard", "iosStep1": "1. Appuyez sur l'icône Partager", "iosStep2": "2. Sélectionnez \"Sur l'écran d'accueil\"" },
+    "push": { "title": "Notifications", "subtitle": "Activez les notifications pour ne rien manquer.", "confirm": "Activer", "skip": "Plus Tard" }
+  }
+}

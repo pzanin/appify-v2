@@ -12,6 +12,8 @@ import { AppConfigurator } from './AppConfigurator';
 import { EngagementHub } from './EngagementHub';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { PublicationHub } from './PublicationHub';
+import { SupportConfig } from './SupportConfig';
+import { GamificationConfig } from './GamificationConfig';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 
 interface BuilderLayoutProps { isPhoneDark: boolean; setIsPhoneDark: (val: boolean) => void; handleDeleteModule: (id: number) => void; handleDeleteSubmodule: (modId: number, subId: number) => void; handleAddSubmodule: (modId: number) => void; handleUpdateSubmoduleContent: (modId: number, subId: number, content: string, data: BuilderBlock[]) => void; showToast: (msg: string, type?: ToastType) => void; }
@@ -149,10 +151,12 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
 
               {activeStep === 1 && <AppConfigurator />}
               {activeStep === 3 && <EngagementHub showToast={showToast} />}
-              {activeStep === 4 && <PublicationHub showToast={showToast} />}
-              {activeStep === 5 && <AnalyticsDashboard />}
+              {activeStep === 4 && <SupportConfig />}
+              {activeStep === 5 && <PublicationHub showToast={showToast} />}
+              {activeStep === 6 && <AnalyticsDashboard />}
+              {activeStep === 7 && <GamificationConfig />}
 
-              {activeStep !== 0 && activeStep !== 1 && activeStep !== 2 && activeStep !== 3 && activeStep !== 4 && activeStep !== 5 && (
+              {activeStep > 7 && (
 
                 <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--muted)' }}>
                   <div style={{ marginBottom: '16px', opacity: 0.5, display: 'flex', justifyContent: 'center' }}><Construction size={48} /></div>

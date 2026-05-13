@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Image as ImageIcon, Trash2, Plus, Smartphone, Globe, 
   Languages, Palette, Info, EyeOff, LayoutGrid, Type, 
-  Trash, AlertTriangle, Link as LinkIcon, CheckCircle2, XCircle, Loader2
+  Trash, AlertTriangle, Link as LinkIcon, CheckCircle2, XCircle, Loader2, Sun, Moon, Headset, MessageCircle, Mail
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { GOOGLE_FONTS } from '../constants';
@@ -168,6 +169,47 @@ export function IdentityConfigurator() {
             </select>
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: '-8px' }}>
               Este é o idioma em que seu app será entregue ao usuário final.
+            </p>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <label className="vpb-label">TEMA PADRÃO DO APP</label>
+            <div style={{ display: 'flex', gap: '8px', background: 'var(--surface2)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border)', width: 'fit-content' }}>
+              <button 
+                onClick={() => updateConfig({ defaultTheme: 'light' })}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: 'none',
+                  background: pwaConfig.defaultTheme === 'light' ? 'var(--accent)' : 'transparent',
+                  color: pwaConfig.defaultTheme === 'light' ? 'white' : 'var(--muted)',
+                  cursor: 'pointer', fontWeight: 600, fontSize: '13px', transition: 'all 0.2s'
+                }}
+              >
+                <Sun size={16} /> Claro (Light)
+              </button>
+              <button 
+                onClick={() => updateConfig({ defaultTheme: 'dark' })}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: 'none',
+                  background: pwaConfig.defaultTheme === 'dark' ? 'var(--accent)' : 'transparent',
+                  color: pwaConfig.defaultTheme === 'dark' ? 'white' : 'var(--muted)',
+                  cursor: 'pointer', fontWeight: 600, fontSize: '13px', transition: 'all 0.2s'
+                }}
+              >
+                <Moon size={16} /> Escuro (Dark)
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
+            <button 
+              onClick={() => useAppStore.getState().resetMockupOnboarding()}
+              className="btn-secondary"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            >
+              <Smartphone size={16} /> Resetar Simulação de Onboarding
+            </button>
+            <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px', textAlign: 'center' }}>
+              Reinicie o fluxo de instalação e notificações no mockup para testar a experiência do primeiro acesso.
             </p>
           </div>
         </div>

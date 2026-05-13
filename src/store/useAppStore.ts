@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist } from 'zustand/middleware';
 import { AppState, AppView, PwaConfig, BuilderBlock, SupportedLocale } from '../types';
-import { INITIAL_MODULES, INITIAL_PWA_CONFIG, DEFAULT_TRANSLATIONS } from '../constants';
+import { INITIAL_MODULES, INITIAL_PWA_CONFIG } from '../constants';
 import { projectService } from '../services/projectService';
 
 interface AppStore extends AppState {
@@ -33,6 +33,8 @@ interface AppStore extends AppState {
   moveSubmodule: (payload: { fromModId: number; subId: number; toModId: number }) => void;
   setLocale: (locale: SupportedLocale) => void;
   setSplash: (active: boolean) => void;
+  setMockupOnboardingCompleted: (completed: boolean) => void;
+  resetMockupOnboarding: () => void;
   isNewProjectModalOpen: boolean;
   setIsNewProjectModalOpen: (open: boolean) => void;
 }
@@ -46,12 +48,14 @@ const initialState: AppState = {
   pwaConfig: INITIAL_PWA_CONFIG, 
   editingSubmodule: null,
   activeLocale: 'pt-BR',
-  translations: DEFAULT_TRANSLATIONS,
-  splashActive: false
+  splashActive: false,
+  mockupOnboardingCompleted: false
 };
 
 export const useAppStore = create<AppStore>()(
-  subscribeWithSelector((set, get) => ({
+  subscribeWithSelector(
+    persist(
+      (set, get) => ({
     ...initialState,
     isLoading: true,
     currentProjectId: null,
@@ -85,7 +89,11 @@ export const useAppStore = create<AppStore>()(
         iconName: payload.iconName || 'BookOpen',
         status: 'Ativo',
         subs: [],
-        releaseType: 'immediate'
+        releaseType: 'immediate',
+        gamificationConfig: {
+          enabled: state.pwaConfig.gamification.enabled,
+          progressStyle: state.pwaConfig.gamification.progressStyle
+        }
       }]
     })),
 
@@ -132,7 +140,17 @@ export const useAppStore = create<AppStore>()(
 
     addSubmodule: (modId) => set((state) => ({
       modules: state.modules.map(mod => mod.id === modId 
-        ? { ...mod, subs: [...mod.subs, { id: Date.now(), name: 'Nova Aula', type: 'HTML Nativo', content_html: '', builder_data: [] }] } 
+        ? { ...mod, subs: [...mod.subs, { 
+            id: Date.now(), 
+            name: 'Nova Aula', 
+            type: 'HTML Nativo', 
+            content_html: '', 
+            builder_data: [],
+            gamificationConfig: {
+              timeGateSeconds: 0,
+              enableCelebration: state.pwaConfig.gamification.enableCelebration
+            }
+          }] } 
         : mod)
     })),
 
@@ -147,9 +165,9 @@ export const useAppStore = create<AppStore>()(
       )
     })),
 
-    updateSubmoduleContent: (payload) => set((state) => ({
+    updateSubmoduleContent: (payload: { modId: number; subId: number; content: string; builderData: BuilderBlock[]; gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean } }) => set((state) => ({
       modules: state.modules.map(mod => mod.id === payload.modId 
-        ? { ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? { ...sub, content_html: payload.content, builder_data: payload.builderData } : sub) } 
+        ? { ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? { ...sub, content_html: payload.content, builder_data: payload.builderData, gamificationConfig: payload.gamificationConfig } : sub) } 
         : mod)
     })),
 
@@ -200,8 +218,15 @@ export const useAppStore = create<AppStore>()(
 
     setLocale: (locale) => set({ activeLocale: locale }),
     setSplash: (active) => set({ splashActive: active }),
-  }))
-);
+    setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
+    resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
+  }), {
+    name: 'appify-storage',
+    partialize: (state) => ({ 
+      mockupOnboardingCompleted: state.mockupOnboardingCompleted 
+    }),
+  })
+));
 
 // Subscribe to state changes to save app state (debounced 1.5s)
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -229,15 +254,4 @@ useAppStore.subscribe(
   { fireImmediately: false }
 );
 
-export function useTranslation() {
-  const activeLocale = useAppStore(state => state.activeLocale);
-  const translations = useAppStore(state => state.translations);
-  
-  const t = (key: string): string => {
-    return translations[activeLocale]?.strings[key] 
-      ?? translations['pt-BR']?.strings[key] 
-      ?? key;
-  };
-  
-  return { t, locale: activeLocale };
-}
+

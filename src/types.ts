@@ -33,7 +33,16 @@ export interface PwaConfig {
   supabaseUrl: string;
   supabaseAnonKey: string;
   carouselInterval?: number;
+  defaultTheme: 'light' | 'dark';
   banners: Array<{ id: number; imageUrl: string; link: string }>;
+  supportConfig: { type: 'whatsapp' | 'email' | 'none'; contact: string };
+  gamification: {
+    enabled: boolean;
+    progressStyle: 'bar' | 'ring' | 'none';
+    enableStreaks: boolean;
+    streakIcon: string;
+    enableCelebration: boolean;
+  };
 }
 
 export interface Version {
@@ -129,8 +138,9 @@ export interface AppState {
   pwaConfig: PwaConfig;
   editingSubmodule: { modId: number, subId: number } | null;
   activeLocale: SupportedLocale;
-  translations: Record<SupportedLocale, AppTranslations>;
+  translations?: Record<SupportedLocale, AppTranslations>;
   splashActive: boolean;
+  mockupOnboardingCompleted: boolean;
 }
 
 export interface Project {
@@ -152,6 +162,7 @@ export interface SubModule {
   builder_data?: BuilderBlock[];
   coverImageUrl?: string;
   externalLink?: string;
+  gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean };
 }
 
 export interface Module {
@@ -165,6 +176,7 @@ export interface Module {
   releaseType?: 'immediate' | 'drip' | 'locked';
   dripDays?: number;
   checkoutUrl?: string;
+  gamificationConfig?: { enabled: boolean; progressStyle: 'bar' | 'ring' | 'none' };
 }
 
 export interface PipelineStep {
@@ -172,6 +184,7 @@ export interface PipelineStep {
   label: string;
   desc: string;
   status: StepStatus;
+  icon?: string;
 }
 
 export interface ToastMessage {

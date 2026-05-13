@@ -1,0 +1,18 @@
+{
+  "nav": { "home": "Inicio", "content": "Contenido", "community": "Comunidad", "profile": "Perfil", "support": "Soporte" },
+  "app": {
+    "login": { "title": "Accede a tu cuenta", "emailPlaceholder": "Ingresa tu correo", "button": "ENTRAR" },
+    "profile": { "title": "Mi Perfil", "fileFormat": "Solo archivos .JPG o .JPEG", "namePlaceholder": "Nombre Completo", "nameDefault": "Nombre del Alumno", "emailPlaceholder": "Correo (Llave de Acceso)", "saveButton": "Guardar Cambios" },
+    "community": { "title": "Comunidad", "admin": "Admin", "justNow": "Justo ahora", "welcomeMessage": "¡Bienvenido a nuestra comunidad! Este es tu espacio premium para interactuar, hacer preguntas y compartir tus resultados. 🎉" },
+    "content": { "title": "Contenido", "badge": "NUEVO", "newLesson": "¡Nueva clase liberada!", "newLessonDesc": "Acabamos de lanzar contenido exclusivo sobre estrategias avanzadas. ¡Ve a la pestaña de inicio para revisar el nuevo módulo!" },
+    "modules": { "title": "Módulos", "emptyState": "Ningún módulo creado", "back": "Volver", "lessonSingle": "clase", "lessonPlural": "clases", "noLessons": "Ninguna clase añadida" },
+    "upsell": { "lockedTitle": "Contenido Bloqueado", "lockedMessagePart1": "Para acceder al módulo", "lockedMessagePart2": "necesitas adquirir esta mejora.", "checkoutButton": "Ir al Checkout", "cancelButton": "Cancelar" },
+    "header": { "theme": "Cambiar Tema", "notifications": "Notificaciones", "install": "Instalar" },
+    "support": { "title": "¿Cómo podemos ayudarte?", "description": "Nuestro equipo está listo para resolver tus dudas e qualquer problema.", "copyEmail": "Copiar Correo", "openWa": "Abrir WhatsApp", "copied": "¡Copiado!", "emailLabel": "CORREO DE CONTACTO" },
+    "gamification": { "streak": "Racha", "days": "días", "completed": "Completado", "keepGoing": "¡Sigue así!" }
+  },
+  "onboarding": {
+    "install": { "title": "Instalar App", "subtitle": "Añade nuestra app a tu pantalla de inicio.", "confirm": "Instalar Ahora", "skip": "Ahora No", "iosStep1": "1. Toca el icono de Compartir", "iosStep2": "2. Selecciona \"Añadir a la pantalla de inicio\"" },
+    "push": { "title": "Notificaciones", "subtitle": "Activa las notificaciones para no perderte nada.", "confirm": "Activar", "skip": "Ahora No" }
+  }
+}

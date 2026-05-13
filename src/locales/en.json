@@ -1,0 +1,18 @@
+{
+  "nav": { "home": "Home", "content": "Content", "community": "Community", "profile": "Profile", "support": "Support" },
+  "app": {
+    "login": { "title": "Access your account", "emailPlaceholder": "Enter your email", "button": "SIGN IN" },
+    "profile": { "title": "My Profile", "fileFormat": "Only .JPG or .JPEG files", "namePlaceholder": "Full Name", "nameDefault": "Student Name", "emailPlaceholder": "Email (Access Key)", "saveButton": "Save Changes" },
+    "community": { "title": "Community", "admin": "Admin", "justNow": "Just now", "welcomeMessage": "Welcome to our community! This is your premium space to interact, ask questions, and share your results. 🎉" },
+    "content": { "title": "Content", "badge": "NEW", "newLesson": "New lesson unlocked!", "newLessonDesc": "We've just released exclusive content on advanced strategies. Go to the home tab to check out the new module!" },
+    "modules": { "title": "Modules", "emptyState": "No modules created", "back": "Back", "lessonSingle": "lesson", "lessonPlural": "lessons", "noLessons": "No lessons added" },
+    "upsell": { "lockedTitle": "Locked Content", "lockedMessagePart1": "To access the module", "lockedMessagePart2": "you need to purchase this upgrade.", "checkoutButton": "Go to Checkout", "cancelButton": "Cancel" },
+    "header": { "theme": "Change Theme", "notifications": "Notifications", "install": "Install" },
+    "support": { "title": "How can we help?", "description": "Our team is ready to answer your questions and solve any problems.", "copyEmail": "Copy Email", "openWa": "Open WhatsApp", "copied": "Copied!", "emailLabel": "CONTACT EMAIL" },
+    "gamification": { "streak": "Streak", "days": "days", "completed": "Completed", "keepGoing": "Keep it up!" }
+  },
+  "onboarding": {
+    "install": { "title": "Install App", "subtitle": "Add our app to your home screen.", "confirm": "Install Now", "skip": "Not Now", "iosStep1": "1. Tap the Share icon", "iosStep2": "2. Select \"Add to Home Screen\"" },
+    "push": { "title": "Notifications", "subtitle": "Enable notifications so you never miss out.", "confirm": "Enable", "skip": "Not Now" }
+  }
+}
