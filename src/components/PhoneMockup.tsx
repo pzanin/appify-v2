@@ -528,9 +528,43 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                       {selectedMockupSubmodule ? (
                         <motion.div key={`sub-${selectedMockupSubmodule.id}`} initial={{ x: '20%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col flex-1 w-full h-full min-h-0 relative">
                           <div className="flex-1 w-full min-h-0 relative bg-white">
-                            <iframe srcDoc={getResponsiveHtml(selectedMockupSubmodule.content_html || '<p style="text-align:center; font-family:sans-serif; opacity:0.5; padding:20px;">Nenhum conteúdo definido.</p>')} title="Conteúdo da Aula" className="absolute inset-0 w-full h-full border-none block" sandbox="allow-scripts allow-same-origin" style={{ background: selectedMockupSubmodule.content_html ? '#ffffff' : 'transparent' }} />
+                            {(() => {
+                              const type = selectedMockupSubmodule.contentType || 'html';
+                              const url = selectedMockupSubmodule.contentUrl || '';
+                              
+                              if (type === 'html') {
+                                return (
+                                  <iframe 
+                                    srcDoc={getResponsiveHtml(selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || '<p style="text-align:center; font-family:sans-serif; opacity:0.5; padding:20px;">Nenhum conteúdo definido.</p>')} 
+                                    title="Conteúdo da Aula" 
+                                    className="absolute inset-0 w-full h-full border-none block" 
+                                    sandbox="allow-scripts allow-same-origin" 
+                                    style={{ background: '#ffffff' }} 
+                                  />
+                                );
+                              }
+
+                              let embedUrl = url;
+                              if (type === 'youtube') {
+                                const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+                                embedUrl = `https://www.youtube.com/embed/${id}`;
+                              } else if (type === 'vimeo') {
+                                const id = url.split('/').pop();
+                                embedUrl = `https://player.vimeo.com/video/${id}`;
+                              }
+
+                              return (
+                                <iframe 
+                                  src={embedUrl} 
+                                  title="Conteúdo da Aula" 
+                                  className="absolute inset-0 w-full h-full border-none block" 
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  style={{ background: '#000' }} 
+                                />
+                              );
+                            })()}
                           </div>
-                          
                         </motion.div>
                       ) : (
                         <>

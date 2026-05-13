@@ -27,7 +27,17 @@ interface AppStore extends AppState {
   addSubmodule: (modId: number) => void;
   deleteSubmodule: (payload: { modId: number; subId: number }) => void;
   renameSubmodule: (payload: { modId: number; subId: number; name: string }) => void;
-  updateSubmoduleContent: (payload: { modId: number; subId: number; content: string; builderData: BuilderBlock[] }) => void;
+  updateSubmoduleContent: (payload: { 
+    modId: number; 
+    subId: number; 
+    content?: string; 
+    builderData?: BuilderBlock[]; 
+    name?: string;
+    contentType?: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
+    contentUrl?: string;
+    contentHtml?: string;
+    gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean } 
+  }) => void;
   updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked'; dripDays?: number; checkoutUrl?: string }) => void;
   reorderSubmodule: (payload: { modId: number; dragId: number; overId: number }) => void;
   duplicateSubmodule: (payload: { modId: number; subId: number }) => void;
@@ -155,7 +165,10 @@ export const useAppStore = create<AppStore>()(
             id: Date.now(), 
             name: 'Nova Aula', 
             type: 'HTML Nativo', 
+            contentType: 'html',
             content_html: '', 
+            contentHtml: '',
+            contentUrl: '',
             builder_data: [],
             gamificationConfig: {
               timeGateSeconds: 0,
@@ -177,9 +190,18 @@ export const useAppStore = create<AppStore>()(
       )
     })),
 
-    updateSubmoduleContent: (payload: { modId: number; subId: number; content: string; builderData: BuilderBlock[]; gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean } }) => set((state) => ({
+    updateSubmoduleContent: (payload) => set((state) => ({
       modules: state.modules.map(mod => mod.id === payload.modId 
-        ? { ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? { ...sub, content_html: payload.content, builder_data: payload.builderData, gamificationConfig: payload.gamificationConfig } : sub) } 
+        ? { ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? { 
+            ...sub, 
+            content_html: payload.content ?? sub.content_html, 
+            contentHtml: payload.contentHtml ?? sub.contentHtml,
+            contentUrl: payload.contentUrl ?? sub.contentUrl,
+            contentType: payload.contentType ?? sub.contentType,
+            builder_data: payload.builderData ?? sub.builder_data, 
+            name: payload.name ?? sub.name,
+            gamificationConfig: payload.gamificationConfig ?? sub.gamificationConfig 
+          } : sub) } 
         : mod)
     })),
     

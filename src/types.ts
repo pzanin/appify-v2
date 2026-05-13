@@ -166,7 +166,10 @@ export interface SubModule {
   id: number;
   name: string;
   type: string;
-  content_html?: string;
+  contentType: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
+  contentUrl?: string;
+  contentHtml?: string;
+  content_html?: string; // Maintain for compatibility
   builder_data?: BuilderBlock[];
   coverImageUrl?: string;
   externalLink?: string;

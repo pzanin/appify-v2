@@ -5,7 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS, SUPPORTED_LOCALES } from '../constants';
 import { Sidebar } from './Sidebar';
 import { PhoneMockup } from './PhoneMockup';
-import { VisualPageBuilder } from './VisualPageBuilder';
+import { ModulesAndContent } from './ModulesAndContent';
 import { ModuleDetail } from './ModuleDetail';
 import { IdentityConfigurator } from './IdentityConfigurator';
 import { AppConfigurator } from './AppConfigurator';
@@ -43,7 +43,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
   return (
     <div className="layout">
       {activeSubToEdit && editingSubmodule && (
-        <VisualPageBuilder 
+        <ModulesAndContent 
           submodule={activeSubToEdit} 
           onSave={(html, data) => handleUpdateSubmoduleContent(editingSubmodule.modId, editingSubmodule.subId, html, data)} 
           onClose={() => setEditingSubmodule(null)}
