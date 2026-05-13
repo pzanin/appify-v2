@@ -14,7 +14,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
   const handleStepClick = (stepId: number) => { setStep(stepId); if (onClose) onClose(); };
-  const handleModuleClick = (modId: number) => { setStep(2); setSelectedModule(modId); if (onClose) onClose(); };
+  const handleModuleClick = (modId: number) => { setStep(3); setSelectedModule(modId); if (onClose) onClose(); };
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
@@ -32,11 +32,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             tabIndex={0}
           >
             <div className={`step-indicator ${step.id < activeStep ? 'done' : step.id === activeStep ? 'active' : 'todo'}`}>
-              {step.id < activeStep ? <Check size={14} /> : step.icon ? <RenderDynamicIcon name={step.icon} size={14} /> : step.id + 1}
+              {step.id < activeStep ? <Check size={14} /> : step.icon ? <RenderDynamicIcon name={step.icon} size={14} /> : index + 1}
             </div>
             <div className="step-info">
               <div className="step-name">{step.label}</div>
-              <div className="step-meta">{step.id === 2 ? `${modules.length} módulos criados` : step.desc}</div>
+              <div className="step-meta">{step.id === 3 ? `${modules.length} módulos criados` : step.desc}</div>
             </div>
           </div>
           {index < PIPELINE_STEPS.length - 1 && <div className={`step-connector ${step.id < activeStep ? 'done' : ''}`}></div>}
@@ -48,7 +48,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {modules.map(mod => (
           <React.Fragment key={mod.id}>
             <div 
-              className={`module-item ${selectedModuleId === mod.id && activeStep === 2 ? 'active' : ''}`} 
+              className={`module-item ${selectedModuleId === mod.id && activeStep === 3 ? 'active' : ''}`} 
               onClick={() => handleModuleClick(mod.id)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleModuleClick(mod.id); }}
               role="button"
@@ -57,7 +57,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             >
               <div className="module-dot"></div> <RenderDynamicIcon name={mod.iconName} size={14} /> {mod.name}
             </div>
-              {selectedModuleId === mod.id && activeStep === 2 && mod.subs.map(sub => (
+              {selectedModuleId === mod.id && activeStep === 3 && mod.subs.map(sub => (
                 <div 
                   key={sub.id} 
                   className="module-item sub"

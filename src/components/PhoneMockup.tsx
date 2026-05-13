@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy } from 'lucide-react';
+import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
@@ -316,18 +316,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                   {onboardingStep === 1 ? t('onboarding.install.subtitle', 'Adicione nosso app à sua tela inicial para acesso instantâneo.') : t('onboarding.push.subtitle', 'Ative as notificações para receber lembretes e novidades em tempo real.')}
                 </p>
 
-                {onboardingStep === 1 && (
-                  <div style={{ background: isPhoneDark ? '#374151' : '#F9FAFB', padding: '16px', borderRadius: '20px', textAlign: 'left', marginBottom: '24px', border: `1px solid ${isPhoneDark ? '#4B5563' : '#E5E7EB'}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: isPhoneDark ? '#4B5563' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Share size={12} /></div>
-                      <span style={{ fontSize: '12px', fontWeight: 600 }}>{t('onboarding.install.iosStep1', '1. Toque em Compartilhar')}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: isPhoneDark ? '#4B5563' : '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={12} /></div>
-                      <span style={{ fontSize: '12px', fontWeight: 600 }}>{t('onboarding.install.iosStep2', '2. Adicionar à Tela de Início')}</span>
-                    </div>
-                  </div>
-                )}
 
                 <button 
                   onClick={() => {
@@ -497,10 +485,45 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 <AnimatePresence mode="wait" initial={false}>
                   {selectedMockupModule ? (
                     <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmoduleId ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`} style={{ padding: selectedMockupSubmoduleId ? '0' : '20px 20px 80px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: selectedMockupSubmoduleId ? '12px 16px 8px' : '10px 0 8px', flexShrink: 0 }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        padding: selectedMockupSubmoduleId ? '12px 16px 8px' : '10px 0 8px', 
+                        flexShrink: 0 
+                      }}>
                         <button onClick={() => { if (selectedMockupSubmoduleId) setSelectedMockupSubmoduleId(null); else setSelectedMockupModuleId(null); }} style={{ background: 'transparent', border: 'none', color: isPhoneDark ? '#ffffff' : '#111111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '13px', fontWeight: 700 }}>
                           <ArrowLeft size={16} /> {t('app.modules.back', 'Voltar')}
                         </button>
+
+                        {selectedMockupSubmoduleId && (
+                          <div className="flex items-center">
+                            {!isCurrentLessonCompleted ? (
+                              !canCompleteLesson ? (
+                                <div className="flex items-center gap-1 text-[11px] font-semibold text-[var(--text-muted)] bg-[var(--surface)] px-2 py-1 rounded-full" style={{ background: isPhoneDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                                  <Clock size={14} />
+                                  <span>{lessonCompletionTimer}s</span>
+                                </div>
+                              ) : (
+                                <button 
+                                  onClick={handleSimulateCompletion}
+                                  className="flex items-center gap-1 text-[12px] font-bold px-2 py-1 rounded-full transition-all"
+                                  style={{ color: themeColor, backgroundColor: `${themeColor}20` }}
+                                >
+                                  <CheckCircle size={18} />
+                                  <span>{t('app.modules.complete', 'Concluir')}</span>
+                                </button>
+                              )
+                            ) : (
+                              <div className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10">
+                                <div style={{ background: '#22c55e', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                  <Check size={12} strokeWidth={4} />
+                                </div>
+                                <span>{t('app.modules.completed_status', 'Concluída')}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {selectedMockupSubmodule ? (
                         <motion.div key={`sub-${selectedMockupSubmodule.id}`} initial={{ x: '20%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-col flex-1 w-full h-full min-h-0 relative">
@@ -508,45 +531,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                             <iframe srcDoc={getResponsiveHtml(selectedMockupSubmodule.content_html || '<p style="text-align:center; font-family:sans-serif; opacity:0.5; padding:20px;">Nenhum conteúdo definido.</p>')} title="Conteúdo da Aula" className="absolute inset-0 w-full h-full border-none block" sandbox="allow-scripts allow-same-origin" style={{ background: selectedMockupSubmodule.content_html ? '#ffffff' : 'transparent' }} />
                           </div>
                           
-                          {/* Anti-Cheat Lesson Completion Button */}
-                          <div style={{ 
-                            padding: '16px 20px', 
-                            background: isPhoneDark ? '#1f2937' : '#ffffff', 
-                            borderTop: isPhoneDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)',
-                            zIndex: 10,
-                            flexShrink: 0
-                          }}>
-                            <motion.button
-                              disabled={!canCompleteLesson && !isCurrentLessonCompleted}
-                              onClick={handleSimulateCompletion}
-                              whileTap={canCompleteLesson && !isCurrentLessonCompleted ? { scale: 0.98 } : {}}
-                              style={{
-                                width: '100%',
-                                padding: '14px',
-                                borderRadius: '14px',
-                                border: isCurrentLessonCompleted ? `2px solid ${themeColor}` : 'none',
-                                fontWeight: 700,
-                                fontSize: '14px',
-                                transition: 'all 0.3s ease',
-                                cursor: isCurrentLessonCompleted ? 'default' : (canCompleteLesson ? 'pointer' : 'not-allowed'),
-                                background: isCurrentLessonCompleted ? 'transparent' : (canCompleteLesson ? themeColor : (isPhoneDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')),
-                                color: isCurrentLessonCompleted ? themeColor : (canCompleteLesson ? '#ffffff' : (isPhoneDark ? '#9CA3AF' : '#6B7280')),
-                                boxShadow: canCompleteLesson && !isCurrentLessonCompleted ? `0 8px 20px ${themeColor}33` : 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px'
-                              }}
-                            >
-                              {(canCompleteLesson || isCurrentLessonCompleted) && <Check size={18} />}
-                              {isCurrentLessonCompleted 
-                                ? t('app.modules.lessonCompleted', 'Aula Concluída') 
-                                : canCompleteLesson 
-                                  ? t('app.modules.completeLesson', 'Marcar Aula como Concluída') 
-                                  : `${t('app.modules.waitToComplete', 'Aguarde')} ${lessonCompletionTimer}s ${t('app.modules.toComplete', 'para concluir...')}`
-                              }
-                            </motion.button>
-                          </div>
                         </motion.div>
                       ) : (
                         <>

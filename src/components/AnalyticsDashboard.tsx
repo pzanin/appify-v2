@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, TrendingDown, Users, Clock, Target, 
-  ChevronRight, BarChart, Info, Trophy, User as UserIcon
+  ChevronRight, BarChart, Info, Trophy, User as UserIcon,
+  Flame, PartyPopper, Monitor, Smartphone, Activity
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 
 export function AnalyticsDashboard() {
   const modules = useAppStore(state => state.modules);
+  const analytics = useAppStore(state => state.analytics);
+  const pwaConfig = useAppStore(state => state.pwaConfig);
 
   // Seeding functions for consistent mock data
   const getModuleViews = (id: number) => Math.floor(50 + ((id * 733) % 451));
@@ -194,6 +197,182 @@ export function AnalyticsDashboard() {
             </div>
           </div>
 
+        </div>
+      </div>
+
+      {/* COMPORTAMENTO & CONVERSÃO */}
+      <div style={{ marginTop: '48px' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '2px' }}>
+            Comportamento & Conversão
+          </h3>
+        </div>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: '24px' 
+        }}>
+          {/* CARD 1: Funil de Upsell */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <Target size={18} style={{ color: 'var(--accent)' }} />
+              <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Funil de Upsell</h4>
+            </div>
+            
+            <div style={{ textAlign: 'center', padding: '10px 0' }}>
+              <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 16px' }}>
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="var(--surface2)" strokeWidth="12" />
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="var(--accent)" strokeWidth="12" 
+                    strokeDasharray={`${(analytics.upsellClicks.clicks / analytics.upsellClicks.total) * 339.29} 339.29`} 
+                    strokeLinecap="round" transform="rotate(-90 60 60)" />
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Syne' }}>
+                    {Math.round((analytics.upsellClicks.clicks / analytics.upsellClicks.total) * 100)}%
+                  </div>
+                  <div style={{ fontSize: '9px', color: 'var(--muted)', fontWeight: 700 }}>INTERESSE</div>
+                </div>
+              </div>
+              <h5 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>Taxa de Interesse em Ofertas</h5>
+              <p style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                <strong style={{ color: 'var(--text)' }}>{analytics.upsellClicks.clicks}</strong> cliques de <strong>{analytics.upsellClicks.total}</strong> visualizações em módulos trancados.
+              </p>
+            </div>
+          </div>
+
+          {/* CARD 2: Mapa de Drop-off */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <TrendingDown size={18} style={{ color: 'var(--accent2)' }} />
+              <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Mapa de Drop-off</h4>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {analytics.dropOffByModule.map((item, idx) => {
+                const isMax = item.rate === Math.max(...analytics.dropOffByModule.map(m => m.rate));
+                return (
+                  <div key={idx}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 600 }}>{item.name}</span>
+                      <span style={{ color: isMax ? 'var(--accent2)' : 'var(--muted)', fontWeight: 700 }}>{item.rate}% evasão</span>
+                    </div>
+                    <div style={{ height: '10px', background: 'var(--surface2)', borderRadius: '5px', overflow: 'hidden' }}>
+                      <div style={{ 
+                        width: `${item.rate}%`, 
+                        height: '100%', 
+                        background: isMax ? 'var(--accent2)' : 'var(--accent)',
+                        opacity: isMax ? 1 : 0.6,
+                        transition: 'width 1s ease'
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(255, 107, 107, 0.05)', border: '1px dashed rgba(255, 107, 107, 0.2)', borderRadius: '8px' }}>
+              <p style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                O <span style={{ color: 'var(--accent2)', fontWeight: 700 }}>Módulo 3</span> apresenta a maior taxa de abandono. Verifique se o conteúdo está muito denso ou se há problemas técnicos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RETENÇÃO & ADOÇÃO */}
+      <div style={{ marginTop: '48px' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '2px' }}>
+            Retenção & Adoção
+          </h3>
+        </div>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: '24px' 
+        }}>
+          {/* CARD 3: Termômetro de Gamificação */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px' }}>
+              <Trophy size={18} style={{ color: '#ffd166' }} />
+              <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Termômetro de Gamificação</h4>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--surface2)', borderRadius: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Média de Ofensiva</div>
+                  <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Syne', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {analytics.gamificationStats.activeStreaks}
+                    <Flame size={20} style={{ color: '#ff6b6b' }} fill="#ff6b6b" />
+                  </div>
+                </div>
+                <div style={{ color: 'var(--muted)', opacity: 0.5 }}><Activity size={24} /></div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--surface2)', borderRadius: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Total de Celebrações</div>
+                  <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Syne', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {analytics.gamificationStats.celebrationTriggers}
+                    <PartyPopper size={20} style={{ color: pwaConfig.themeColor || 'var(--accent)' }} />
+                  </div>
+                </div>
+                <div style={{ color: 'var(--muted)', opacity: 0.5 }}><Trophy size={24} /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 4: Adoção do App */}
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+              <Smartphone size={18} style={{ color: pwaConfig.themeColor || 'var(--accent)' }} />
+              <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Adoção do App</h4>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '32px', height: '160px' }}>
+              <div style={{ position: 'relative', width: '120px', height: '120px', flexShrink: 0 }}>
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--surface2)" strokeWidth="14" />
+                  <circle cx="60" cy="60" r="50" fill="none" stroke={pwaConfig.themeColor || 'var(--accent)'} strokeWidth="14" 
+                    strokeDasharray={`${(analytics.pwaAdoption.installed / 100) * 314.159} 314.159`} 
+                    strokeLinecap="round" transform="rotate(-90 60 60)" />
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 800, fontFamily: 'Syne' }}>
+                    {analytics.pwaAdoption.installed}%
+                  </div>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: pwaConfig.themeColor || 'var(--accent)' }}></div>
+                  <div>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)', fontWeight: 700 }}>APP INSTALADO</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {analytics.pwaAdoption.installed}% <Smartphone size={12} />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--surface2)' }}></div>
+                  <div>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)', fontWeight: 700 }}>NAVEGADOR</div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {analytics.pwaAdoption.web}% <Monitor size={12} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '20px', fontSize: '11px', color: 'var(--muted)', textAlign: 'center', padding: '8px', background: 'var(--surface2)', borderRadius: '8px' }}>
+              A maioria dos usuários prefere a experiência instalada para acesso rápido.
+            </div>
+          </div>
         </div>
       </div>
     </div>

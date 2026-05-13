@@ -63,12 +63,12 @@ export const INITIAL_PWA_CONFIG: PwaConfig = {
 export const PIPELINE_STEPS: PipelineStep[] = [
   { id: 0, label: 'Identidade', desc: 'Nome, cores, logo', status: 'done', icon: 'Fingerprint' },
   { id: 1, label: 'Configurações', desc: 'Manifest, ícones, offline', status: 'todo', icon: 'Settings' },
-  { id: 2, label: 'Módulos & Conteúdo', desc: 'Estrutura do app', status: 'active', icon: 'LayoutGrid' },
-  { id: 3, label: 'Engajamento', desc: 'Push & Comunidade', status: 'todo', icon: 'Megaphone' },
-  { id: 4, label: 'Suporte', desc: 'Canais de contato', status: 'todo', icon: 'Headset' },
+  { id: 2, label: 'Suporte', desc: 'Canais de contato', status: 'todo', icon: 'Headset' },
+  { id: 3, label: 'Módulos & Conteúdo', desc: 'Estrutura do app', status: 'active', icon: 'LayoutGrid' },
+  { id: 4, label: 'Engajamento', desc: 'Push & Comunidade', status: 'todo', icon: 'Megaphone' },
   { id: 5, label: 'Publicação', desc: 'Deploy & domínio', status: 'todo', icon: 'Globe' },
-  { id: 6, label: 'Analytics', desc: 'Métricas & crescimento', status: 'todo', icon: 'BarChart3' },
-  { id: 7, label: 'Gamificação', desc: 'Retenção & recompensas', status: 'todo', icon: 'Trophy' },
+  { id: 6, label: 'Gamificação', desc: 'Retenção & recompensas', status: 'todo', icon: 'Trophy' },
+  { id: 7, label: 'Analytics', desc: 'Métricas & crescimento', status: 'todo', icon: 'BarChart3' },
 ];
 
 export const GOOGLE_FONTS = ['DM Sans','Roboto','Open Sans','Lato','Montserrat','Poppins','Raleway','Playfair Display','Merriweather','Oswald','Nunito','Ubuntu','Quicksand','Bitter','Crimson Text','Fira Sans','Work Sans','Mulish','Karla','Libre Baskerville'];

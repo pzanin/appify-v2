@@ -129,6 +129,13 @@ export interface AppTranslations {
   strings: Record<string, string>;
 }
 
+export interface AnalyticsData {
+  upsellClicks: { total: number; clicks: number };
+  dropOffByModule: Array<{ name: string; rate: number }>;
+  gamificationStats: { activeStreaks: number; celebrationTriggers: number };
+  pwaAdoption: { web: number; installed: number };
+}
+
 export interface AppState {
   currentView: AppView;
   activeStep: number;
@@ -141,6 +148,7 @@ export interface AppState {
   translations?: Record<SupportedLocale, AppTranslations>;
   splashActive: boolean;
   mockupOnboardingCompleted: boolean;
+  analytics: AnalyticsData;
 }
 
 export interface Project {
@@ -163,6 +171,9 @@ export interface SubModule {
   coverImageUrl?: string;
   externalLink?: string;
   gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean };
+  releaseType?: 'immediate' | 'drip' | 'locked';
+  dripDays?: number;
+  checkoutUrl?: string;
 }
 
 export interface Module {

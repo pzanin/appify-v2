@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { 
   Settings, Trash2, Layers, Plus, GripVertical, Pencil, Eye, 
   MoreHorizontal, Copy, Edit2, Move, ChevronRight, X, Check, BookOpen,
-  Image as ImageIcon
+  Image as ImageIcon, Lock
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
@@ -23,6 +23,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
   const reorderSubmodule = useAppStore(state => state.reorderSubmodule);
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
   const updateSubmoduleCover = useAppStore(state => state.updateSubmoduleCover);
+  const updateSubmoduleAccess = useAppStore(state => state.updateSubmoduleAccess);
 
   const selectedModule = modules.find(m => m.id === selectedModuleId);
   
@@ -62,6 +63,12 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
   const [tempSubCoverUrl, setTempSubCoverUrl] = useState('');
   const [tempSubExternalLink, setTempSubExternalLink] = useState('');
   const fileInputSubCoverRef = useRef<HTMLInputElement>(null);
+
+  // Sub-module access rules state
+  const [subAccessEditId, setSubAccessEditId] = useState<number | null>(null);
+  const [subReleaseType, setSubReleaseType] = useState<'immediate' | 'drip' | 'locked'>('immediate');
+  const [subDripDays, setSubDripDays] = useState(0);
+  const [subCheckoutUrl, setSubCheckoutUrl] = useState('');
 
   const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -604,6 +611,124 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                                       className="btn-ghost"
                                       style={{ padding: '5px', fontSize: '12px' }}
                                       onClick={(e) => { e.stopPropagation(); setSubCoverEditId(null); }}
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                className="dropdown-item"
+                                style={{ ...dropdownItemStyle, justifyContent: 'space-between' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSubReleaseType(sub.releaseType || 'immediate');
+                                  setSubDripDays(sub.dripDays || 0);
+                                  setSubCheckoutUrl(sub.checkoutUrl || '');
+                                  setSubAccessEditId(subAccessEditId === sub.id ? null : sub.id);
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <Lock size={12} /> Regra de Acesso
+                                </div>
+                                <ChevronRight size={12} />
+                              </button>
+
+                              {subAccessEditId === sub.id && (
+                                <div style={{
+                                  position: 'absolute',
+                                  right: '100%',
+                                  bottom: 0,
+                                  marginRight: '8px',
+                                  background: 'var(--surface)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '12px',
+                                  padding: '16px',
+                                  width: '220px',
+                                  boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '10px',
+                                  zIndex: 20
+                                }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Regra de Acesso</div>
+                                  
+                                  <div className="flex gap-1 p-1 bg-[var(--surface2)] rounded-lg">
+                                    {[
+                                      { id: 'immediate', label: 'Imediato' },
+                                      { id: 'drip', label: 'Drip' },
+                                      { id: 'locked', label: 'Upsell' }
+                                    ].map(opt => (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setSubReleaseType(opt.id as any); }}
+                                        className={`flex-1 py-2 px-1 rounded-md text-[10px] font-bold transition-all ${
+                                          subReleaseType === opt.id 
+                                            ? 'bg-[var(--accent)] text-white shadow-sm' 
+                                            : 'text-[var(--muted)] hover:bg-[var(--surface)]'
+                                        }`}
+                                      >
+                                        {opt.label}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  {subReleaseType === 'drip' && (
+                                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Dias após a compra</label>
+                                      <input 
+                                        type="number"
+                                        min="0"
+                                        className="vpb-input !mb-0 !h-9 text-xs" 
+                                        placeholder="Ex: 7" 
+                                        value={subDripDays}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => setSubDripDays(parseInt(e.target.value) || 0)}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {subReleaseType === 'locked' && (
+                                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Link / Checkout</label>
+                                      <input 
+                                        type="text"
+                                        className="vpb-input !mb-0 !h-9 text-xs" 
+                                        placeholder="https://..." 
+                                        value={subCheckoutUrl}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => setSubCheckoutUrl(e.target.value)}
+                                      />
+                                    </div>
+                                  )}
+
+                                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                    <button
+                                      className="btn-primary"
+                                      style={{ flex: 1, padding: '5px', fontSize: '12px' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateSubmoduleAccess({ 
+                                          modId: selectedModule.id, 
+                                          subId: sub.id, 
+                                          releaseType: subReleaseType, 
+                                          dripDays: subDripDays, 
+                                          checkoutUrl: subCheckoutUrl 
+                                        });
+                                        setSubAccessEditId(null);
+                                        setOpenDropdownId(null);
+                                      }}
+                                    >
+                                      Salvar Regras
+                                    </button>
+                                    <button
+                                      className="btn-ghost"
+                                      style={{ padding: '5px', fontSize: '12px' }}
+                                      onClick={(e) => { e.stopPropagation(); setSubAccessEditId(null); }}
                                     >
                                       <X size={14} />
                                     </button>

@@ -28,6 +28,7 @@ interface AppStore extends AppState {
   deleteSubmodule: (payload: { modId: number; subId: number }) => void;
   renameSubmodule: (payload: { modId: number; subId: number; name: string }) => void;
   updateSubmoduleContent: (payload: { modId: number; subId: number; content: string; builderData: BuilderBlock[] }) => void;
+  updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked'; dripDays?: number; checkoutUrl?: string }) => void;
   reorderSubmodule: (payload: { modId: number; dragId: number; overId: number }) => void;
   duplicateSubmodule: (payload: { modId: number; subId: number }) => void;
   moveSubmodule: (payload: { fromModId: number; subId: number; toModId: number }) => void;
@@ -49,7 +50,17 @@ const initialState: AppState = {
   editingSubmodule: null,
   activeLocale: 'pt-BR',
   splashActive: false,
-  mockupOnboardingCompleted: false
+  mockupOnboardingCompleted: false,
+  analytics: {
+    upsellClicks: { total: 1240, clicks: 450 },
+    dropOffByModule: [
+      { name: 'Módulo 1', rate: 5 },
+      { name: 'Módulo 2', rate: 12 },
+      { name: 'Módulo 3', rate: 45 }
+    ],
+    gamificationStats: { activeStreaks: 85, celebrationTriggers: 320 },
+    pwaAdoption: { web: 40, installed: 60 }
+  }
 };
 
 export const useAppStore = create<AppStore>()(
@@ -149,7 +160,8 @@ export const useAppStore = create<AppStore>()(
             gamificationConfig: {
               timeGateSeconds: 0,
               enableCelebration: state.pwaConfig.gamification.enableCelebration
-            }
+            },
+            releaseType: 'immediate'
           }] } 
         : mod)
     })),
@@ -169,6 +181,16 @@ export const useAppStore = create<AppStore>()(
       modules: state.modules.map(mod => mod.id === payload.modId 
         ? { ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? { ...sub, content_html: payload.content, builder_data: payload.builderData, gamificationConfig: payload.gamificationConfig } : sub) } 
         : mod)
+    })),
+    
+    updateSubmoduleAccess: (payload) => set((state) => ({
+      modules: state.modules.map(m => m.id === payload.modId
+        ? { ...m, subs: m.subs.map(s => s.id === payload.subId 
+            ? { ...s, releaseType: payload.releaseType, dripDays: payload.dripDays, checkoutUrl: payload.checkoutUrl }
+            : s
+          )}
+        : m
+      )
     })),
 
     reorderSubmodule: (payload) => set((state) => {
@@ -247,6 +269,8 @@ useAppStore.subscribe(
         activeLocale: state.activeLocale,
         translations: state.translations,
         splashActive: state.splashActive,
+        mockupOnboardingCompleted: state.mockupOnboardingCompleted,
+        analytics: state.analytics,
       };
       await projectService.saveAppState(appState, state.currentProjectId!);
     }, 1500);

@@ -59,7 +59,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
             <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}><Menu size={16} /></button>
             <div className="breadcrumb">
               <span>Meu Projeto</span><span className="sep">/</span><span>{PIPELINE_STEPS.find(s => s.id === activeStep)?.label}</span>
-              {activeStep === 2 && selectedModuleId && <><span className="sep">/</span><span className="crumb-active">{modules.find(m => m.id === selectedModuleId)?.name}</span></>}
+              {activeStep === 3 && selectedModuleId && <><span className="sep">/</span><span className="crumb-active">{modules.find(m => m.id === selectedModuleId)?.name}</span></>}
             </div>
             
             <div 
@@ -89,7 +89,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
               
               {activeStep === 0 && <IdentityConfigurator />}
 
-              {activeStep === 2 && (
+              {activeStep === 3 && (
                 <>
                   <div className="section-header" style={{ marginBottom: '24px' }}><div><h2 className="section-title">Módulos & Conteúdo</h2></div></div>
                   <div>
@@ -150,11 +150,11 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
               )}
 
               {activeStep === 1 && <AppConfigurator />}
-              {activeStep === 3 && <EngagementHub showToast={showToast} />}
-              {activeStep === 4 && <SupportConfig />}
+              {activeStep === 2 && <SupportConfig />}
+              {activeStep === 4 && <EngagementHub showToast={showToast} />}
               {activeStep === 5 && <PublicationHub showToast={showToast} />}
-              {activeStep === 6 && <AnalyticsDashboard />}
-              {activeStep === 7 && <GamificationConfig />}
+              {activeStep === 6 && <GamificationConfig />}
+              {activeStep === 7 && <AnalyticsDashboard />}
 
               {activeStep > 7 && (
 
