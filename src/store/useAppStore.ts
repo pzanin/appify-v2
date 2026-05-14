@@ -265,7 +265,7 @@ export const useAppStore = create<AppStore>()(
     setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
     resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
   }), {
-    name: 'appify-storage',
+    name: 'v-storage',
     partialize: (state) => ({ 
       mockupOnboardingCompleted: state.mockupOnboardingCompleted 
     }),

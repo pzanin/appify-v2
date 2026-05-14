@@ -183,7 +183,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
       const inner = sanitizeHtml(getBlockInnerHtml(mod)).replace(/href="#"/g, ''); 
       return `<section style="${wrapStyle}">${inner}</section>`;
     }).join('\n');
-    return `<div class="appify-generated-content custom-html-container">\n${bodyHTML}\n</div>`;
+    return `<div class="v-generated-content custom-html-container">\n${bodyHTML}\n</div>`;
   };
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);

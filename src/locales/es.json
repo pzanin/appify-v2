@@ -9,7 +9,7 @@
     "upsell": { "lockedTitle": "Contenido Bloqueado", "lockedMessagePart1": "Para acceder al módulo", "lockedMessagePart2": "necesitas adquirir esta mejora.", "checkoutButton": "Ir al Checkout", "cancelButton": "Cancelar" },
     "header": { "theme": "Cambiar Tema", "notifications": "Notificaciones", "install": "Instalar" },
     "support": { "title": "¿Cómo podemos ayudarte?", "description": "Nuestro equipo está listo para resolver tus dudas e qualquer problema.", "copyEmail": "Copiar Correo", "openWa": "Abrir WhatsApp", "copied": "¡Copiado!", "emailLabel": "CORREO DE CONTACTO" },
-    "gamification": { "streak": "Racha", "days": "días", "completed": "Completado", "keepGoing": "¡Sigue así!" }
+    "gamification": { "streak": "Racha", "days": "días", "completed": "Completado", "keepGoing": "¡Sigue así!", "points": "Puntos", "achievements": "Logros", "badges": "Medallas", "myCollection": "Mi Colección" }
   },
   "onboarding": {
     "install": { "title": "Instalar App", "subtitle": "Añade nuestra app a tu pantalla de inicio.", "confirm": "Instalar Ahora", "skip": "Ahora No", "iosStep1": "1. Toca el icono de Compartir", "iosStep2": "2. Selecciona \"Añadir a la pantalla de inicio\"" },

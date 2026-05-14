@@ -9,7 +9,7 @@
     "upsell": { "lockedTitle": "Contenu Verrouillé", "lockedMessagePart1": "Pour accéder au module", "lockedMessagePart2": "vous devez acheter cette mise à niveau.", "checkoutButton": "Aller au Paiement", "cancelButton": "Annuler" },
     "header": { "theme": "Changer le Thème", "notifications": "Notifications", "install": "Installer" },
     "support": { "title": "Comment pouvons-nous aider?", "description": "Notre équipe est prête à répondre à vos questions et à résoudre tout problème.", "copyEmail": "Copier l'e-mail", "openWa": "Ouvrir WhatsApp", "copied": "Copié!", "emailLabel": "E-MAIL DE CONTACT" },
-    "gamification": { "streak": "Série", "days": "jours", "completed": "Terminé", "keepGoing": "Continuez!" }
+    "gamification": { "streak": "Série", "days": "jours", "completed": "Terminé", "keepGoing": "Continuez!", "points": "Points", "achievements": "Réalisations", "badges": "Badges", "myCollection": "Ma Collection" }
   },
   "onboarding": {
     "install": { "title": "Installer l'App", "subtitle": "Ajoutez notre app à votre écran d'accueil.", "confirm": "Installer", "skip": "Plus Tard", "iosStep1": "1. Appuyez sur l'icône Partager", "iosStep2": "2. Sélectionnez \"Sur l'écran d'accueil\"" },

@@ -4,6 +4,7 @@ import { Project, ToastType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { AppifyLogo } from './AppLogo';
 
 // --- Header ---
 interface HeaderProps {
@@ -21,13 +22,8 @@ export function Header({ handleOpenProject, handleExportZip, handlePublish, show
 
   return (
     <header className="header">
-      <div 
-        className="logo" 
-        onClick={() => setView('projects')}
-        onKeyDown={(e) => { if (e.key === 'Enter') setView('projects'); }}
-        role="button"
-        tabIndex={0}
-      >App<span>ify</span></div>
+      <AppifyLogo className="h-7 w-auto text-[var(--text-primary)]" />
+
       <div className="header-actions">
         {currentView === 'builder' ? (
           <>

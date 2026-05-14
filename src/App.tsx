@@ -28,6 +28,7 @@ import { useToast, useProjects, useBuilderActions } from './hooks';
 import { Header } from './components/CommonComponents';
 import { ProjectsDashboard } from './components/ProjectsDashboard';
 import { BuilderLayout } from './components/BuilderLayout';
+import { AppifyLogo } from './components/AppLogo';
 
 function AppContent() {
   const currentView = useAppStore(state => state.currentView);
@@ -49,7 +50,7 @@ function AppContent() {
         background: 'var(--surface)',
         gap: '20px'
       }}>
-        <div className="logo" style={{ fontSize: '32px' }}>App<span>ify</span></div>
+        <AppifyLogo className="text-5xl mb-4 animate-pulse" />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--muted)' }}>
           <Loader2 className="spin" size={24} />
           <span style={{ fontFamily: 'Syne', fontWeight: 500 }}>Conectando ao Supabase...</span>
@@ -108,7 +109,7 @@ function AppContent() {
 
 export default function App() { 
   return (
-    <div className="appify-root">
+    <div className="v-root">
       <ErrorBoundary>
         <AppContent />
       </ErrorBoundary>

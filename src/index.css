@@ -18,8 +18,8 @@
   --step-todo: #2a2a38;
 }
 
-.appify-root { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-.appify-root h1, .appify-root h2, .appify-root h3, .appify-root h4 { font-family: 'Syne', sans-serif; }
+.v-root { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+.v-root h1, .v-root h2, .v-root h3, .v-root h4 { font-family: 'Syne', sans-serif; }
 
 /* Utilitários Botões & Layout Global */
 .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }

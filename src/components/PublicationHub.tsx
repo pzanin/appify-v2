@@ -248,7 +248,7 @@ self.addEventListener('fetch', e => e.respondWith(
 
   const generateSqlSchema = () => {
     const sql = `-- =============================================
--- Schema gerado pelo Appify
+-- Schema gerado pela Plataforma
 -- App: ${pwaConfig.appName} | v${pwaConfig.version}
 -- Gerado em: ${new Date().toISOString()}
 -- =============================================

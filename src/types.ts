@@ -4,6 +4,15 @@ export type StepStatus = 'done' | 'active' | 'todo';
 export type AppView = 'projects' | 'builder';
 export type ToastType = 'success' | 'error' | 'loading';
 
+export interface Award {
+  id: string;
+  title: string;
+  icon: string;
+  points: number;
+  criteria: 'lesson_count' | 'module_complete' | 'streak_days' | 'first_login';
+  criteriaValue: number;
+}
+
 export interface PwaConfig {
   appName: string;
   tagline: string;
@@ -25,6 +34,7 @@ export interface PwaConfig {
   language: string;
   description: string;
   noIndex: boolean;
+  showAdvanced?: boolean;
   offlineMode: boolean;
   customSplash: boolean;
   startUrl: string;
@@ -42,6 +52,9 @@ export interface PwaConfig {
     enableStreaks: boolean;
     streakIcon: string;
     enableCelebration: boolean;
+    enablePoints: boolean;
+    enableBadges: boolean;
+    awardsConfig: Award[];
   };
 }
 
@@ -187,9 +200,10 @@ export interface Module {
   subs: SubModule[];
   coverImageUrl?: string;
   externalLink?: string;
-  releaseType?: 'immediate' | 'drip' | 'locked';
+  releaseType?: 'immediate' | 'drip' | 'locked' | 'upsell' | 'points';
   dripDays?: number;
-  checkoutUrl?: string;
+  checkoutUrl?: number | string;
+  requiredPoints?: number;
   gamificationConfig?: { enabled: boolean; progressStyle: 'bar' | 'ring' | 'none' };
 }
 

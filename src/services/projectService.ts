@@ -53,7 +53,7 @@ export const projectService = {
       status: 'Rascunho',
       last_edited: new Date().toISOString(), // Corrigido para o DB
       color: '#7c6fff',
-      url: `${newProjectName.toLowerCase().replace(/\s+/g, '')}.appify.com`
+      url: `${newProjectName.toLowerCase().replace(/\s+/g, '')}.vapp.pro`
     };
 
     try {

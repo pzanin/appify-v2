@@ -9,7 +9,7 @@
     "upsell": { "lockedTitle": "Locked Content", "lockedMessagePart1": "To access the module", "lockedMessagePart2": "you need to purchase this upgrade.", "checkoutButton": "Go to Checkout", "cancelButton": "Cancel" },
     "header": { "theme": "Change Theme", "notifications": "Notifications", "install": "Install" },
     "support": { "title": "How can we help?", "description": "Our team is ready to answer your questions and solve any problems.", "copyEmail": "Copy Email", "openWa": "Open WhatsApp", "copied": "Copied!", "emailLabel": "CONTACT EMAIL" },
-    "gamification": { "streak": "Streak", "days": "days", "completed": "Completed", "keepGoing": "Keep it up!" }
+    "gamification": { "streak": "Streak", "days": "days", "completed": "Completed", "keepGoing": "Keep it up!", "points": "Points", "achievements": "Achievements", "badges": "Badges", "myCollection": "My Collection" }
   },
   "onboarding": {
     "install": { "title": "Install App", "subtitle": "Add our app to your home screen.", "confirm": "Install Now", "skip": "Not Now", "iosStep1": "1. Tap the Share icon", "iosStep2": "2. Select \"Add to Home Screen\"" },

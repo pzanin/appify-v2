@@ -16,9 +16,9 @@ export const ICON_MAP: Record<string, React.FC<LucideProps>> = {
 };
 
 export const MOCK_PROJECTS: Project[] = [
-  { id: 1, name: 'Kenshô App', status: 'Publicado', lastEdited: 'Hoje, 14:30', users: 1240, color: '#6b8af0', url: 'kensho.appify.com' },
-  { id: 2, name: 'VendasPro', status: 'Rascunho', lastEdited: 'Ontem, 09:15', users: 0, color: '#2dc4b6', url: 'vendaspro.appify.com' },
-  { id: 3, name: 'Comunidade Fit', status: 'Publicado', lastEdited: '12 Nov, 2023', users: 85, color: '#ff6b6b', url: 'fit.appify.com' }
+  { id: 1, name: 'Kenshô App', status: 'Publicado', lastEdited: 'Hoje, 14:30', users: 1240, color: '#6b8af0', url: 'kensho.vapp.pro' },
+  { id: 2, name: 'VendasPro', status: 'Rascunho', lastEdited: 'Ontem, 09:15', users: 0, color: '#2dc4b6', url: 'vendaspro.vapp.pro' },
+  { id: 3, name: 'Comunidade Fit', status: 'Publicado', lastEdited: '12 Nov, 2023', users: 85, color: '#ff6b6b', url: 'fit.vapp.pro' }
 ];
 
 export const INITIAL_MODULES: Module[] = [];
@@ -43,7 +43,8 @@ export const INITIAL_PWA_CONFIG: PwaConfig = {
   domain: '',
   language: 'pt-BR',
   description: '',
-  noIndex: false,
+  noIndex: true,
+  showAdvanced: false,
   offlineMode: true,
   customSplash: true,
   startUrl: '/',
@@ -57,7 +58,7 @@ export const INITIAL_PWA_CONFIG: PwaConfig = {
     { id: 1, imageUrl: '', link: '' }
   ],
   supportConfig: { type: 'none', contact: '' },
-  gamification: { enabled: false, progressStyle: 'none', enableStreaks: false, streakIcon: '🔥', enableCelebration: false }
+  gamification: { enabled: false, progressStyle: 'none', enableStreaks: false, streakIcon: '🔥', enableCelebration: false, enablePoints: false, enableBadges: false, awardsConfig: [] }
 };
 
 export const PIPELINE_STEPS: PipelineStep[] = [

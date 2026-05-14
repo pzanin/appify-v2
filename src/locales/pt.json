@@ -9,7 +9,7 @@
     "upsell": { "lockedTitle": "Conteúdo Bloqueado", "lockedMessagePart1": "Para acessar o módulo", "lockedMessagePart2": "é necessário adquirir este upgrade.", "checkoutButton": "Ir para o Checkout", "cancelButton": "Cancelar" },
     "header": { "theme": "Mudar Tema", "notifications": "Notificações", "install": "Instalar" },
     "support": { "title": "Como podemos ajudar?", "description": "Nossa equipe está pronta para tirar suas dúvidas e resolver qualquer problema.", "copyEmail": "Copiar E-mail", "openWa": "Falar no WhatsApp", "copied": "Copiado!", "emailLabel": "E-MAIL DE CONTATO" },
-    "gamification": { "streak": "Ofensiva", "days": "dias", "completed": "Concluído", "keepGoing": "Continue assim!" }
+    "gamification": { "streak": "Ofensiva", "days": "dias", "completed": "Concluído", "keepGoing": "Continue assim!", "points": "Pontos", "achievements": "Conquistas", "badges": "Medalhas", "myCollection": "Minha Coleção" }
   },
   "onboarding": {
     "install": { "title": "Instalar App", "subtitle": "Adicione nosso app à sua tela inicial.", "confirm": "Instalar Agora", "skip": "Agora Não", "iosStep1": "1. Toque no ícone de Compartilhar", "iosStep2": "2. Selecione \"Adicionar à Tela de Início\"" },

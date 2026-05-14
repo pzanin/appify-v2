@@ -46,15 +46,17 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
   const fileInputCoverRef = useRef<HTMLInputElement>(null);
 
   // Release Rules state
-  const [releaseType, setReleaseType] = useState<'immediate' | 'drip' | 'locked'>('immediate');
+  const [releaseType, setReleaseType] = useState<'immediate' | 'drip' | 'locked' | 'upsell' | 'points'>('immediate');
   const [dripDays, setDripDays] = useState(0);
   const [checkoutUrl, setCheckoutUrl] = useState('');
+  const [requiredPoints, setRequiredPoints] = useState(0);
 
   React.useEffect(() => {
     if (showConfig && selectedModule) {
-      setReleaseType(selectedModule.releaseType || 'immediate');
+      setReleaseType(selectedModule.releaseType as any || 'immediate');
       setDripDays(selectedModule.dripDays || 0);
-      setCheckoutUrl(selectedModule.checkoutUrl || '');
+      setCheckoutUrl(selectedModule.checkoutUrl as string || '');
+      setRequiredPoints(selectedModule.requiredPoints || 0);
     }
   }, [showConfig, selectedModule]);
 
@@ -327,7 +329,8 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                     {[
                       { id: 'immediate', label: 'Imediato' },
                       { id: 'drip', label: 'Drip' },
-                      { id: 'locked', label: 'Upsell' }
+                      { id: 'upsell', label: 'Upsell' },
+                      { id: 'points', label: 'Por Pontos' }
                     ].map(opt => (
                       <button
                         key={opt.id}
@@ -358,7 +361,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                     </div>
                   )}
 
-                  {releaseType === 'locked' && (
+                  {releaseType === 'locked' || releaseType === 'upsell' ? (
                     <div className="mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
                       <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Link de Vendas / Checkout</label>
                       <input 
@@ -369,13 +372,27 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                         onChange={(e) => setCheckoutUrl(e.target.value)}
                       />
                     </div>
+                  ) : null}
+
+                  {releaseType === 'points' && (
+                    <div className="mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Pontos Necessários para Desbloquear</label>
+                      <input 
+                        type="number"
+                        min="0"
+                        className="vpb-input !mb-0 !h-9 text-xs" 
+                        placeholder="Ex: 500" 
+                        value={requiredPoints}
+                        onChange={(e) => setRequiredPoints(parseInt(e.target.value) || 0)}
+                      />
+                    </div>
                   )}
 
                   <button 
                     className="btn-primary w-full py-2.5 text-xs font-bold"
                     onClick={() => {
                       if (selectedModule) {
-                        updateModule(selectedModule.id, { releaseType, dripDays, checkoutUrl });
+                        updateModule(selectedModule.id, { releaseType, dripDays, checkoutUrl, requiredPoints });
                       }
                       setShowConfig(false);
                     }}

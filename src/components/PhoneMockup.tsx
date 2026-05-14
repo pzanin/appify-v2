@@ -28,6 +28,9 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
   const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);
+  const awards = pwaConfig.gamification?.awardsConfig || [];
+  const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
+  const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
 
   const [lockedModuleClick, setLockedModuleClick] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -413,6 +416,50 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     }}
                   />
                 </div>
+
+                {pwaConfig.gamification?.enablePoints && (
+                  <div style={{ width: '100%', marginBottom: '32px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '16px', marginBottom: '16px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPhoneDark ? '#ffffff' : '#111111', fontWeight: 600, fontSize: '14px' }}>
+                        <Trophy size={18} color={themeColor} /> {t('app.gamification.points', 'Meus Pontos')}
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: themeColor }}>{mockTotalPoints}</div>
+                    </div>
+
+                    {awards.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '12px' }}>{t('app.gamification.achievements', 'Minhas Conquistas')}</div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {awards.map((award) => {
+                            const isEarned = mockEarnedBadges.includes(award.id);
+                            return (
+                              <div key={award.id} style={{ 
+                                aspectRatio: '1/1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px', 
+                                borderRadius: '12px', textAlign: 'center', transition: 'all 0.2s',
+                                background: isEarned ? `${themeColor}15` : (isPhoneDark ? 'rgba(255,255,255,0.02)' : '#f9fafb'),
+                                border: isEarned ? `1px solid ${themeColor}30` : (isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb'),
+                                filter: isEarned ? 'none' : 'grayscale(100%)',
+                                opacity: isEarned ? 1 : 0.5,
+                                position: 'relative'
+                              }}>
+                                {!isEarned && (
+                                  <div style={{ position: 'absolute', top: '6px', right: '6px', color: isPhoneDark ? '#9CA3AF' : '#6B7280' }}>
+                                    <Lock size={10} />
+                                  </div>
+                                )}
+                                <div style={{ fontSize: '24px', marginBottom: '4px' }}>{award.icon}</div>
+                                <div style={{ fontSize: '10px', fontWeight: 700, lineHeight: 1.1, color: isEarned ? (isPhoneDark ? '#ffffff' : '#111111') : (isPhoneDark ? '#9CA3AF' : '#6B7280') }}>
+                                  {award.title}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button onClick={() => setActiveTab('inicio')} style={{ width: '100%', padding: '16px', background: themeColor, color: '#ffffff', borderRadius: '14px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: `0 8px 20px ${themeColor}33`, flexShrink: 0 }}>{t('app.profile.saveButton', 'Salvar Alterações')}</button>
               </motion.div>
             ) : activeTab === 'suporte' ? (
@@ -433,7 +480,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 ) : (
                   <div style={{ width: '100%', background: isPhoneDark ? '#1F2937' : '#F9FAFB', padding: '20px', borderRadius: '24px', border: `1px solid ${isPhoneDark ? '#374151' : '#E5E7EB'}`, flexShrink: 0 }}>
                     <p style={{ fontSize: '11px', fontWeight: 800, color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '8px', letterSpacing: '0.5px' }}>{t('app.support.emailLabel')}</p>
-                    <p style={{ fontSize: '16px', fontWeight: 600, color: isPhoneDark ? 'white' : '#111', marginBottom: '16px', wordBreak: 'break-all', lineHeight: '1.4' }}>{pwaConfig.supportConfig?.contact || 'suporte@appify.com'}</p>
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: isPhoneDark ? 'white' : '#111', marginBottom: '16px', wordBreak: 'break-all', lineHeight: '1.4' }}>{pwaConfig.supportConfig?.contact || 'suporte@sua-plataforma.com'}</p>
                     <button 
                       onClick={() => {
                         navigator.clipboard.writeText(pwaConfig.supportConfig?.contact || '');
@@ -671,7 +718,8 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                       ) : (
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                           {modules.map((mod, idx) => {
-                            const isLocked = mod.releaseType === 'locked';
+                            const isLocked = mod.releaseType === 'locked' || mod.releaseType === 'upsell';
+                            const isByPoints = mod.releaseType === 'points';
                             const progress = getModuleProgress(idx);
                             
                             return (
@@ -680,7 +728,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                 className="phone-module-wrapper"
                                 onClick={() => {
                                   if (mod.status === 'Rascunho') return;
-                                  if (isLocked) {
+                                  if (isLocked || isByPoints) {
                                     setLockedModuleClick(mod);
                                   } else {
                                     setSelectedMockupModuleId(mod.id);
@@ -698,7 +746,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                 }}>
                                   <div style={{ position: 'absolute', inset: 0, background: mod.coverImageUrl ? `url(${mod.coverImageUrl}) center/cover no-repeat` : 'var(--p-card-empty)', borderRadius: '16px', overflow: 'hidden' }}>
                                     {!mod.coverImageUrl && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--p-card-icon)', opacity: mod.status === 'Rascunho' ? 0.4 : 1 }}><RenderDynamicIcon name={mod.iconName} size={48} /></div>}
-                                    {isLocked && (
+                                    {(isLocked || isByPoints) && (
                                       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
                                           <Lock size={20} color="#111111" />
@@ -734,7 +782,12 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                   )}
 
                                   {mod.status === 'Rascunho' && (<div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1, borderRadius: '16px' }} />)}
-                                  {!isLocked && (
+                                  {isByPoints && (
+                                    <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 800, zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                      <Lock size={12} /> {mod.requiredPoints || 0} pts
+                                    </div>
+                                  )}
+                                  {!isLocked && !isByPoints && (
                                     <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, zIndex: 2 }}>
                                       {mod.subs?.length || 0} {t('app.modules.lessonPlural', 'Aulas')}
                                     </div>

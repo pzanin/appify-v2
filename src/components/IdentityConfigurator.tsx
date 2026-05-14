@@ -551,48 +551,68 @@ export function IdentityConfigurator() {
 
       {/* SEÇÃO 6: AVANÇADO */}
       <div className="eng-card">
-        <div className="eng-card-header">
+        <div className="eng-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--muted)' }}>
-            AVANÇADO
+            AVANÇADO & SEO
           </div>
-        </div>
-        <div className="eng-card-body" style={{ padding: '24px' }}>
-          <div style={{ marginBottom: '24px' }}>
-            <label className="vpb-label">DESCRIÇÃO DO APP</label>
-            <textarea 
-              className="vpb-textarea" 
-              placeholder="Descreva o que seu app oferece..." 
-              style={{ minHeight: '100px' }}
-              value={pwaConfig.description}
-              onChange={(e) => updateConfig({ description: e.target.value })}
+          <label className="toggle-switch scale-75">
+            <input 
+              type="checkbox" 
+              checked={pwaConfig.showAdvanced}
+              onChange={() => updateConfig({ showAdvanced: !pwaConfig.showAdvanced })}
             />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px', background: 'var(--surface2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>Ocultar dos Motores de Busca</div>
-              <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Impede que seu app seja indexado pelo Google.</div>
-            </div>
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={pwaConfig.noIndex}
-                onChange={() => updateConfig({ noIndex: !pwaConfig.noIndex })}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-          </div>
-          
-          {pwaConfig.noIndex ? (
-            <p style={{ fontSize: 11, color: '#f59e0b', marginTop: 4 }}>
-              ⚠️ Ative apenas após o lançamento, se quiser acesso restrito.
-            </p>
-          ) : (
-            <p style={{ fontSize: 11, color: 'var(--accent3)', marginTop: 4 }}>
-              ✓ Seu app pode ser encontrado pelo Google.
-            </p>
-          )}
+            <span className="toggle-slider"></span>
+          </label>
         </div>
+        <AnimatePresence>
+          {pwaConfig.showAdvanced && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div className="eng-card-body" style={{ padding: '24px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <label className="vpb-label">DESCRIÇÃO DO APP</label>
+                  <textarea 
+                    className="vpb-textarea" 
+                    placeholder="Descreva o que seu app oferece..." 
+                    style={{ minHeight: '100px' }}
+                    value={pwaConfig.description}
+                    onChange={(e) => updateConfig({ description: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px', background: 'var(--surface2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px' }}>Ocultar dos Motores de Busca</div>
+                    <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Impede que seu app seja indexado pelo Google.</div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      checked={pwaConfig.noIndex}
+                      onChange={() => updateConfig({ noIndex: !pwaConfig.noIndex })}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                
+                {pwaConfig.noIndex ? (
+                  <p style={{ fontSize: 11, color: '#f59e0b', marginTop: 4 }}>
+                    ⚠️ Ative apenas após o lançamento, se quiser acesso restrito.
+                  </p>
+                ) : (
+                  <p style={{ fontSize: 11, color: 'var(--accent3)', marginTop: 4 }}>
+                    ✓ Seu app pode ser encontrado pelo Google.
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `

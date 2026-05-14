@@ -109,7 +109,7 @@ export function AppConfigurator() {
                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '15px', fontWeight: 800, marginBottom: '2px' }}>Splash Screen Personalizada</div>
                     <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '0' }}>
-                      Utilizar a Splash Screen gerada pelo Appify em vez da padrão do navegador.
+                      Utilizar a Splash Screen gerada pela plataforma em vez da padrão do navegador.
                     </p>
                  </div>
                  <label className="toggle-switch">

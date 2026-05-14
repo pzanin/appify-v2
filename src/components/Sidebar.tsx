@@ -11,13 +11,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const selectedModuleId = useAppStore(state => state.selectedModuleId);
   const setStep = useAppStore(state => state.setStep);
   const setSelectedModule = useAppStore(state => state.setSelectedModule);
+  const setView = useAppStore(state => state.setView);
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
   const handleStepClick = (stepId: number) => { setStep(stepId); if (onClose) onClose(); };
   const handleModuleClick = (modId: number) => { setStep(3); setSelectedModule(modId); if (onClose) onClose(); };
+  const handleLogoClick = () => { setView('projects'); if (onClose) onClose(); };
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      {/* Sidebar Header limpo para reinício */}
+      <div className="sidebar-header-spacer" style={{ height: '60px' }}></div>
       <div className="sidebar-mobile-header">
         <div className="sidebar-label" style={{ margin: 0 }}>Pipeline</div>
         <button className="mobile-close-btn" onClick={onClose}><X size={16} /></button>
