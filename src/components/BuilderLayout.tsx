@@ -87,7 +87,7 @@ export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule,
           <div className="workspace-split">
             <div className="workspace-builder">
               
-              {activeStep === 0 && <IdentityConfigurator />}
+              {activeStep === 0 && <IdentityConfigurator showToast={showToast} />}
 
               {activeStep === 3 && (
                 <>

@@ -5,6 +5,8 @@ import { INITIAL_MODULES, INITIAL_PWA_CONFIG } from '../constants';
 import { projectService } from '../services/projectService';
 
 interface AppStore extends AppState {
+  projects: Project[];
+  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
   isLoading: boolean;
   currentProjectId: number | null;
   setIsLoading: (loading: boolean) => void;
@@ -78,7 +80,11 @@ export const useAppStore = create<AppStore>()(
     persist(
       (set, get) => ({
     ...initialState,
-    isLoading: true,
+    projects: [],
+    setProjects: (updater) => set((state) => ({
+      projects: typeof updater === 'function' ? updater(state.projects) : updater
+    })),
+    isLoading: false, // Changed from true to false to prevent infinite loading if not using Supabase
     currentProjectId: null,
     isNewProjectModalOpen: false,
 
@@ -92,8 +98,11 @@ export const useAppStore = create<AppStore>()(
     },
 
     initializeProjects: async () => {
-      // This is basically to just ensure we start in 'projects' view
-      set({ isLoading: false, currentView: 'projects', activeStep: 0 });
+      // Only set to projects view if we don't have a current project to persist builder state
+      set((state) => {
+        if (state.currentProjectId) return { isLoading: false };
+        return { isLoading: false, currentView: 'projects', activeStep: 0 };
+      });
     },
 
     setView: (view) => set({ currentView: view }),
@@ -265,10 +274,7 @@ export const useAppStore = create<AppStore>()(
     setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
     resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
   }), {
-    name: 'v-storage',
-    partialize: (state) => ({ 
-      mockupOnboardingCompleted: state.mockupOnboardingCompleted 
-    }),
+    name: 'appify-local-database',
   })
 ));
 

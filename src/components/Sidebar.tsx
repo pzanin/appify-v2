@@ -3,6 +3,7 @@ import { X, Check, Plus } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
+import { AppifyLogo } from './AppLogo';
 
 interface SidebarProps { isOpen?: boolean; onClose?: () => void; }
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -20,8 +21,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-      {/* Sidebar Header limpo para reinício */}
-      <div className="sidebar-header-spacer" style={{ height: '60px' }}></div>
+      <div className="px-4 pt-6">
+        <AppifyLogo className="text-4xl ml-1 mb-8" />
+      </div>
       <div className="sidebar-mobile-header">
         <div className="sidebar-label" style={{ margin: 0 }}>Pipeline</div>
         <button className="mobile-close-btn" onClick={onClose}><X size={16} /></button>

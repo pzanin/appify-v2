@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2 } from 'lucide-react';
+import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy } from 'lucide-react';
 import { Project, ToastType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
@@ -22,7 +22,7 @@ export function Header({ handleOpenProject, handleExportZip, handlePublish, show
 
   return (
     <header className="header">
-      <AppifyLogo className="h-7 w-auto text-[var(--text-primary)]" />
+      <div /> {/* Espaçador para manter as ações à direita */}
 
       <div className="header-actions">
         {currentView === 'builder' ? (
@@ -134,6 +134,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProjec
           opacity: 1;
           color: #ff4d4d;
           background: rgba(255, 77, 77, 0.1);
+          transform: scale(1.1);
+        }
+        .duplicate-project-btn {
+          opacity: 0.6;
+          transition: all 0.2s ease;
+          color: var(--text-muted);
+        }
+        .duplicate-project-btn:hover {
+          opacity: 1;
+          color: var(--accent);
+          background: var(--accent-glow);
           transform: scale(1.1);
         }
       `}</style>

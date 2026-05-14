@@ -23,11 +23,16 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
   const setIsLoading = useAppStore(state => state.setIsLoading);
   const currentView = useAppStore(state => state.currentView);
   
-  const [projects, setProjects] = useState<Project[]>([]);
+  const projects = useAppStore(state => state.projects);
+  const setProjects = useAppStore(state => state.setProjects);
 
   const fetchProjects = async () => {
+    // Check if we already have local projects, if local first we might not need to fetch
+    // But for safety let's sync if there are any from supabase
     const data = await projectService.getProjects();
-    setProjects(data);
+    if (data && data.length > 0) {
+      setProjects(data);
+    }
   };
 
   useEffect(() => {
@@ -61,8 +66,20 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
         setView('builder'); 
         showToast('Projeto criado com sucesso!', 'success');
       } catch (err: any) {
-        showToast(`Erro ao criar: ${err.message || 'Verifique o Supabase'}`, 'error');
-        return;
+        // If Supabase fails, fallback to local creation
+        const newProject = {
+          id: Date.now(),
+          name: projectName || 'Novo App',
+          status: 'Rascunho' as const,
+          lastEdited: new Date().toISOString(),
+          users: 0,
+          color: '#7c6fff',
+          url: `${(projectName || 'Novo App').toLowerCase().replace(/\s+/g, '')}.vapp.pro`
+        };
+        setProjects(prev => [...prev, newProject]);
+        await loadProject(newProject.id);
+        setView('builder');
+        showToast('Projeto criado localmente com sucesso!', 'success');
       }
     } else { 
       await loadProject(projectId);
@@ -95,7 +112,9 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
       setProjects(prev => prev.filter(p => p.id !== projectId));
       showToast('Projeto excluído com sucesso!', 'success');
     } catch (err: any) {
-      showToast(`Erro ao excluir: ${err.message}`, 'error');
+      // Local fallback
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+      showToast('Projeto excluído localmente com sucesso!', 'success');
     }
   };
 

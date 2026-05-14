@@ -7,10 +7,14 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { GOOGLE_FONTS } from '../constants';
-import { SupportedLocale } from '../types';
+import { SupportedLocale, ToastType } from '../types';
 import { useTranslation } from 'react-i18next';
 
-export function IdentityConfigurator() {
+interface IdentityConfiguratorProps {
+  showToast: (msg: string, type?: ToastType) => void;
+}
+
+export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const updatePwaConfig = useAppStore(state => state.updatePwaConfig);
   const setLocale = useAppStore(state => state.setLocale);
@@ -479,6 +483,14 @@ export function IdentityConfigurator() {
                     input.onchange = (e: any) => {
                       const file = e.target.files?.[0];
                       if (file) {
+                        // Limite estrito de 2MB
+                        const maxSize = 2 * 1024 * 1024;
+                        if (file.size > maxSize) {
+                          showToast("A imagem é muito grande. O tamanho máximo permitido é 2MB.", 'error');
+                          input.value = '';
+                          return;
+                        }
+
                         const reader = new FileReader();
                         reader.onloadend = () => {
                           updateBanner(banner.id, { imageUrl: reader.result as string });
@@ -505,7 +517,7 @@ export function IdentityConfigurator() {
                   )}
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '-8px', textAlign: 'center' }}>
-                  Tamanho recomendado: 1200x400 pixels (Proporção 3:1)
+                  Tamanho recomendado: 600x200 pixels (Proporção 3:1. Máx: 2MB)
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

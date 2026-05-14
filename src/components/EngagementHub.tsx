@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Send, Image as ImageIcon, Calendar, Rss, Users, User, Trash2, MessageSquare, Megaphone, LayoutGrid, Check, BarChart3, Settings, Pencil, ImagePlus, X as XIcon } from 'lucide-react';
+import { Bell, Send, Image as ImageIcon, Calendar, Rss, Users, User, Trash2, MessageSquare, Megaphone, LayoutGrid, Check, BarChart3, Settings, Pencil, ImagePlus, X as XIcon, Plus, Hash, Zap, Ghost, Trash, UploadCloud } from 'lucide-react';
 import { ToastType } from '../types';
 
 interface EngagementHubProps {
@@ -24,6 +24,9 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   const [pushImgFile, setPushImgFile] = useState<File | null>(null);
   const [pushImgPreview, setPushImgPreview] = useState<string | null>(null);
   const [pushDate, setPushDate] = useState('');
+  const [pushTarget, setPushTarget] = useState('all');
+  const [pushAction, setPushAction] = useState('open_app');
+  const [pushUrl, setPushUrl] = useState('');
   const [pushHistoryTab, setPushHistoryTab] = useState<'history' | 'scheduled'>('history');
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -79,6 +82,51 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
     offensiveFilter: true
   });
   const [badWords, setBadWords] = useState('');
+  
+  // Persona States
+  const [personas, setPersonas] = useState<{id: number, name: string, avatar: string}[]>([]);
+  const [newPersonaName, setNewPersonaName] = useState('');
+  const [newPersonaAvatar, setNewPersonaAvatar] = useState('');
+
+  const handleAddPersona = () => {
+    if (!newPersonaName) {
+      showToast('Nome é obrigatório!', 'error');
+      return;
+    }
+    const newPersona = {
+      id: Date.now(),
+      name: newPersonaName,
+      avatar: newPersonaAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(newPersonaName)}&background=random`
+    };
+    setPersonas([...personas, newPersona]);
+    setNewPersonaName('');
+    setNewPersonaAvatar('');
+    showToast('Perfil semente criado!', 'success');
+  };
+
+  const handleDeletePersona = (id: number) => {
+    setPersonas(personas.filter(p => p.id !== id));
+    showToast('Perfil removido.', 'success');
+  };
+
+  const handlePersonaAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Limite estrito de 2MB
+      const maxSize = 2 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast("A imagem é muito grande. O tamanho máximo permitido é 2MB.", 'error');
+        e.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewPersonaAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSendPush = () => {
     if (!pushTitle || !pushMsg) {
@@ -90,6 +138,9 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
     setPushMsg('');
     removeImage();
     setPushDate('');
+    setPushTarget('all');
+    setPushAction('open_app');
+    setPushUrl('');
   };
 
   const handleCreatePost = () => {
@@ -159,6 +210,18 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
               </div>
             </div>
             <div className="eng-card-body">
+              <label className="vpb-label">PÚBLICO-ALVO</label>
+              <select 
+                className="vpb-input" 
+                value={pushTarget}
+                onChange={(e) => setPushTarget(e.target.value)}
+                style={{ marginBottom: '16px' }}
+              >
+                <option value="all">Todos os Usuários</option>
+                <option value="inactive_7">Usuários Inativos (7+ dias)</option>
+                <option value="active_24">Usuários Ativos (Últimas 24h)</option>
+              </select>
+
               <label className="vpb-label">TÍTULO DA NOTIFICAÇÃO</label>
               <input 
                 className="vpb-input" 
@@ -175,6 +238,29 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                 value={pushMsg}
                 onChange={(e) => setPushMsg(e.target.value)}
               />
+              
+              <label className="vpb-label">AÇÃO AO CLICAR NO PUSH</label>
+              <select 
+                className="vpb-input" 
+                value={pushAction}
+                onChange={(e) => setPushAction(e.target.value)}
+                style={{ marginBottom: pushAction === 'external_link' ? '8px' : '16px' }}
+              >
+                <option value="open_app">Apenas abrir o App</option>
+                <option value="external_link">Redirecionar para um Link</option>
+              </select>
+
+              {pushAction === 'external_link' && (
+                <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                  <input 
+                    className="vpb-input" 
+                    placeholder="https://..." 
+                    value={pushUrl}
+                    onChange={(e) => setPushUrl(e.target.value)}
+                    style={{ marginBottom: '16px' }}
+                  />
+                </div>
+              )}
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -399,73 +485,169 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
       )}
 
       {activeTab === 'community' && (
-        <div className="eng-layout" style={{ gridTemplateColumns: '1fr' }}>
-          <div className="eng-card" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-            <div className="eng-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                <Settings size={16} color="var(--accent)"/> Moderação de Comunidade
+        <div className="eng-layout">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* CARD DE MODERAÇÃO */}
+            <div className="eng-card">
+              <div className="eng-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                  <Settings size={16} color="var(--accent)"/> Moderação de Comunidade
+                </div>
               </div>
-            </div>
-            <div className="eng-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '13px', fontWeight: 500 }}>Aprovar posts antes de publicar</div>
-                <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    checked={moderation.approvePosts} 
-                    onChange={() => setModeration({...moderation, approvePosts: !moderation.approvePosts})}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: '13px', fontWeight: 500 }}>Permitir comentários nos posts</div>
-                <label className="toggle-switch">
-                  <input 
-                    type="checkbox" 
-                    checked={moderation.allowComments} 
-                    onChange={() => setModeration({...moderation, allowComments: !moderation.allowComments})}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="eng-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Filtro de palavras ofensivas</div>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Aprovar posts antes de publicar</div>
                   <label className="toggle-switch">
                     <input 
                       type="checkbox" 
-                      checked={moderation.offensiveFilter} 
-                      onChange={() => setModeration({...moderation, offensiveFilter: !moderation.offensiveFilter})}
+                      checked={moderation.approvePosts} 
+                      onChange={() => setModeration({...moderation, approvePosts: !moderation.approvePosts})}
                     />
                     <span className="toggle-slider"></span>
                   </label>
                 </div>
-                
-                {moderation.offensiveFilter && (
-                  <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-                    <textarea 
-                      className="vpb-textarea"
-                      placeholder="Digite as palavras proibidas separadas por vírgula (ex: lixo, idiota, spam)..."
-                      value={badWords}
-                      onChange={(e) => setBadWords(e.target.value)}
-                      style={{ 
-                        minHeight: '120px', 
-                        fontSize: '13px',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border)',
-                        background: 'var(--surface2)',
-                        width: '100%'
-                      }}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 500 }}>Permitir comentários nos posts</div>
+                  <label className="toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      checked={moderation.allowComments} 
+                      onChange={() => setModeration({...moderation, allowComments: !moderation.allowComments})}
                     />
-                    <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '6px' }}>
-                      As palavras acima serão automaticamente bloqueadas ou enviadas para revisão.
-                    </p>
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 500 }}>Filtro de palavras ofensivas</div>
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={moderation.offensiveFilter} 
+                        onChange={() => setModeration({...moderation, offensiveFilter: !moderation.offensiveFilter})}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
                   </div>
-                )}
+                  
+                  {moderation.offensiveFilter && (
+                    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                      <textarea 
+                        className="vpb-textarea"
+                        placeholder="Digite as palavras proibidas separadas por vírgula (ex: lixo, idiota, spam)..."
+                        value={badWords}
+                        onChange={(e) => setBadWords(e.target.value)}
+                        style={{ 
+                          minHeight: '100px', 
+                          fontSize: '13px',
+                          padding: '12px',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border)',
+                          background: 'var(--surface2)',
+                          width: '100%'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* PASSO 1: O CARD DE PERFIS SEMENTE */}
+            <div className="eng-card">
+              <div className="eng-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                  <Users size={16} color="var(--accent3)"/> Perfis Semente (Ghost Mode)
+                </div>
+              </div>
+              <div className="eng-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.4 }}>
+                  Crie membros virtuais para movimentar a comunidade e gerar o efeito manada inicial.
+                </p>
+
+                {/* PASSO 2: CRIAÇÃO DE PERSONAS */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label className="vpb-label">Nome do Membro (ex: João Silva)</label>
+                    <input 
+                      className="vpb-input" 
+                      placeholder="Nome completo ou apelido"
+                      value={newPersonaName}
+                      onChange={(e) => setNewPersonaName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2 mb-4">
+                    <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                      Foto de Perfil (Avatar)
+                    </label>
+                    <label className="border-2 border-dashed border-[var(--border)] rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-[#6338F6] hover:bg-[#6338F6]/5 transition-colors group">
+                      {newPersonaAvatar ? (
+                        <div style={{ position: 'relative', width: '48px', height: '48px', marginBottom: '8px' }}>
+                           <img src={newPersonaAvatar} alt="Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 }} className="group-hover:opacity-100 transition-opacity">
+                              <UploadCloud className="w-4 h-4 text-white" />
+                           </div>
+                        </div>
+                      ) : (
+                        <UploadCloud className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[#6338F6] mb-2" />
+                      )}
+                      <span className="text-sm font-medium text-[var(--text-primary)]">
+                        {newPersonaAvatar ? 'Alterar foto' : 'Clique para enviar foto'}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)] mt-1">JPG, PNG (Máx: 2MB)</span>
+                      <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handlePersonaAvatarChange} />
+                    </label>
+                  </div>
+                  <button className="btn-primary" style={{ width: '100%' }} onClick={handleAddPersona}>
+                    <Plus size={14} /> Criar Perfil
+                  </button>
+                </div>
+
+                {/* PASSO 3: LISTA DE PERSONAS ATIVAS */}
+                {personas.length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                    <label className="vpb-label" style={{ marginBottom: '12px' }}>PERSONAS ATIVAS</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                      {personas.map(p => (
+                        <div key={p.id} style={{ background: 'var(--surface2)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative' }}>
+                          <img src={p.avatar} alt={p.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                          <span style={{ fontSize: '10px', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', whiteSpace: 'nowrap' }}>
+                            {p.name.split(' ')[0]}
+                          </span>
+                          <button 
+                            onClick={() => handleDeletePersona(p.id)}
+                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: '2px' }}
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PASSO 4: NOTA ESTRATÉGICA */}
+                <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(124, 111, 255, 0.05)', borderRadius: '8px', border: '1px solid rgba(124, 111, 255, 0.1)' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--muted)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                    <strong>Dica:</strong> Ao acessar o painel de moderação da comunidade, você poderá selecionar no dropdown "Postar como..." qualquer um destes perfis para iniciar discussões.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="eng-card" style={{ height: 'fit-content' }}>
+             <div className="eng-card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                  <BarChart3 size={16} color="var(--accent2)"/> Estatísticas da Comunidade
+                </div>
+              </div>
+              <div className="eng-card-body">
+                 <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted)' }}>
+                    <LayoutGrid size={32} style={{ marginBottom: '16px', opacity: 0.2 }} />
+                    <p style={{ fontSize: '13px' }}>As estatísticas detalhadas de engajamento aparecerão aqui após os primeiros posts.</p>
+                 </div>
+              </div>
           </div>
         </div>
       )}
