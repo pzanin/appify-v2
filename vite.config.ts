@@ -1,19 +1,19 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import electron from 'vite-plugin-electron/simple';
+// import electron from 'vite-plugin-electron/simple';
 
 export default defineConfig({
   plugins: [
-    react(), 
+    react(),
     tailwindcss(),
-    electron({
-      main: {
-        entry: 'electron/main.ts',
-      },
-    }),
+    // electron({
+    //   main: {
+    //     entry: 'electron/main.ts',
+    //   },
+    // }),
   ],
-  
+
   server: {
     port: 3000,
     host: '0.0.0.0',

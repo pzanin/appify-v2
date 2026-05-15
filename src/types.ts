@@ -147,6 +147,11 @@ export interface AnalyticsData {
   dropOffByModule: Array<{ name: string; rate: number }>;
   gamificationStats: { activeStreaks: number; celebrationTriggers: number };
   pwaAdoption: { web: number; installed: number };
+  activeUsers: number;
+  sessionsToday: number;
+  avgConsumptionMinutes: number;
+  retentionRate: number;
+  retentionFunnel: Array<{ label: string; val: number; pc: number; op: number }>;
 }
 
 export interface AppState {

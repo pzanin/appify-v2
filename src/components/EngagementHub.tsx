@@ -28,6 +28,14 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   const [pushAction, setPushAction] = useState('open_app');
   const [pushUrl, setPushUrl] = useState('');
   const [pushHistoryTab, setPushHistoryTab] = useState<'history' | 'scheduled'>('history');
+
+  React.useEffect(() => {
+    return () => {
+      if (pushImgPreview && pushImgPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(pushImgPreview);
+      }
+    };
+  }, [pushImgPreview]);
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -62,14 +70,22 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   const handleFeedFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (feedImagePreview) URL.revokeObjectURL(feedImagePreview);
-      setFeedImageFile(file);
-      setFeedImagePreview(URL.createObjectURL(file));
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('A imagem é muito grande (Máx: 2MB)', 'error');
+        if (e.target) e.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFeedImageFile(file);
+        setFeedImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const removeFeedImage = () => {
-    if (feedImagePreview) URL.revokeObjectURL(feedImagePreview);
     setFeedImageFile(null);
     setFeedImagePreview(null);
     if (feedFileInputRef.current) feedFileInputRef.current.value = '';
@@ -144,24 +160,22 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   };
 
   const handleCreatePost = () => {
-    if (!authorName || !postContent) {
+    if (!authorName?.trim() || !postContent?.trim()) {
       showToast('Preencha autor e conteúdo!', 'error');
       return;
     }
     const newPost: Post = {
       id: Date.now(),
-      author: authorName,
-      content: postContent,
+      author: authorName.trim(),
+      content: postContent.trim(),
       imageUrl: feedImagePreview || undefined,
       timestamp: 'Agora'
     };
     setPosts([newPost, ...posts]);
     setAuthorName('');
     setPostContent('');
-    // Clear image but DON'T revoke yet as the post now uses it in the list (if we were using a real server, we'd upload and get a real URL)
     setFeedImageFile(null);
     setFeedImagePreview(null);
-    setFeedDate('');
     if (feedFileInputRef.current) feedFileInputRef.current.value = '';
     showToast('Post publicado no feed!', 'success');
   };
@@ -454,7 +468,7 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--accent-glow)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
-                          {post.author[0]}
+                          {post.author?.[0] || '?'}
                         </div>
                         <div style={{ fontWeight: 700, fontSize: '13px' }}>{post.author}</div>
                       </div>

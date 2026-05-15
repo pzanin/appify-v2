@@ -2,11 +2,12 @@ import { create } from 'zustand';
 import { subscribeWithSelector, persist } from 'zustand/middleware';
 import { AppState, AppView, PwaConfig, BuilderBlock, SupportedLocale } from '../types';
 import { INITIAL_MODULES, INITIAL_PWA_CONFIG } from '../constants';
-import { projectService } from '../services/projectService';
+
+// O projectService foi REMOVIDO pois agora somos 100% Local-First!
 
 interface AppStore extends AppState {
-  projects: Project[];
-  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
+  projects: any[]; // Usando any[] para evitar erros de tipagem com o objeto customizado que criaremos
+  setProjects: (projects: any[] | ((prev: any[]) => any[])) => void;
   isLoading: boolean;
   currentProjectId: number | null;
   setIsLoading: (loading: boolean) => void;
@@ -24,21 +25,21 @@ interface AppStore extends AppState {
   toggleModuleStatus: (id: number) => void;
   setModuleIcon: (payload: { id: number; iconName: string }) => void;
   updateModuleCover: (payload: { id: number; coverImageUrl: string; externalLink?: string }) => void;
-  updateModule: (id: number, payload: Partial<Module>) => void;
+  updateModule: (id: number, payload: Partial<any>) => void;
   updateSubmoduleCover: (payload: { modId: number; subId: number; coverImageUrl: string; externalLink?: string }) => void;
   addSubmodule: (modId: number) => void;
   deleteSubmodule: (payload: { modId: number; subId: number }) => void;
   renameSubmodule: (payload: { modId: number; subId: number; name: string }) => void;
-  updateSubmoduleContent: (payload: { 
-    modId: number; 
-    subId: number; 
-    content?: string; 
-    builderData?: BuilderBlock[]; 
+  updateSubmoduleContent: (payload: {
+    modId: number;
+    subId: number;
+    content?: string;
+    builderData?: BuilderBlock[];
     name?: string;
     contentType?: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
     contentUrl?: string;
     contentHtml?: string;
-    gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean } 
+    gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean }
   }) => void;
   updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked'; dripDays?: number; checkoutUrl?: string }) => void;
   reorderSubmodule: (payload: { modId: number; dragId: number; overId: number }) => void;
@@ -52,26 +53,27 @@ interface AppStore extends AppState {
   setIsNewProjectModalOpen: (open: boolean) => void;
 }
 
-const initialState: AppState = { 
-  currentView: 'projects', 
-  activeStep: 0, 
-  appName: 'Meu App', 
-  modules: INITIAL_MODULES, 
-  selectedModuleId: 1, 
-  pwaConfig: INITIAL_PWA_CONFIG, 
+const initialState: AppState = {
+  currentView: 'projects',
+  activeStep: 0,
+  appName: 'Meu App',
+  modules: INITIAL_MODULES,
+  selectedModuleId: 1,
+  pwaConfig: INITIAL_PWA_CONFIG,
   editingSubmodule: null,
   activeLocale: 'pt-BR',
   splashActive: false,
   mockupOnboardingCompleted: false,
   analytics: {
-    upsellClicks: { total: 1240, clicks: 450 },
-    dropOffByModule: [
-      { name: 'Módulo 1', rate: 5 },
-      { name: 'Módulo 2', rate: 12 },
-      { name: 'Módulo 3', rate: 45 }
-    ],
-    gamificationStats: { activeStreaks: 85, celebrationTriggers: 320 },
-    pwaAdoption: { web: 40, installed: 60 }
+    activeUsers: 0,
+    sessionsToday: 0,
+    avgConsumptionMinutes: 0,
+    retentionRate: 0,
+    retentionFunnel: [],
+    upsellClicks: { total: 0, clicks: 0 },
+    dropOffByModule: [],
+    gamificationStats: { activeStreaks: 0, celebrationTriggers: 0 },
+    pwaAdoption: { web: 0, installed: 0 }
   }
 };
 
@@ -79,214 +81,229 @@ export const useAppStore = create<AppStore>()(
   subscribeWithSelector(
     persist(
       (set, get) => ({
-    ...initialState,
-    projects: [],
-    setProjects: (updater) => set((state) => ({
-      projects: typeof updater === 'function' ? updater(state.projects) : updater
-    })),
-    isLoading: false, // Changed from true to false to prevent infinite loading if not using Supabase
-    currentProjectId: null,
-    isNewProjectModalOpen: false,
+        ...initialState,
+        projects: [],
+        setProjects: (updater) => set((state) => ({
+          projects: typeof updater === 'function' ? updater(state.projects) : updater
+        })),
+        isLoading: false,
+        currentProjectId: null,
+        isNewProjectModalOpen: false,
 
-    setIsLoading: (loading) => set({ isLoading: loading }),
-    setIsNewProjectModalOpen: (open) => set({ isNewProjectModalOpen: open }),
+        setIsLoading: (loading) => set({ isLoading: loading }),
+        setIsNewProjectModalOpen: (open) => set({ isNewProjectModalOpen: open }),
 
-    loadProject: async (id) => {
-      set({ isLoading: true, currentProjectId: id });
-      const state = await projectService.getAppState(initialState, id);
-      set({ ...state, isLoading: false });
-    },
+        loadProject: async (id) => {
+          set((state) => {
+            // CÉREBRO LOCAL: Procura os dados dentro da própria memória do Appify
+            const project = state.projects.find((p: any) => p.id === id);
+            if (project && project.savedWorkspace) {
+              // Se encontrou o projeto salvo, carrega ele pra tela
+              return { ...project.savedWorkspace, currentProjectId: id, isLoading: false };
+            }
+            // Se for um projeto novinho, zera o painel
+            return { ...initialState, currentProjectId: id, isLoading: false, currentView: 'builder' };
+          });
+        },
 
-    initializeProjects: async () => {
-      // Only set to projects view if we don't have a current project to persist builder state
-      set((state) => {
-        if (state.currentProjectId) return { isLoading: false };
-        return { isLoading: false, currentView: 'projects', activeStep: 0 };
-      });
-    },
+        initializeProjects: async () => {
+          set((state) => {
+            if (state.currentProjectId) return { isLoading: false };
+            return { isLoading: false, currentView: 'projects', activeStep: 0 };
+          });
+        },
 
-    setView: (view) => set({ currentView: view }),
-    setStep: (step) => set({ activeStep: step }),
-    setAppName: (name) => set({ appName: name }),
-    setSelectedModule: (id) => set({ selectedModuleId: id }),
-    updatePwaConfig: (config) => set((state) => ({ pwaConfig: { ...state.pwaConfig, ...config } })),
-    setEditingSubmodule: (editing) => set({ editingSubmodule: editing }),
-    
-    addModule: (payload) => set((state) => ({
-      modules: [...state.modules, {
-        id: Date.now(),
-        name: payload.name,
-        iconName: payload.iconName || 'BookOpen',
-        status: 'Ativo',
-        subs: [],
-        releaseType: 'immediate',
-        gamificationConfig: {
-          enabled: state.pwaConfig.gamification.enabled,
-          progressStyle: state.pwaConfig.gamification.progressStyle
-        }
-      }]
-    })),
+        setView: (view) => set({ currentView: view }),
+        setStep: (step) => set({ activeStep: step }),
+        setAppName: (name) => set({ appName: name }),
+        setSelectedModule: (id) => set({ selectedModuleId: id }),
+        updatePwaConfig: (config) => set((state) => ({ pwaConfig: { ...state.pwaConfig, ...config } })),
+        setEditingSubmodule: (editing) => set({ editingSubmodule: editing }),
 
-    deleteModule: (id) => set((state) => ({
-      modules: state.modules.filter(m => m.id !== id),
-      selectedModuleId: state.selectedModuleId === id ? null : state.selectedModuleId
-    })),
-
-    renameModule: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.id ? { ...m, name: payload.name } : m)
-    })),
-
-    toggleModuleStatus: (id) => set((state) => ({
-      modules: state.modules.map(m => m.id === id 
-        ? { ...m, status: m.status === 'Ativo' ? 'Rascunho' : 'Ativo' } 
-        : m
-      )
-    })),
-
-    setModuleIcon: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.id ? { ...m, iconName: payload.iconName } : m)
-    })),
-    
-    updateModuleCover: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.id 
-        ? { ...m, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink } 
-        : m
-      )
-    })),
-
-    updateModule: (id, payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === id ? { ...m, ...payload } : m)
-    })),
-
-    updateSubmoduleCover: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.modId
-        ? { ...m, subs: m.subs.map(s => s.id === payload.subId 
-            ? { ...s, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink }
-            : s
-          )}
-        : m
-      )
-    })),
-
-    addSubmodule: (modId) => set((state) => ({
-      modules: state.modules.map(mod => mod.id === modId 
-        ? { ...mod, subs: [...mod.subs, { 
-            id: Date.now(), 
-            name: 'Nova Aula', 
-            type: 'HTML Nativo', 
-            contentType: 'html',
-            content_html: '', 
-            contentHtml: '',
-            contentUrl: '',
-            builder_data: [],
+        addModule: (payload) => set((state) => ({
+          modules: [...state.modules, {
+            id: Date.now(),
+            name: payload.name,
+            iconName: payload.iconName || 'BookOpen',
+            status: 'Ativo',
+            subs: [],
+            releaseType: 'immediate',
             gamificationConfig: {
-              timeGateSeconds: 0,
-              enableCelebration: state.pwaConfig.gamification.enableCelebration
-            },
-            releaseType: 'immediate'
-          }] } 
-        : mod)
-    })),
+              enabled: state.pwaConfig.gamification?.enabled || false,
+              progressStyle: state.pwaConfig.gamification?.progressStyle || 'linear'
+            }
+          } as any] // <-- O 'as any' é o nosso passe livre que cala o aviso
+        })),
 
-    deleteSubmodule: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.modId ? { ...m, subs: m.subs.filter(s => s.id !== payload.subId) } : m)
-    })),
+        deleteModule: (id) => set((state) => ({
+          modules: state.modules.filter(m => m.id !== id),
+          selectedModuleId: state.selectedModuleId === id ? null : state.selectedModuleId
+        })),
 
-    renameSubmodule: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.modId
-        ? { ...m, subs: m.subs.map(s => s.id === payload.subId ? { ...s, name: payload.name } : s) }
-        : m
-      )
-    })),
+        renameModule: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.id ? { ...m, name: payload.name } : m)
+        })),
 
-    updateSubmoduleContent: (payload) => set((state) => ({
-      modules: state.modules.map(mod => mod.id === payload.modId 
-        ? { ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? { 
-            ...sub, 
-            content_html: payload.content ?? sub.content_html, 
-            contentHtml: payload.contentHtml ?? sub.contentHtml,
-            contentUrl: payload.contentUrl ?? sub.contentUrl,
-            contentType: payload.contentType ?? sub.contentType,
-            builder_data: payload.builderData ?? sub.builder_data, 
-            name: payload.name ?? sub.name,
-            gamificationConfig: payload.gamificationConfig ?? sub.gamificationConfig 
-          } : sub) } 
-        : mod)
-    })),
-    
-    updateSubmoduleAccess: (payload) => set((state) => ({
-      modules: state.modules.map(m => m.id === payload.modId
-        ? { ...m, subs: m.subs.map(s => s.id === payload.subId 
-            ? { ...s, releaseType: payload.releaseType, dripDays: payload.dripDays, checkoutUrl: payload.checkoutUrl }
-            : s
-          )}
-        : m
-      )
-    })),
+        toggleModuleStatus: (id) => set((state) => ({
+          modules: state.modules.map(m => m.id === id
+            ? { ...m, status: m.status === 'Ativo' ? 'Rascunho' : 'Ativo' }
+            : m
+          )
+        })),
 
-    reorderSubmodule: (payload) => set((state) => {
-      const { modId, dragId, overId } = payload;
-      return {
-        modules: state.modules.map(mod => {
-          if (mod.id === modId) {
-            const newSubs = [...mod.subs];
-            const dragIndex = newSubs.findIndex(s => s.id === dragId);
-            const overIndex = newSubs.findIndex(s => s.id === overId);
-            const [draggedItem] = newSubs.splice(dragIndex, 1);
-            newSubs.splice(overIndex, 0, draggedItem);
-            return { ...mod, subs: newSubs };
-          }
-          return mod;
-        })
-      };
-    }),
+        setModuleIcon: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.id ? { ...m, iconName: payload.iconName } : m)
+        })),
 
-    duplicateSubmodule: (payload) => set((state) => {
-      const mod = state.modules.find(m => m.id === payload.modId);
-      const sub = mod?.subs.find(s => s.id === payload.subId);
-      if (!sub) return state;
-      const clone = { ...sub, id: Date.now(), name: `${sub.name} (cópia)` };
-      return {
-        modules: state.modules.map(m => m.id === payload.modId ? { ...m, subs: [...m.subs, clone] } : m)
-      };
-    }),
+        updateModuleCover: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.id
+            ? { ...m, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink }
+            : m
+          )
+        })),
 
-    moveSubmodule: (payload) => set((state) => {
-      const { fromModId, subId, toModId } = payload;
-      let movedSub: any = null;
-      const newModules = state.modules.map(m => {
-        if (m.id === fromModId) {
-          movedSub = m.subs.find(s => s.id === subId);
-          return { ...m, subs: m.subs.filter(s => s.id !== subId) };
-        }
-        return m;
-      }).map(m => {
-        if (m.id === toModId && movedSub) {
-          return { ...m, subs: [...m.subs, { ...movedSub, id: Date.now() }] };
-        }
-        return m;
-      });
-      return { modules: newModules };
-    }),
+        updateModule: (id, payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === id ? { ...m, ...payload } : m)
+        })),
 
-    setLocale: (locale) => set({ activeLocale: locale }),
-    setSplash: (active) => set({ splashActive: active }),
-    setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
-    resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
-  }), {
-    name: 'appify-local-database',
-  })
-));
+        updateSubmoduleCover: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.modId
+            ? {
+              ...m, subs: m.subs.map(s => s.id === payload.subId
+                ? { ...s, coverImageUrl: payload.coverImageUrl, externalLink: payload.externalLink }
+                : s
+              )
+            }
+            : m
+          )
+        })),
 
-// Subscribe to state changes to save app state (debounced 1.5s)
+        addSubmodule: (modId) => set((state) => ({
+          modules: state.modules.map(mod => mod.id === modId
+            ? {
+              ...mod, subs: [...mod.subs, {
+                id: Date.now(),
+                name: 'Nova Aula',
+                type: 'HTML Nativo',
+                contentType: 'html',
+                content_html: '',
+                contentHtml: '',
+                contentUrl: '',
+                builder_data: [],
+                gamificationConfig: {
+                  timeGateSeconds: 0,
+                  enableCelebration: state.pwaConfig.gamification?.enableCelebration || false
+                },
+                releaseType: 'immediate'
+              }]
+            }
+            : mod)
+        })),
+
+        deleteSubmodule: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.modId ? { ...m, subs: m.subs.filter(s => s.id !== payload.subId) } : m)
+        })),
+
+        renameSubmodule: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.modId
+            ? { ...m, subs: m.subs.map(s => s.id === payload.subId ? { ...s, name: payload.name } : s) }
+            : m
+          )
+        })),
+
+        updateSubmoduleContent: (payload) => set((state) => ({
+          modules: state.modules.map(mod => mod.id === payload.modId
+            ? {
+              ...mod, subs: mod.subs.map(sub => sub.id === payload.subId ? {
+                ...sub,
+                content_html: payload.content ?? sub.content_html,
+                contentHtml: payload.contentHtml ?? sub.contentHtml,
+                contentUrl: payload.contentUrl ?? sub.contentUrl,
+                contentType: payload.contentType ?? sub.contentType,
+                builder_data: payload.builderData ?? sub.builder_data,
+                name: payload.name ?? sub.name,
+                gamificationConfig: payload.gamificationConfig ?? sub.gamificationConfig
+              } : sub)
+            }
+            : mod)
+        })),
+
+        updateSubmoduleAccess: (payload) => set((state) => ({
+          modules: state.modules.map(m => m.id === payload.modId
+            ? {
+              ...m, subs: m.subs.map(s => s.id === payload.subId
+                ? { ...s, releaseType: payload.releaseType, dripDays: payload.dripDays, checkoutUrl: payload.checkoutUrl }
+                : s
+              )
+            }
+            : m
+          )
+        })),
+
+        reorderSubmodule: (payload) => set((state) => {
+          const { modId, dragId, overId } = payload;
+          return {
+            modules: state.modules.map(mod => {
+              if (mod.id === modId) {
+                const newSubs = [...mod.subs];
+                const dragIndex = newSubs.findIndex(s => s.id === dragId);
+                const overIndex = newSubs.findIndex(s => s.id === overId);
+                const [draggedItem] = newSubs.splice(dragIndex, 1);
+                newSubs.splice(overIndex, 0, draggedItem);
+                return { ...mod, subs: newSubs };
+              }
+              return mod;
+            })
+          };
+        }),
+
+        duplicateSubmodule: (payload) => set((state) => {
+          const mod = state.modules.find(m => m.id === payload.modId);
+          const sub = mod?.subs.find(s => s.id === payload.subId);
+          if (!sub) return state;
+          const clone = { ...sub, id: Date.now(), name: `${sub.name} (cópia)` };
+          return {
+            modules: state.modules.map(m => m.id === payload.modId ? { ...m, subs: [...m.subs, clone] } : m)
+          };
+        }),
+
+        moveSubmodule: (payload) => set((state) => {
+          const { fromModId, subId, toModId } = payload;
+          let movedSub: any = null;
+          const newModules = state.modules.map(m => {
+            if (m.id === fromModId) {
+              movedSub = m.subs.find(s => s.id === subId);
+              return { ...m, subs: m.subs.filter(s => s.id !== subId) };
+            }
+            return m;
+          }).map(m => {
+            if (m.id === toModId && movedSub) {
+              return { ...m, subs: [...m.subs, { ...movedSub, id: Date.now() }] };
+            }
+            return m;
+          });
+          return { modules: newModules };
+        }),
+
+        setLocale: (locale) => set({ activeLocale: locale }),
+        setSplash: (active) => set({ splashActive: active }),
+        setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
+        resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
+      }), {
+      name: 'appify-v2-database',
+    })
+  ));
+
+// MOTOR DE SALVAMENTO LOCAL (Sem internet!)
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 useAppStore.subscribe(
   (state) => state,
   (state) => {
     if (!state.currentProjectId || state.isLoading) return;
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      const appState: AppState = {
+    saveTimer = setTimeout(() => {
+      // Empacota o que está na tela
+      const currentWorkspace: AppState = {
         currentView: state.currentView,
         activeStep: state.activeStep,
         appName: state.appName,
@@ -295,15 +312,18 @@ useAppStore.subscribe(
         pwaConfig: state.pwaConfig,
         editingSubmodule: state.editingSubmodule,
         activeLocale: state.activeLocale,
-        translations: state.translations,
         splashActive: state.splashActive,
         mockupOnboardingCompleted: state.mockupOnboardingCompleted,
         analytics: state.analytics,
       };
-      await projectService.saveAppState(appState, state.currentProjectId!);
-    }, 1500);
+
+      // Injeta os dados da tela DE VOLTA na lista de projetos (state.projects) silenciosamente
+      useAppStore.getState().setProjects((prevProjects: any[]) =>
+        prevProjects.map((p) =>
+          p.id === state.currentProjectId ? { ...p, savedWorkspace: currentWorkspace } : p
+        )
+      );
+    }, 1000);
   },
   { fireImmediately: false }
 );
-
-
