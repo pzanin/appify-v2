@@ -3,6 +3,7 @@ import { Project, ToastMessage, ToastType, BuilderBlock } from './types';
 import { projectService } from './services/projectService';
 import { useAppStore } from './store/useAppStore';
 import JSZip from 'jszip';
+import { handleExportZIP } from './utils/exportPWA';
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -132,82 +133,7 @@ export function useBuilderActions(showToast: (msg: string, type?: ToastType) => 
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
   const handleExportZip = async () => {
-    showToast('Iniciando empacotamento do Appify...', 'loading');
-    console.log("=========================================");
-    console.log(`[ZIP EXPORT ENGINE] Gerando o PWA: ${appName}`);
-
-    try {
-      // 1. Liga o motor de ZIP
-      const zip = new JSZip();
-
-      // 2. Cria a página inicial do seu App (O esqueleto)
-      const indexHtml = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${appName}</title>
-          <style>
-            body { font-family: sans-serif; background: #111; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-            .card { background: #222; padding: 2rem; border-radius: 12px; text-align: center; border: 1px solid #333; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h1>🚀 ${appName}</h1>
-            <p>Seu PWA foi exportado com sucesso da fábrica do Appify!</p>
-          </div>
-        </body>
-        </html>
-      `;
-      zip.file("index.html", indexHtml);
-
-      // 3. Cria uma pasta com todos os seus módulos e aulas
-      const modulesFolder = zip.folder("modules");
-      modules.forEach(mod => {
-        mod.subs.forEach(sub => {
-          // Pega o conteúdo real que você digitou na aula
-          const aulaHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"><title>${sub.name}</title></head>
-            <body>
-              <h2>${sub.name}</h2>
-              <div>${sub.content_html || sub.contentHtml || '<p>Aula sem conteúdo ainda.</p>'}</div>
-            </body>
-            </html>
-          `;
-          // Salva o arquivo de cada aula dentro do ZIP
-          if (modulesFolder) {
-            modulesFolder.file(`${mod.id}_${sub.id}.html`, aulaHtml);
-            console.log(`-> /modules/${mod.id}_${sub.id}.html empacotado na caixa.`);
-          }
-        });
-      });
-
-      // 4. Empacota tudo e gera o arquivo físico
-      const content = await zip.generateAsync({ type: "blob" });
-
-      // 5. Força o navegador a fazer o download para o computador
-      const url = window.URL.createObjectURL(content);
-      const link = document.createElement('a');
-      link.href = url;
-      // Dá o nome do seu app ao arquivo, tirando espaços
-      link.download = `${appName.replace(/\s+/g, '-').toLowerCase()}-export.zip`;
-
-      document.body.appendChild(link);
-      link.click(); // Aperta o botão de download invisível
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      console.log("=========================================");
-      showToast('Download do ZIP concluído!', 'success');
-
-    } catch (error) {
-      console.error("Erro fatal ao gerar o ZIP:", error);
-      showToast('Erro ao gerar o arquivo ZIP.', 'error');
-    }
+    await handleExportZIP(showToast);
   };
 
   const handlePublish = () => {

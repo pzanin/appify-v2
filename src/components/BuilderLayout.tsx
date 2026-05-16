@@ -18,7 +18,7 @@ import { RenderDynamicIcon } from './RenderDynamicIcon';
 
 interface BuilderLayoutProps { isPhoneDark: boolean; setIsPhoneDark: (val: boolean) => void; handleDeleteModule: (id: number) => void; handleDeleteSubmodule: (modId: number, subId: number) => void; handleAddSubmodule: (modId: number) => void; handleUpdateSubmoduleContent: (modId: number, subId: number, content: string, data: BuilderBlock[]) => void; showToast: (msg: string, type?: ToastType) => void; }
 
-export function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule, handleDeleteSubmodule, handleAddSubmodule, handleUpdateSubmoduleContent, showToast }: BuilderLayoutProps) {
+export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule, handleDeleteSubmodule, handleAddSubmodule, handleUpdateSubmoduleContent, showToast }: BuilderLayoutProps) {
   const activeStep = useAppStore(state => state.activeStep);
   const modules = useAppStore(state => state.modules);
   const selectedModuleId = useAppStore(state => state.selectedModuleId);

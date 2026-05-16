@@ -11,7 +11,7 @@ interface ProjectsDashboardProps {
   handleDeleteProject: (id: number) => void; 
 }
 
-export function ProjectsDashboard({ projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject }: ProjectsDashboardProps) {
+export default function ProjectsDashboard({ projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject }: ProjectsDashboardProps) {
   const isNewProjectModalOpen = useAppStore(state => state.isNewProjectModalOpen);
   const setIsNewProjectModalOpen = useAppStore(state => state.setIsNewProjectModalOpen);
   const [searchQuery, setSearchQuery] = useState('');

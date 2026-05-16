@@ -192,7 +192,15 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
 
-      <div className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily || 'inherit', opacity: isTransitioning ? 0 : 1, transition: 'opacity 0.3s ease' } as any}>
+      <div className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily || 'inherit', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
+        
+        {/* Hardware UI Elements */}
+        <div className="phone-hw-buttons">
+          <div className="phone-hw-silent"></div>
+          <div className="phone-hw-vol-up"></div>
+          <div className="phone-hw-vol-down"></div>
+          <div className="phone-hw-power"></div>
+        </div>
 
         <AnimatePresence>
           {isCelebrating && (
@@ -267,13 +275,47 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
 
         <AnimatePresence>
           {splashActive && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: themeColor, zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-              <div style={{ position: 'relative', width: '100px', height: '100px', marginBottom: '20px' }}>
-                {pwaConfig.iconBase64 ? <img src={pwaConfig.iconBase64} alt="Icon" style={{ width: '100%', height: '100%', borderRadius: '24px' }} /> : <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.2)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Smartphone size={48} /></div>}
-              </div>
-              <h2 style={{ fontSize: '20px', fontWeight: 800 }}>{displayAppName}</h2>
-              <div style={{ position: 'absolute', bottom: '40px', width: '120px', height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden' }}>
-                <motion.div initial={{ x: '-100%' }} animate={{ x: '0%' }} transition={{ duration: 1.5, ease: "easeInOut" }} style={{ width: '100%', height: '100%', background: 'white' }} />
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }} 
+              transition={{ duration: 0.6 }}
+              style={{ 
+                position: 'absolute', inset: 0, 
+                background: `linear-gradient(135deg, ${themeColor}, ${themeColor}dd, #1a1a24)`, 
+                zIndex: 1000, 
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white' 
+              }}
+            >
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, type: 'spring', damping: 15 }}
+                style={{ position: 'relative', width: '100px', height: '100px', marginBottom: '24px' }}
+              >
+                {pwaConfig.iconBase64 ? (
+                  <img src={pwaConfig.iconBase64} alt="Icon" style={{ width: '100%', height: '100%', borderRadius: '28px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <Smartphone size={48} />
+                  </div>
+                )}
+              </motion.div>
+              <motion.h2 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}
+              >
+                {displayAppName}
+              </motion.h2>
+              <div style={{ position: 'absolute', bottom: '60px', width: '140px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+                <motion.div 
+                  initial={{ x: '-100%' }} 
+                  animate={{ x: '100%' }} 
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} 
+                  style={{ width: '60%', height: '100%', background: 'linear-gradient(90deg, transparent, #fff, transparent)' }} 
+                />
               </div>
             </motion.div>
           )}
@@ -344,31 +386,34 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         </AnimatePresence>
 
         <div className="phone-notch"></div>
+        
         <div className="phone-header-bg">
-          <div className="flex items-center gap-2 text-xl font-bold" style={{ color: pwaConfig.textColor || '#FFFFFF' }}>
-            <div className="phone-logo-icon">
-              {pwaConfig.logoBase64 ? <img src={pwaConfig.logoBase64} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain' }} /> : displayAppName.charAt(0).toUpperCase()}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), transparent)', pointerEvents: 'none' }} />
+          <div className="flex items-center gap-3 text-lg font-bold relative z-10" style={{ color: pwaConfig.textColor || '#FFFFFF' }}>
+            <div className="phone-logo-icon" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+              {pwaConfig.logoBase64 ? <img src={pwaConfig.logoBase64} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'contain' }} /> : displayAppName.charAt(0).toUpperCase()}
             </div>
-            {displayAppName}
+            <span style={{ letterSpacing: '-0.5px' }}>{displayAppName}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative z-10">
             {/* Streak Pill */}
             {gamification.enabled && gamification.enableStreaks && (
               <div style={{ 
                 display: 'flex', alignItems: 'center', gap: '4px', 
-                background: isPhoneDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)', 
-                padding: '4px 10px', borderRadius: '99px', marginRight: '4px' 
+                background: 'rgba(255,255,255,0.2)', 
+                backdropFilter: 'blur(8px)',
+                padding: '5px 12px', borderRadius: '99px', marginRight: '4px',
+                border: '1px solid rgba(255,255,255,0.1)'
               }}>
                 <span style={{ fontSize: '14px' }}>{gamification.streakIcon}</span>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: pwaConfig.textColor || '#FFFFFF' }}>3</span>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: pwaConfig.textColor || '#FFFFFF' }}>3</span>
               </div>
             )}
             
-            <div className="phone-header-icon" onClick={() => setIsPhoneDark(!isPhoneDark)} role="button" title={t('app.header.theme', 'Mudar Tema')}>
-              {isPhoneDark ? <Sun size={15} /> : <Moon size={15} />}
+            <div className="phone-header-icon" onClick={() => setIsPhoneDark(!isPhoneDark)} role="button">
+              {isPhoneDark ? <Sun size={15} strokeWidth={2.5} /> : <Moon size={15} strokeWidth={2.5} />}
             </div>
-            <div className="phone-header-icon" onClick={() => setOnboardingStep(2)} title={t('app.header.notifications', 'Notificações')}><Bell size={15} /></div>
-            <div className="phone-header-icon" onClick={() => setOnboardingStep(1)} title={t('app.header.install', 'Instalar')}><Download size={15} /></div>
+            <div className="phone-header-icon" onClick={() => setOnboardingStep(2)}><Bell size={15} strokeWidth={2.5} /></div>
           </div>
         </div>
 

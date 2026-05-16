@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 // import electron from 'vite-plugin-electron/simple';
 
+const isPwaBuild = process.env.VITE_BUILD_TARGET === 'pwa';
+
 export default defineConfig({
   plugins: [
     react(),
@@ -41,5 +43,14 @@ export default defineConfig({
     commonjsOptions: {
       include: [/node_modules/],
     },
+    ...(isPwaBuild && {
+      rollupOptions: {
+        output: {
+          entryFileNames: 'assets/pwa-engine.js',
+          chunkFileNames: 'assets/pwa-engine-chunk.js',
+          assetFileNames: 'assets/pwa-engine.[ext]'
+        }
+      }
+    })
   },
 });

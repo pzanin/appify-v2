@@ -268,13 +268,93 @@
 .submodule-actions { display: flex; gap: 4px; }
 
 /* ── COMPONENTE: PHONE MOCKUP (COM SUPORTE A VARS DINÂMICAS) ── */
-.phone-mockup { width: 320px; height: 650px; background: var(--p-bg); border-radius: 40px; border: 12px solid #2a2a38; position: relative; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.4); display: flex; flex-direction: column; flex-shrink: 0; transition: background 0.3s;
-  --p-bg: #161b22; --p-surface: #212631; --p-text: #ffffff; --p-muted: #6b6b80; --p-border: rgba(255,255,255,0.05); --p-card-empty: #0a0a0f; --p-track: #2a2a38; --p-card-icon: rgba(255,255,255,0.05);
+.phone-mockup { 
+  width: 320px; 
+  height: 650px; 
+  background: var(--p-bg); 
+  border-radius: 44px; 
+  border: 8px solid #1a1a24; 
+  position: relative; 
+  overflow: hidden; 
+  box-shadow: 
+    0 24px 48px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.05) inset,
+    0 0 20px rgba(0,0,0,0.3) inset;
+  display: flex; 
+  flex-direction: column; 
+  flex-shrink: 0; 
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --p-bg: #0d1117; 
+  --p-surface: rgba(22, 27, 34, 0.7); 
+  --p-text: #ffffff; 
+  --p-muted: #8b949e; 
+  --p-border: rgba(255,255,255,0.08); 
+  --p-card-empty: #0a0a0f; 
+  --p-track: #21262d; 
+  --p-card-icon: rgba(255,255,255,0.03);
 }
-.phone-mockup.light { --p-bg: #f4f5f7; --p-surface: #ffffff; --p-text: #111118; --p-muted: #8e8e9e; --p-border: rgba(0,0,0,0.08); --p-card-empty: #e4e4e9; --p-track: #e4e4e9; --p-card-icon: rgba(0,0,0,0.06); }
-.phone-notch { position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 110px; height: 22px; background: #2a2a38; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; z-index: 10; }
+.phone-mockup.light { 
+  --p-bg: #f6f8fa; 
+  --p-surface: rgba(255, 255, 255, 0.8); 
+  --p-text: #1f2328; 
+  --p-muted: #656d76; 
+  --p-border: rgba(31, 35, 40, 0.08); 
+  --p-card-empty: #ffffff; 
+  --p-track: #ebf0f4; 
+  --p-card-icon: rgba(0,0,0,0.04); 
+}
+.phone-notch { 
+  position: absolute; 
+  top: 0; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 120px; 
+  height: 24px; 
+  background: #1a1a24; 
+  border-bottom-left-radius: 18px; 
+  border-bottom-right-radius: 18px; 
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.phone-notch::before {
+  content: '';
+  width: 40px;
+  height: 4px;
+  background: #2a2a38;
+  border-radius: 2px;
+}
 
-.phone-header-bg { background: var(--dynamic-theme, #6b8af0); padding: 38px 20px 20px; display: flex; align-items: center; justify-content: space-between; color: white; transition: background 0.3s ease; }
+.phone-header-bg { 
+  background: var(--dynamic-theme, #7c6fff); 
+  padding: 42px 20px 18px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  color: white; 
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.phone-hw-buttons {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+.phone-hw-silent, .phone-hw-vol-up, .phone-hw-vol-down, .phone-hw-power {
+  position: absolute;
+  background: #1a1a24;
+  border-radius: 2px;
+}
+.phone-hw-silent { left: -10px; top: 100px; width: 3px; height: 20px; }
+.phone-hw-vol-up { left: -10px; top: 140px; width: 3px; height: 40px; }
+.phone-hw-vol-down { left: -10px; top: 190px; width: 3px; height: 40px; }
+.phone-hw-power { right: -10px; top: 160px; width: 3px; height: 60px; }
 .phone-logo { display: flex; align-items: center; gap: 8px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; }
 .phone-logo-icon { background: #2a2a38; color: var(--dynamic-theme, #6b8af0); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 14px; transition: color 0.3s ease; }
 .phone-header-icons { display: flex; gap: 10px; }
@@ -303,11 +383,49 @@
 .phone-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 32px 16px; background: var(--p-surface); border: 1px dashed var(--p-border); border-radius: 16px; margin-top: 8px; transition: all 0.3s; }
 .phone-empty-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--p-card-icon); color: var(--p-muted); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; transition: all 0.3s; }
 .phone-empty-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--p-text); margin-bottom: 4px; transition: color 0.3s; }
-.phone-empty-desc { font-size: 11px; color: var(--p-muted); line-height: 1.4; transition: color 0.3s; }
+.phone-empty-desc { font-size: 11px; color: var(--p-muted); line-height: 1.4; transition: color 0.3s; opacity: 0.8; }
 
-.phone-bottom-nav { background: var(--p-surface); padding: 12px 20px 24px; display: flex; justify-content: space-between; border-top: 1px solid var(--p-border); transition: all 0.3s; }
-.phone-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--p-muted); font-size: 10px; font-weight: 500; cursor: pointer; transition: color 0.3s; }
-.phone-nav-item.active { color: var(--dynamic-theme, #6b8af0); }
+.phone-module-wrapper {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.phone-module-wrapper:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+.phone-module-wrapper:active {
+  transform: scale(0.96);
+}
+
+.phone-bottom-nav { 
+  background: var(--p-surface); 
+  backdrop-filter: blur(12px);
+  padding: 12px 20px 28px; 
+  display: flex; 
+  justify-content: space-between; 
+  border-top: 1px solid var(--p-border); 
+  transition: all 0.3s;
+  position: relative;
+  z-index: 10;
+}
+.phone-nav-item { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 5px; 
+  color: var(--p-muted); 
+  font-size: 10px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  transition: all 0.2s;
+  opacity: 0.8;
+}
+.phone-nav-item:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.phone-nav-item.active { 
+  color: var(--dynamic-theme, #7c6fff); 
+  opacity: 1;
+}
 
 /* ── TOASTS NOTIFICATIONS ── */
 .toast-container { position: fixed; bottom: 32px; right: 32px; display: flex; flex-direction: column; gap: 12px; z-index: 9999; }
