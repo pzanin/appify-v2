@@ -36,6 +36,43 @@ const PWARuntime = React.lazy(() => import('./components/PWARuntime').then(m => 
 
 const buildTarget = import.meta.env.VITE_BUILD_TARGET;
 
+function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, setIsPhoneDark: (val: boolean) => void }) {
+  const [loaded, setLoaded] = React.useState(false);
+  const [error, setError] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch('/app-data.json?nocache=' + new Date().getTime())
+      .then(res => {
+        if (!res.ok) throw new Error("Não foi possível ler o app-data.json");
+        return res.json();
+      })
+      .then(data => {
+        // Hidrata o Zustand com os dados do cliente de forma segura
+        useAppStore.setState(data);
+        setLoaded(true);
+      })
+      .catch(err => {
+        console.error(err);
+        setError(true);
+      });
+  }, []);
+
+  if (error) {
+    return <div style={{width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#ff4a4a', fontFamily: 'sans-serif'}}>Ocorreu um erro ao carregar os dados do aplicativo.</div>;
+  }
+
+  if (!loaded) {
+    return <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#fff', fontFamily: 'sans-serif', fontSize: '18px'}}>Carregando App...</div>;
+  }
+
+  // SÓ MONTA O APP QUANDO OS DADOS ESTIVEREM 100% PRONTOS
+  return (
+    <Suspense fallback={<Loader2 className="animate-spin text-white" size={32} />}>
+      <PWARuntime isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />
+    </Suspense>
+  );
+}
+
 function AppContent() {
   const currentView = useAppStore(state => state.currentView);
   const isLoading = useAppStore(state => state.isLoading);
@@ -52,9 +89,7 @@ function AppContent() {
   if (buildTarget === 'pwa' || isStandaloneMode) {
     return (
       <div className="standalone-app-wrapper w-screen h-screen flex items-center justify-center bg-[#0d1117]">
-        <Suspense fallback={<Loader2 className="animate-spin text-white" size={32} />}>
-          <PWARuntime isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />
-        </Suspense>
+        <PWABootstrap isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />
       </div>
     );
   }

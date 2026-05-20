@@ -20,8 +20,6 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
 
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
-  const [isHydrated, setIsHydrated] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -73,22 +71,6 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     }
   };
 
-  // Bootstrap do PWA (Fetch dos dados estáticos compilados)
-  useEffect(() => {
-    fetch('/app-data.json')
-      .then(res => res.json())
-      .then(data => {
-        useAppStore.setState(data);
-        setIsHydrated(true); // Libera a tela
-      })
-      .catch(err => {
-        console.error("Erro ao ler app-data:", err);
-        setIsHydrated(true); // Libera a tela mesmo com erro para não travar em dev
-      })
-      .finally(() => {
-        setIsBootstrapping(false);
-      });
-  }, []);
 
   useEffect(() => {
     if (selectedMockupModuleId !== null) {
@@ -165,17 +147,6 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">${hideScrollbarStyle}</head><body>${html}</body></html>`;
   };
 
-  if (isBootstrapping) {
-    return (
-      <div className={`w-screen h-screen flex items-center justify-center ${isPhoneDark ? 'bg-[#0d1117] text-white' : 'bg-[#f6f8fa] text-[#1f2328]'}`}>
-        <Loader2 className="animate-spin" size={32} />
-      </div>
-    );
-  }
-
-  if (!isHydrated) {
-    return <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#fff', fontFamily: 'sans-serif'}}>Carregando App...</div>;
-  }
 
   return (
     <div 
