@@ -28,6 +28,8 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
   const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);
+  const [userName, setUserName] = useState("Nome do Aluno");
+  const [userEmail, setUserEmail] = useState("email@exemplo.com");
   const awards = pwaConfig.gamification?.awardsConfig || [];
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
   const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
@@ -442,17 +444,17 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 </div>
                 <span style={{ fontSize: '10px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '32px', fontWeight: 600, flexShrink: 0 }}>{t('app.profile.fileFormat', 'Apenas arquivos .JPG ou .JPEG')}</span>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px', flexShrink: 0 }}>
-                  <input type="text" placeholder={t('app.profile.namePlaceholder', 'Nome Completo') as string} value={t('app.profile.nameDefault', 'Nome do Aluno') as string} readOnly style={{ width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '14px', border: isPhoneDark ? 'none' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)', color: isPhoneDark ? '#9CA3AF' : '#6B7280', fontSize: '14px', outline: 'none', cursor: 'default' }} />
+                  <input type="text" placeholder={t('app.profile.namePlaceholder', 'Nome Completo') as string} value={userName} onChange={(e) => setUserName(e.target.value)} style={{ width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '14px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)', color: isPhoneDark ? '#ffffff' : '#111111', fontSize: '14px', outline: 'none' }} />
                   <input
                     type="email"
                     placeholder={t('app.profile.emailPlaceholder', 'E-mail (Chave de Acesso)') as string}
-                    value="email.com"
-                    readOnly
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
                     style={{
                       width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.02)' : '#f9fafb',
                       borderRadius: '14px', border: isPhoneDark ? '1px dashed rgba(255,255,255,0.1)' : '1px dashed #d1d5db',
-                      color: isPhoneDark ? '#9CA3AF' : '#6B7280',
-                      fontSize: '14px', outline: 'none', cursor: 'not-allowed'
+                      color: isPhoneDark ? '#ffffff' : '#111111',
+                      fontSize: '14px', outline: 'none'
                     }}
                   />
                 </div>
