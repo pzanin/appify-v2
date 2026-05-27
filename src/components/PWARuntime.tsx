@@ -29,6 +29,8 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
   const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);
+  const [userName, setUserName] = useState("Nome do Aluno");
+  const [userEmail, setUserEmail] = useState("email@exemplo.com");
   
   const awards = pwaConfig?.gamification?.awardsConfig || [];
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
@@ -259,8 +261,8 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                     </label>
                  </div>
                  <div className="w-full space-y-4 mb-8">
-                    <div className={`p-4 rounded-2xl text-sm font-bold ${isPhoneDark ? 'bg-white/5' : 'bg-white shadow-sm border border-black/5'}`} style={{ color: isPhoneDark ? '#9ca3af' : '#4b5563' }}>Nome do Aluno</div>
-                    <div className={`p-4 rounded-2xl text-sm font-bold border border-dashed ${isPhoneDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'}`} style={{ color: isPhoneDark ? '#6b7280' : '#9ca3af' }}>email@exemplo.com</div>
+                    <input type="text" className={`w-full p-4 rounded-2xl text-sm font-bold outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 text-gray-300' : 'bg-white text-gray-700 shadow-sm border border-black/5'}`} value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Nome do Aluno" />
+                    <input type="email" className={`w-full p-4 rounded-2xl text-sm font-bold border border-dashed outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`} value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder="email@exemplo.com" />
                  </div>
 
                  {pwaConfig?.gamification?.enablePoints && (
