@@ -173,16 +173,11 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
 
   const getResponsiveHtml = (html: string) => {
     if (!html) return '';
-    const hideScrollbarStyle = `
-      <style>
-        ::-webkit-scrollbar { display: none !important; width: 0px !important; background: transparent !important; }
-        html, body { -ms-overflow-style: none !important; scrollbar-width: none !important; }
-      </style>
-    `;
+    const hideScrollbarStyle = `<style>::-webkit-scrollbar { display: none !important; width: 0px !important; } html, body { -ms-overflow-style: none !important; scrollbar-width: none !important; margin: 0; padding: 0; overflow-x: hidden; max-width: 100vw; font-family: sans-serif; } img, video, iframe { max-width: 100% !important; height: auto; } * { box-sizing: border-box; }</style>`;
     if (html.includes('<html') || html.includes('<meta name="viewport"')) {
       return html.includes('</head>') ? html.replace('</head>', `${hideScrollbarStyle}</head>`) : `${hideScrollbarStyle}${html}`;
     }
-    return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">${hideScrollbarStyle}<style>html, body { margin: 0; padding: 0; overflow-x: hidden; max-width: 100vw; font-family: sans-serif; } img, video, iframe { max-width: 100% !important; height: auto; } * { box-sizing: border-box; }</style></head><body>${html}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">${hideScrollbarStyle}</head><body>${html}</body></html>`;
   };
 
   return (

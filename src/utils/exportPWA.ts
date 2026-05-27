@@ -10,10 +10,12 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const appName = state.appName || 'Meu App';
     
     // Extrai apenas os dados necessários do construtor
+    const { description, noIndex, showAdvanced, ...cleanPwaConfig } = state.pwaConfig || {};
+    
     const appData = {
       appName: state.appName,
       modules: state.modules,
-      pwaConfig: state.pwaConfig
+      pwaConfig: cleanPwaConfig
     };
 
     const zip = new JSZip();

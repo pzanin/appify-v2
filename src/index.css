@@ -72,7 +72,7 @@
 .vpb-module-icon { color: var(--accent); display: flex; align-items: center; justify-content: center; margin-top: 2px; }
 
 .vpb-canvas-area { flex: 1; background: #0a0a0f; overflow-y: auto; padding: 32px 32px 120px; display: flex; flex-direction: column; align-items: center; }
-.vpb-canvas-paper { width: 100%; max-width: 800px; background: #ffffff; min-height: 100%; border-radius: 8px; box-shadow: 0 12px 32px rgba(0,0,0,0.4); overflow: visible; position: relative; }
+.vpb-canvas-paper { width: 100%; max-width: 430px; margin: 0 auto; background: #ffffff; min-height: 100%; border-radius: 32px; border: 12px solid #111118; box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow: hidden; position: relative; }
 
 .vpb-block-wrapper { position: relative; outline: 2px dashed transparent; transition: all 0.2s; }
 .vpb-block-wrapper:hover { outline: 2px dashed var(--accent); }

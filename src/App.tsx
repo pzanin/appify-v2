@@ -88,7 +88,7 @@ function AppContent() {
   // Modo PWA Exclusivo (via Variável de Ambiente) ou Fallback via URL
   if (buildTarget === 'pwa' || isStandaloneMode) {
     return (
-      <div className="standalone-app-wrapper w-screen h-screen flex items-center justify-center bg-[#0d1117]">
+      <div className="standalone-app-wrapper w-screen h-screen flex items-center justify-center bg-[#000]">
         <PWABootstrap isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />
       </div>
     );

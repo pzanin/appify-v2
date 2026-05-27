@@ -125,6 +125,19 @@ export interface BuilderBlock {
     rightText?: string;
     columnBgColor?: string;
     columnPadding?: string | number;
+    // Advanced image controls
+    imgHeight?: string | number;
+    imgBorderRadius?: string | number;
+    imgObjectFit?: 'cover' | 'contain' | 'fill';
+    // Advanced title controls
+    titleFontSize?: string | number;
+    titleFontWeight?: string | number;
+    titleMarginBottom?: string | number;
+    // Image controls for imageText container
+    imageWidth?: string | number;
+    imageHeight?: string | number;
+    imageBorderRadius?: string | number;
+    imageObjectFit?: 'cover' | 'contain' | 'fill';
   };
 }
 

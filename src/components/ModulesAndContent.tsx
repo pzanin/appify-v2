@@ -126,20 +126,20 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const getDefaultProps = (type: string, subtype?: string) => {
     const base = { bgColor: '#ffffff', padding: '20', align: 'left', fontFamily: 'DM Sans', fontSize: '16', color: '#333333' };
     switch(type) {
-      case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', fontSize: '32', align: 'center', padding: '40' };
+      case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', fontSize: '32', align: 'center', padding: '40', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
-      case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center' };
+      case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'link': return { ...base, text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', align: 'center' };
       case 'spacer': return { ...base, height: '40', bgColor: 'transparent', align: 'left' };
       case 'divider': return { ...base, dividerColor: '#e5e7eb', thickness: '1', padding: '10', align: 'center' };
       case 'container':
         switch(subtype) {
-          case 'hero': return { ...base, bgColor: '#6b8af0', padding: '80', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', fontSize: '48' };
-          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '40', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '24' };
-          case 'threeColumn': return { ...base, bgColor: '#ffffff', padding: '40', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '24' };
-          case 'imageText': return { ...base, bgColor: '#ffffff', padding: '40', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left' };
+          case 'hero': return { ...base, bgColor: '#6b8af0', padding: '80', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', fontSize: '48', titleFontSize: '48', titleFontWeight: '700', titleMarginBottom: '16' };
+          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '40', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '24', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'threeColumn': return { ...base, bgColor: '#ffffff', padding: '40', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '24', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'imageText': return { ...base, bgColor: '#ffffff', padding: '40', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'testimonial': return { ...base, bgColor: '#f9fafb', padding: '40', quote: '"Este é um depoimento incrível sobre nosso produto ou serviço."', author: 'Nome do Cliente', role: 'Cargo/Empresa', quoteColor: '#6b8af0', quoteSize: '18' };
-          case 'cta': return { ...base, bgColor: '#111118', padding: '60', align: 'center', title: 'Pronto para começar?', subtitle: 'Faça uma ação agora mesmo', titleColor: '#ffffff', subtitleColor: '#d1d5db', buttonText: 'Clique aqui', buttonColor: '#6b8af0', buttonTextColor: '#ffffff' };
+          case 'cta': return { ...base, bgColor: '#111118', padding: '60', align: 'center', title: 'Pronto para começar?', subtitle: 'Faça uma ação agora mesmo', titleColor: '#ffffff', subtitleColor: '#d1d5db', buttonText: 'Clique aqui', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontSize: '36', titleFontWeight: '700', titleMarginBottom: '12' };
         }
     }
     return base;
@@ -154,23 +154,39 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
   const getBlockInnerHtml = (mod: BuilderBlock) => {
     const p = mod.props;
+    // Helper: resolve title styling
+    const tfs = p.titleFontSize || p.fontSize || '32';
+    const tfw = p.titleFontWeight || '700';
+    const tmb = p.titleMarginBottom || '8';
+    // Helper: resolve image styling for standalone image block
+    const imgH = p.imgHeight && p.imgHeight !== 'auto' ? `height:${p.imgHeight}px;` : 'height:auto;';
+    const imgR = `border-radius:${p.imgBorderRadius || 0}px;`;
+    const imgF = `object-fit:${p.imgObjectFit || 'cover'};`;
+    // Helper: resolve image styling for imageText container
+    const itImgW = p.imageWidth ? `width:${p.imageWidth}%;` : 'max-width:100%;';
+    const itImgH = p.imageHeight && p.imageHeight !== 'auto' ? `height:${p.imageHeight}px;` : 'height:auto;';
+    const itImgR = `border-radius:${p.imageBorderRadius || 8}px;`;
+    const itImgF = `object-fit:${p.imageObjectFit || 'cover'};`;
+
     switch(mod.type) {
-      case 'header': return `<h1 style="font-size:${p.fontSize}px;font-weight:700;margin:0 0 8px;">${p.title}</h1><p style="font-size:${parseInt(String(p.fontSize))*0.5}px;opacity:0.7;margin:0;">${p.subtitle}</p>`;
+      case 'header': return `<h1 style="font-size:${tfs}px;font-weight:${tfw};margin:0 0 ${tmb}px;">${p.title}</h1><p style="font-size:${parseInt(String(tfs))*0.5}px;opacity:0.7;margin:0;">${p.subtitle}</p>`;
       case 'text': return `<p style="margin:0;">${p.content}</p>`;
-      case 'image': return p.src ? `<img src="${p.src}" alt="${p.alt}" style="max-width:${p.width}%;height:auto;display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:8px;">Clique para adicionar imagem</div>`;
+      case 'image': return p.src ? `<img src="${p.src}" alt="${p.alt}" style="max-width:${p.width}%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:8px;">Clique para adicionar imagem</div>`;
       case 'link': return p.style === 'button' ? `<a href="#" style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:${p.fontSize}px;">${p.text}</a>` : `<a href="#" style="color:${p.buttonColor};text-decoration:underline;font-size:${p.fontSize}px;">${p.text}</a>`;
       case 'spacer': return `<div style="height:${p.height}px;"></div>`;
       case 'divider': return `<hr style="border:none;border-top:${p.thickness}px solid ${p.dividerColor};margin:0;">`;
       case 'container':
         switch(mod.subtype) {
-          case 'hero': return `<h1 style="font-size:${p.fontSize}px;font-weight:700;color:${p.titleColor};margin:0 0 16px;">${p.title}</h1><p style="font-size:${parseInt(String(p.fontSize))*0.4}px;color:${p.subtitleColor};margin:0;">${p.subtitle}</p>`;
-          case 'twoColumn': return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="margin:0 0 12px;font-weight:700;">${p.leftTitle}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.leftText}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="margin:0 0 12px;font-weight:700;">${p.rightTitle}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.rightText}</p></div></div>`;
-          case 'threeColumn': return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 12px;font-weight:700;">${p.col1Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col1Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 12px;font-weight:700;">${p.col2Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col2Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 12px;font-weight:700;">${p.col3Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col3Text}</p></div></div>`;
-          case 'imageText': 
-            const imgHtml = p.imageSrc ? `<img src="${p.imageSrc}" alt="${p.imageAlt}" style="max-width:100%;height:auto;border-radius:8px;">` : `<div style="background:#e5e7eb;height:300px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Clique para adicionar imagem</div>`;
-            return p.imagePosition === 'left' ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;"><div>${imgHtml}</div><div><h3 style="margin:0 0 12px;font-weight:700;font-size:24px;">${p.title}</h3><p style="margin:0;line-height:1.8;">${p.text}</p></div></div>` : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;"><div><h3 style="margin:0 0 12px;font-weight:700;font-size:24px;">${p.title}</h3><p style="margin:0;line-height:1.8;">${p.text}</p></div><div>${imgHtml}</div></div>`;
+          case 'hero': return `<h1 style="font-size:${tfs}px;font-weight:${tfw};color:${p.titleColor};margin:0 0 ${tmb}px;">${p.title}</h1><p style="font-size:${parseInt(String(tfs))*0.4}px;color:${p.subtitleColor};margin:0;">${p.subtitle}</p>`;
+          case 'twoColumn': return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.leftTitle}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.leftText}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.rightTitle}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.rightText}</p></div></div>`;
+          case 'threeColumn': return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.col1Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col1Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.col2Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col2Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.col3Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col3Text}</p></div></div>`;
+          case 'imageText': {
+            const imgHtml = p.imageSrc ? `<img src="${p.imageSrc}" alt="${p.imageAlt}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Clique para adicionar imagem</div>`;
+            const titleH = `<h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.title}</h3>`;
+            return p.imagePosition === 'left' ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;"><div>${imgHtml}</div><div>${titleH}<p style="margin:0;line-height:1.8;">${p.text}</p></div></div>` : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;"><div>${titleH}<p style="margin:0;line-height:1.8;">${p.text}</p></div><div>${imgHtml}</div></div>`;
+          }
           case 'testimonial': return `<div style="background:${p.bgColor};padding:${p.padding}px;border-radius:12px;border-left:4px solid ${p.quoteColor};"><p style="font-size:${p.quoteSize}px;font-style:italic;margin:0 0 16px;line-height:1.8;color:${p.color};">${p.quote}</p><p style="margin:0 0 4px;font-weight:700;color:${p.color};">${p.author}</p><p style="margin:0;font-size:14px;color:#6b7280;">${p.role}</p></div>`;
-          case 'cta': return `<h2 style="font-size:36px;font-weight:700;color:${p.titleColor};margin:0 0 12px;">${p.title}</h2><p style="font-size:18px;color:${p.subtitleColor};margin:0 0 24px;">${p.subtitle}</p><a href="#" style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:14px 32px;border-radius:6px;text-decoration:none;font-weight:600;font-size:16px;">${p.buttonText}</a>`;
+          case 'cta': return `<h2 style="font-size:${tfs}px;font-weight:${tfw};color:${p.titleColor};margin:0 0 ${tmb}px;">${p.title}</h2><p style="font-size:18px;color:${p.subtitleColor};margin:0 0 24px;">${p.subtitle}</p><a href="#" style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:14px 32px;border-radius:6px;text-decoration:none;font-weight:600;font-size:16px;">${p.buttonText}</a>`;
         }
     }
     return '';
@@ -179,11 +195,18 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const generateHTML = () => {
     const bodyHTML = blocks.map(mod => {
       const p = mod.props;
-      const wrapStyle = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};`;
+      const wrapStyle = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;`;
       const inner = sanitizeHtml(getBlockInnerHtml(mod)).replace(/href="#"/g, ''); 
       return `<section style="${wrapStyle}">${inner}</section>`;
     }).join('\n');
-    return `<div class="v-generated-content custom-html-container">\n${bodyHTML}\n</div>`;
+    
+    const uniqueFonts = Array.from(new Set(blocks.map(b => b.props.fontFamily as string).filter(Boolean)));
+    const fontLinks = uniqueFonts.map(font => {
+      const fontName = font.replace(/\s+/g, '+');
+      return `<link href="https://fonts.googleapis.com/css2?family=${fontName}:wght@400;600;700;800&display=swap" rel="stylesheet">`;
+    }).join('\n');
+
+    return `<div class="v-generated-content custom-html-container">\n${fontLinks}\n${bodyHTML}\n</div>`;
   };
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
@@ -257,7 +280,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
               </div>
             </aside>
 
-            <main className="vpb-canvas-area" onClick={() => setSelectedBlockId(null)} style={{ background: '#ffffff', minHeight: '100%', position: 'relative' }}>
+            <main className="vpb-canvas-area" onClick={() => setSelectedBlockId(null)} style={{ background: 'var(--bg)', minHeight: '100%', position: 'relative' }}>
               {blocks.length === 0 ? (
                 <div className="empty-state" style={{ margin: 'auto' }}>
                   <Layers size={48} color="var(--muted)" style={{ marginBottom: 16 }} />
@@ -369,21 +392,329 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
             {selectedBlock && contentType === 'html' && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                {/* ── CONTEÚDO DO BLOCO ── */}
                 <div className="vpb-prop-group">
                   <span className="vpb-lib-label">Conteúdo do Bloco</span>
+
                   {selectedBlock.type === 'header' && (
-                    <><label className="vpb-label">Título</label><input className="vpb-input" value={selectedBlock.props.title} onChange={e => updateProp('title', e.target.value)} />
-                    <label className="vpb-label">Subtítulo</label><input className="vpb-input" value={selectedBlock.props.subtitle} onChange={e => updateProp('subtitle', e.target.value)} /></>
+                    <>
+                      <label className="vpb-label">Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.title || ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Subtítulo</label>
+                      <input className="vpb-input" value={selectedBlock.props.subtitle || ''} onChange={e => updateProp('subtitle', e.target.value)} />
+                    </>
                   )}
+
                   {selectedBlock.type === 'text' && (
-                    <><label className="vpb-label">Texto</label><textarea className="vpb-textarea" value={selectedBlock.props.content} onChange={e => updateProp('content', e.target.value)} /></>
+                    <>
+                      <label className="vpb-label">Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
                   )}
+
                   {selectedBlock.type === 'image' && (
-                    <><label className="vpb-label">Upload</label><input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'src')} />
-                    <label className="vpb-label">Largura (%)</label><input type="range" min="10" max="100" className="vpb-input" value={selectedBlock.props.width} onChange={e => updateProp('width', e.target.value)} /></>
+                    <>
+                      <label className="vpb-label">Upload de Imagem</label>
+                      <input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'src')} />
+                      {selectedBlock.props.src && (
+                        <div style={{ marginBottom: '12px', borderRadius: String(selectedBlock.props.imgBorderRadius || 0) + 'px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                          <img src={selectedBlock.props.src as string} alt="preview" style={{ width: '100%', maxHeight: '120px', objectFit: (selectedBlock.props.imgObjectFit || 'cover') as any }} />
+                        </div>
+                      )}
+                      <label className="vpb-label">Largura ({selectedBlock.props.width || 100}%)</label>
+                      <input type="range" min="10" max="100" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.width || 100} onChange={e => updateProp('width', e.target.value)} />
+                      <label className="vpb-label">Altura (px) — "auto" = proporcional</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                        <input type="number" className="vpb-input" style={{ flex: 1, marginBottom: 0 }} placeholder="auto" value={selectedBlock.props.imgHeight === 'auto' ? '' : selectedBlock.props.imgHeight || ''} onChange={e => updateProp('imgHeight', e.target.value ? e.target.value : 'auto')} />
+                        <button type="button" onClick={() => updateProp('imgHeight', 'auto')} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: selectedBlock.props.imgHeight === 'auto' ? 'var(--accent)' : 'var(--surface)', color: selectedBlock.props.imgHeight === 'auto' ? 'white' : 'var(--muted)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>Auto</button>
+                      </div>
+                      <label className="vpb-label">Arredondamento ({selectedBlock.props.imgBorderRadius || 0}px)</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                        <input type="range" min="0" max="200" style={{ flex: 1, accentColor: 'var(--accent)' }} value={selectedBlock.props.imgBorderRadius || 0} onChange={e => updateProp('imgBorderRadius', e.target.value)} />
+                        <button type="button" onClick={() => updateProp('imgBorderRadius', '999')} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: String(selectedBlock.props.imgBorderRadius) === '999' ? 'var(--accent)' : 'var(--surface)', color: String(selectedBlock.props.imgBorderRadius) === '999' ? 'white' : 'var(--muted)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>⬤ Círculo</button>
+                      </div>
+                      <label className="vpb-label">Preenchimento</label>
+                      <select className="vpb-input" value={selectedBlock.props.imgObjectFit || 'cover'} onChange={e => updateProp('imgObjectFit', e.target.value as any)}>
+                        <option value="cover">Cobrir (Cover)</option>
+                        <option value="contain">Conter (Contain)</option>
+                        <option value="fill">Esticar (Fill)</option>
+                      </select>
+                      <label className="vpb-label">Texto Alternativo</label>
+                      <input className="vpb-input" value={selectedBlock.props.alt || ''} onChange={e => updateProp('alt', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'link' && (
+                    <>
+                      <label className="vpb-label">Texto do Botão / Link</label>
+                      <input className="vpb-input" value={selectedBlock.props.text || ''} onChange={e => updateProp('text', e.target.value)} />
+                      <label className="vpb-label">URL de Destino</label>
+                      <input className="vpb-input" placeholder="https://..." value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
+                      <label className="vpb-label">Estilo</label>
+                      <select className="vpb-input" value={selectedBlock.props.style || 'button'} onChange={e => updateProp('style', e.target.value)}>
+                        <option value="button">Botão</option>
+                        <option value="link">Link com sublinhado</option>
+                      </select>
+                      <label className="vpb-label">Cor do Botão</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.buttonColor || '#6b8af0'} onChange={e => updateProp('buttonColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.buttonColor || '#6b8af0'} onChange={e => updateProp('buttonColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Cor do Texto do Botão</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.buttonTextColor || '#ffffff'} onChange={e => updateProp('buttonTextColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.buttonTextColor || '#ffffff'} onChange={e => updateProp('buttonTextColor', e.target.value)} />
+                      </div>
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'spacer' && (
+                    <>
+                      <label className="vpb-label">Altura ({selectedBlock.props.height || 40}px)</label>
+                      <input type="range" min="8" max="200" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.height || 40} onChange={e => updateProp('height', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'divider' && (
+                    <>
+                      <label className="vpb-label">Espessura ({selectedBlock.props.thickness || 1}px)</label>
+                      <input type="range" min="1" max="8" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.thickness || 1} onChange={e => updateProp('thickness', e.target.value)} />
+                      <label className="vpb-label">Cor da Linha</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.dividerColor || '#e5e7eb'} onChange={e => updateProp('dividerColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.dividerColor || '#e5e7eb'} onChange={e => updateProp('dividerColor', e.target.value)} />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Container subtypes */}
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'hero' && (
+                    <>
+                      <label className="vpb-label">Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.title || ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Subtítulo</label>
+                      <input className="vpb-input" value={selectedBlock.props.subtitle || ''} onChange={e => updateProp('subtitle', e.target.value)} />
+                      <label className="vpb-label">Cor do Título</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.titleColor || '#ffffff'} onChange={e => updateProp('titleColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.titleColor || '#ffffff'} onChange={e => updateProp('titleColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Cor do Subtítulo</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.subtitleColor || '#e0e7ff'} onChange={e => updateProp('subtitleColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.subtitleColor || '#e0e7ff'} onChange={e => updateProp('subtitleColor', e.target.value)} />
+                      </div>
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'twoColumn' && (
+                    <>
+                      <label className="vpb-label">Título Esquerda</label>
+                      <input className="vpb-input" value={selectedBlock.props.leftTitle || ''} onChange={e => updateProp('leftTitle', e.target.value)} />
+                      <label className="vpb-label">Texto Esquerda</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.leftText || ''} onChange={e => updateProp('leftText', e.target.value)} />
+                      <label className="vpb-label">Título Direita</label>
+                      <input className="vpb-input" value={selectedBlock.props.rightTitle || ''} onChange={e => updateProp('rightTitle', e.target.value)} />
+                      <label className="vpb-label">Texto Direita</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.rightText || ''} onChange={e => updateProp('rightText', e.target.value)} />
+                      <label className="vpb-label">Cor de Fundo das Colunas</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.columnBgColor || '#ffffff'} onChange={e => updateProp('columnBgColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.columnBgColor || '#ffffff'} onChange={e => updateProp('columnBgColor', e.target.value)} />
+                      </div>
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'threeColumn' && (
+                    <>
+                      <label className="vpb-label">Card 1 — Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.col1Title || ''} onChange={e => updateProp('col1Title', e.target.value)} />
+                      <label className="vpb-label">Card 1 — Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.col1Text || ''} onChange={e => updateProp('col1Text', e.target.value)} />
+                      <label className="vpb-label">Card 2 — Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.col2Title || ''} onChange={e => updateProp('col2Title', e.target.value)} />
+                      <label className="vpb-label">Card 2 — Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.col2Text || ''} onChange={e => updateProp('col2Text', e.target.value)} />
+                      <label className="vpb-label">Card 3 — Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.col3Title || ''} onChange={e => updateProp('col3Title', e.target.value)} />
+                      <label className="vpb-label">Card 3 — Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.col3Text || ''} onChange={e => updateProp('col3Text', e.target.value)} />
+                      <label className="vpb-label">Cor de Fundo dos Cards</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
+                      </div>
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'imageText' && (
+                    <>
+                      <label className="vpb-label">Upload de Imagem</label>
+                      <input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'imageSrc')} />
+                      {selectedBlock.props.imageSrc && (
+                        <div style={{ marginBottom: '12px', borderRadius: String(selectedBlock.props.imageBorderRadius || 8) + 'px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                          <img src={selectedBlock.props.imageSrc as string} alt="preview" style={{ width: '100%', maxHeight: '100px', objectFit: (selectedBlock.props.imageObjectFit || 'cover') as any }} />
+                        </div>
+                      )}
+                      <label className="vpb-label">Largura da Imagem ({selectedBlock.props.imageWidth || 100}%)</label>
+                      <input type="range" min="10" max="100" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.imageWidth || 100} onChange={e => updateProp('imageWidth', e.target.value)} />
+                      <label className="vpb-label">Altura (px)</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                        <input type="number" className="vpb-input" style={{ flex: 1, marginBottom: 0 }} placeholder="auto" value={selectedBlock.props.imageHeight === 'auto' ? '' : selectedBlock.props.imageHeight || ''} onChange={e => updateProp('imageHeight', e.target.value ? e.target.value : 'auto')} />
+                        <button type="button" onClick={() => updateProp('imageHeight', 'auto')} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: selectedBlock.props.imageHeight === 'auto' ? 'var(--accent)' : 'var(--surface)', color: selectedBlock.props.imageHeight === 'auto' ? 'white' : 'var(--muted)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>Auto</button>
+                      </div>
+                      <label className="vpb-label">Arredondamento ({selectedBlock.props.imageBorderRadius || 8}px)</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                        <input type="range" min="0" max="200" style={{ flex: 1, accentColor: 'var(--accent)' }} value={selectedBlock.props.imageBorderRadius || 8} onChange={e => updateProp('imageBorderRadius', e.target.value)} />
+                        <button type="button" onClick={() => updateProp('imageBorderRadius', '999')} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: String(selectedBlock.props.imageBorderRadius) === '999' ? 'var(--accent)' : 'var(--surface)', color: String(selectedBlock.props.imageBorderRadius) === '999' ? 'white' : 'var(--muted)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap' }}>⬤ Círculo</button>
+                      </div>
+                      <label className="vpb-label">Preenchimento</label>
+                      <select className="vpb-input" value={selectedBlock.props.imageObjectFit || 'cover'} onChange={e => updateProp('imageObjectFit', e.target.value as any)}>
+                        <option value="cover">Cobrir (Cover)</option>
+                        <option value="contain">Conter (Contain)</option>
+                        <option value="fill">Esticar (Fill)</option>
+                      </select>
+                      <label className="vpb-label">Posição da Imagem</label>
+                      <select className="vpb-input" value={selectedBlock.props.imagePosition || 'left'} onChange={e => updateProp('imagePosition', e.target.value)}>
+                        <option value="left">Esquerda</option>
+                        <option value="right">Direita</option>
+                      </select>
+                      <div style={{ height: '1px', background: 'var(--border)', margin: '12px 0' }} />
+                      <label className="vpb-label">Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.title || ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.text || ''} onChange={e => updateProp('text', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'testimonial' && (
+                    <>
+                      <label className="vpb-label">Citação</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.quote || ''} onChange={e => updateProp('quote', e.target.value)} />
+                      <label className="vpb-label">Nome do Autor</label>
+                      <input className="vpb-input" value={selectedBlock.props.author || ''} onChange={e => updateProp('author', e.target.value)} />
+                      <label className="vpb-label">Cargo / Empresa</label>
+                      <input className="vpb-input" value={selectedBlock.props.role || ''} onChange={e => updateProp('role', e.target.value)} />
+                      <label className="vpb-label">Cor da Citação</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.quoteColor || '#6b8af0'} onChange={e => updateProp('quoteColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.quoteColor || '#6b8af0'} onChange={e => updateProp('quoteColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Tamanho da Citação (px)</label>
+                      <input type="number" className="vpb-input" value={selectedBlock.props.quoteSize || 18} onChange={e => updateProp('quoteSize', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'cta' && (
+                    <>
+                      <label className="vpb-label">Título</label>
+                      <input className="vpb-input" value={selectedBlock.props.title || ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label">Subtítulo</label>
+                      <input className="vpb-input" value={selectedBlock.props.subtitle || ''} onChange={e => updateProp('subtitle', e.target.value)} />
+                      <label className="vpb-label">Texto do Botão</label>
+                      <input className="vpb-input" value={selectedBlock.props.buttonText || ''} onChange={e => updateProp('buttonText', e.target.value)} />
+                      <label className="vpb-label">Cor do Título</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.titleColor || '#ffffff'} onChange={e => updateProp('titleColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.titleColor || '#ffffff'} onChange={e => updateProp('titleColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Cor do Subtítulo</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.subtitleColor || '#d1d5db'} onChange={e => updateProp('subtitleColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.subtitleColor || '#d1d5db'} onChange={e => updateProp('subtitleColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Cor do Botão</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.buttonColor || '#6b8af0'} onChange={e => updateProp('buttonColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.buttonColor || '#6b8af0'} onChange={e => updateProp('buttonColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Cor do Texto do Botão</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.buttonTextColor || '#ffffff'} onChange={e => updateProp('buttonTextColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.buttonTextColor || '#ffffff'} onChange={e => updateProp('buttonTextColor', e.target.value)} />
+                      </div>
+                    </>
                   )}
                 </div>
-                {/* Outras props aqui seriam mantidas como no VisualPageBuilder original */}
+
+                {/* ── ESTILOS GLOBAIS DO BLOCO ── */}
+                <div className="vpb-prop-group">
+                  <span className="vpb-lib-label">Estilos do Bloco</span>
+
+                  <label className="vpb-label">Fonte</label>
+                  <select className="vpb-input" value={selectedBlock.props.fontFamily || 'DM Sans'} onChange={e => updateProp('fontFamily', e.target.value)}>
+                    {GOOGLE_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+
+                  <label className="vpb-label">Tamanho da Fonte ({selectedBlock.props.fontSize || 16}px)</label>
+                  <input type="range" min="10" max="72" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.fontSize || 16} onChange={e => updateProp('fontSize', e.target.value)} />
+
+                  <label className="vpb-label">Cor do Texto</label>
+                  <div className="vpb-color-row">
+                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.color || '#333333'} onChange={e => updateProp('color', e.target.value)} />
+                    <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.color || '#333333'} onChange={e => updateProp('color', e.target.value)} />
+                  </div>
+
+                  <label className="vpb-label">Cor de Fundo</label>
+                  <div className="vpb-color-row">
+                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.bgColor || '#ffffff'} onChange={e => updateProp('bgColor', e.target.value)} />
+                    <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.bgColor || '#ffffff'} onChange={e => updateProp('bgColor', e.target.value)} />
+                  </div>
+
+                  <label className="vpb-label">Padding ({selectedBlock.props.padding || 20}px)</label>
+                  <input type="range" min="0" max="120" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.padding || 20} onChange={e => updateProp('padding', e.target.value)} />
+
+                  <label className="vpb-label">Alinhamento</label>
+                  <div style={{ display: 'flex', gap: '4px', background: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '12px' }}>
+                    {(['left', 'center', 'right'] as const).map(a => (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => updateProp('align', a)}
+                        style={{
+                          flex: 1, padding: '6px', borderRadius: '6px', border: 'none',
+                          background: selectedBlock.props.align === a ? 'var(--accent)' : 'transparent',
+                          color: selectedBlock.props.align === a ? 'white' : 'var(--muted)',
+                          cursor: 'pointer', fontWeight: 600, fontSize: '11px', transition: 'all 0.2s'
+                        }}
+                      >
+                        {a === 'left' ? '◀ Esq' : a === 'center' ? '● Centro' : 'Dir ▶'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── TÍTULO AVANÇADO ── */}
+                {(selectedBlock.type === 'header' || (selectedBlock.type === 'container' && ['hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
+                  <div className="vpb-prop-group">
+                    <span className="vpb-lib-label">Título Avançado</span>
+
+                    <label className="vpb-label">Tamanho do Título ({selectedBlock.props.titleFontSize || selectedBlock.props.fontSize || 32}px)</label>
+                    <input type="range" min="12" max="96" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.titleFontSize || selectedBlock.props.fontSize || 32} onChange={e => updateProp('titleFontSize', e.target.value)} />
+
+                    <label className="vpb-label">Peso da Fonte</label>
+                    <div style={{ display: 'flex', gap: '4px', background: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '12px' }}>
+                      {([{ v: '400', l: 'Normal' }, { v: '600', l: 'Semi' }, { v: '700', l: 'Negrito' }, { v: '800', l: 'Extra' }] as const).map(w => (
+                        <button
+                          key={w.v}
+                          type="button"
+                          onClick={() => updateProp('titleFontWeight', w.v)}
+                          style={{
+                            flex: 1, padding: '6px 2px', borderRadius: '6px', border: 'none',
+                            background: String(selectedBlock.props.titleFontWeight || '700') === w.v ? 'var(--accent)' : 'transparent',
+                            color: String(selectedBlock.props.titleFontWeight || '700') === w.v ? 'white' : 'var(--muted)',
+                            cursor: 'pointer', fontWeight: parseInt(w.v), fontSize: '10px', transition: 'all 0.2s'
+                          }}
+                        >
+                          {w.l}
+                        </button>
+                      ))}
+                    </div>
+
+                    <label className="vpb-label">Espaçamento Inferior ({selectedBlock.props.titleMarginBottom || 8}px)</label>
+                    <input type="range" min="0" max="80" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.titleMarginBottom || 8} onChange={e => updateProp('titleMarginBottom', e.target.value)} />
+                  </div>
+                )}
               </div>
             )}
 

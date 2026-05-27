@@ -75,11 +75,6 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
       stepId: 0 
     },
     { 
-      label: "Descrição do app preenchida", 
-      ok: !!pwaConfig.description, 
-      stepId: 0 
-    },
-    { 
       label: "Supabase conectado", 
       ok: connectionStatus === 'connected', 
       stepId: 4 
