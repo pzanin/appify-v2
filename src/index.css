@@ -71,8 +71,19 @@
 .vpb-module-btn:hover { border-color: var(--accent); background: var(--accent-glow); transform: translateY(-2px); }
 .vpb-module-icon { color: var(--accent); display: flex; align-items: center; justify-content: center; margin-top: 2px; }
 
-.vpb-canvas-area { flex: 1; background: #0a0a0f; overflow-y: auto; padding: 32px 32px 120px; display: flex; flex-direction: column; align-items: center; }
-.vpb-canvas-paper { width: 100%; max-width: 430px; margin: 0 auto; background: #ffffff; min-height: 100%; border-radius: 32px; border: 12px solid #111118; box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow: hidden; position: relative; }
+.vpb-canvas-area { flex: 1; background: #0a0a0f; overflow-y: hidden; padding: 32px 32px 0px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.vpb-canvas-paper { width: 100%; max-width: 430px; margin: 0 auto; background: #ffffff; height: calc(100vh - 120px); max-height: 850px; border-radius: 32px; border: 12px solid #111118; box-shadow: 0 20px 40px rgba(0,0,0,0.6); overflow-y: auto; overflow-x: hidden; position: relative; scrollbar-width: thin; }
+
+.vpb-canvas-paper::-webkit-scrollbar {
+  width: 4px;
+}
+.vpb-canvas-paper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.vpb-canvas-paper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
 
 .vpb-block-wrapper { position: relative; outline: 2px dashed transparent; transition: all 0.2s; }
 .vpb-block-wrapper:hover { outline: 2px dashed var(--accent); }
