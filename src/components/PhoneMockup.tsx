@@ -8,6 +8,24 @@ import { useTranslation } from 'react-i18next';
 
 interface PhoneMockupProps { isPhoneDark: boolean; setIsPhoneDark: (val: boolean) => void; }
 
+interface EmptyStateProps {
+  icon: any;
+  text: string;
+}
+
+function EmptyState({ icon: Icon, text }: EmptyStateProps) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', textAlign: 'center', height: '100%', flex: 1 }}>
+      <div style={{ opacity: 0.15, marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={48} />
+      </div>
+      <p style={{ fontSize: '13px', fontWeight: 600, opacity: 0.4, lineHeight: 1.5, margin: 0, maxWidth: '240px' }}>
+        {text}
+      </p>
+    </div>
+  );
+}
+
 export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const { t } = useTranslation();
   const appName = useAppStore(state => state.appName);
@@ -19,6 +37,9 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const activeLocale = useAppStore(state => state.activeLocale);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
+  const feedPosts = useAppStore(state => state.feedPosts) || [];
+  const pushNotifications = useAppStore(state => state.pushNotifications) || [];
+  const currentProjectId = useAppStore(state => state.currentProjectId);
 
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -28,8 +49,15 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
   const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);
-  const [userName, setUserName] = useState("Nome do Aluno");
-  const [userEmail, setUserEmail] = useState("email@exemplo.com");
+
+  // Reset states when project changes
+  useEffect(() => {
+    setSelectedMockupModuleId(null);
+    setSelectedMockupSubmoduleId(null);
+    setActiveTab('inicio');
+  }, [currentProjectId]);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const awards = pwaConfig.gamification?.awardsConfig || [];
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
   const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
@@ -37,6 +65,9 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [lockedModuleClick, setLockedModuleClick] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
+  const [hasNewAnnouncement, setHasNewAnnouncement] = useState<boolean>(false);
+  const [hasNewPush, setHasNewPush] = useState<boolean>(false);
+  const [activePushBanner, setActivePushBanner] = useState<any | null>(null);
 
   // Anti-Cheat states
   const [canCompleteLesson, setCanCompleteLesson] = useState(false);
@@ -130,7 +161,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     
-    if (selectedMockupSubmoduleId) {
+    if (selectedMockupSubmodule) {
       const timeGate = selectedMockupSubmodule?.gamificationConfig?.timeGateSeconds || 0;
       
       setCanCompleteLesson(timeGate === 0);
@@ -172,6 +203,43 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
     const timer = setTimeout(() => setIsTransitioning(false), 300);
     return () => clearTimeout(timer);
   }, [activeLocale]);
+
+  useEffect(() => {
+    if (feedPosts && feedPosts.length > 0) {
+      const latestPost = feedPosts[0];
+      const latestTime = latestPost.createdAt || latestPost.id;
+      const lastViewed = Number(localStorage.getItem('last_viewed_announcement') || '0');
+      if (latestTime > lastViewed) {
+        setHasNewAnnouncement(true);
+      } else {
+        setHasNewAnnouncement(false);
+      }
+    } else {
+      setHasNewAnnouncement(false);
+    }
+  }, [feedPosts]);
+
+  useEffect(() => {
+    if (pushNotifications && pushNotifications.length > 0) {
+      const latestPush = pushNotifications[0];
+      const latestTime = latestPush.createdAt || latestPush.id;
+      const lastViewed = Number(localStorage.getItem('last_viewed_push') || '0');
+      if (latestTime > lastViewed) {
+        setHasNewPush(true);
+        if (Date.now() - latestTime < 10000) {
+          setActivePushBanner(latestPush);
+          const timer = setTimeout(() => {
+            setActivePushBanner(null);
+          }, 5000);
+          return () => clearTimeout(timer);
+        }
+      } else {
+        setHasNewPush(false);
+      }
+    } else {
+      setHasNewPush(false);
+    }
+  }, [pushNotifications]);
 
   const getResponsiveHtml = (html: string) => {
     if (!html) return '';
@@ -293,7 +361,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 {pwaConfig.iconBase64 ? (
                   <img src={pwaConfig.iconBase64} alt="Icon" style={{ width: '100%', height: '100%', borderRadius: '28px', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }} />
                 ) : (
-                  <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  <div style={{ width: '100%', height: '100%', background: '#1F2937', borderRadius: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <Smartphone size={48} />
                   </div>
                 )}
@@ -341,7 +409,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
 
         <AnimatePresence>
           {onboardingStep > 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 150, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', overflow: 'hidden' }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'rgba(9, 18, 24, 0.92)', zIndex: 150, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', inset: 0 }} onClick={() => { setOnboardingStep(0); setMockupOnboardingCompleted(true); }} />
               <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} style={{ position: 'relative', background: isPhoneDark ? '#1F2937' : 'white', borderRadius: '32px 32px 0 0', padding: '40px 24px 32px', color: isPhoneDark ? 'white' : '#111', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
                 {/* Background Glow */}
@@ -382,6 +450,52 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
           )}
         </AnimatePresence>
 
+        <AnimatePresence>
+          {activePushBanner && (
+            <motion.div
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 12, opacity: 1 }}
+              exit={{ y: -100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+              onClick={() => {
+                setActiveTab('inicio');
+                setActivePushBanner(null);
+                localStorage.setItem('last_viewed_push', String(Date.now()));
+                setHasNewPush(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: '40px',
+                left: '12px',
+                right: '12px',
+                background: isPhoneDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                padding: '12px 16px',
+                borderRadius: '18px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                border: isPhoneDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)',
+                zIndex: 999,
+                cursor: 'pointer',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ width: '36px', height: '36px', background: themeColor, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+                <Bell size={18} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: isPhoneDark ? '#fff' : '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activePushBanner.title}
+                </div>
+                <div style={{ fontSize: '12px', color: isPhoneDark ? '#9ca3af' : '#4b5563', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activePushBanner.body}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div className="phone-notch"></div>
         
         <div className="phone-header-bg">
@@ -410,7 +524,31 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             <div className="phone-header-icon" onClick={() => setIsPhoneDark(!isPhoneDark)} role="button">
               {isPhoneDark ? <Sun size={15} strokeWidth={2.5} /> : <Moon size={15} strokeWidth={2.5} />}
             </div>
-            <div className="phone-header-icon" onClick={() => setOnboardingStep(2)}><Bell size={15} strokeWidth={2.5} /></div>
+            <div 
+              className="phone-header-icon" 
+              onClick={() => {
+                localStorage.setItem('last_viewed_push', String(Date.now()));
+                setHasNewPush(false);
+                setOnboardingStep(2);
+              }}
+              style={{ position: 'relative' }}
+            >
+              <Bell size={15} strokeWidth={2.5} />
+              {hasNewPush && (
+                <span 
+                  style={{ 
+                    position: 'absolute', 
+                    top: '-2px', 
+                    right: '-2px', 
+                    width: '6px', 
+                    height: '6px', 
+                    backgroundColor: '#ef4444', 
+                    borderRadius: '50%', 
+                    border: isPhoneDark ? '1px solid #1a1a24' : '1px solid #ffffff' 
+                  }} 
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -540,52 +678,78 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             ) : activeTab === 'comunidade' ? (
               <motion.div key="comunidade" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '24px 20px 80px 20px' }}>
                 <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '20px', flexShrink: 0 }}>{t('app.community.title', 'Comunidade')}</div>
-                <div style={{ background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', padding: '16px', borderRadius: '16px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 4px 12px rgba(0,0,0,0.04)', flexShrink: 0 }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '16px' }}>A</div>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111' }}>{t('app.community.admin', 'Admin')}</div>
-                      <div style={{ fontSize: '11px', color: isPhoneDark ? '#9CA3AF' : '#6B7280' }}>{t('app.community.justNow', 'Agora mesmo')}</div>
-                    </div>
+                {feedPosts && feedPosts.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
+                    {feedPosts.map((post) => (
+                      <div key={post.id} style={{ background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', padding: '16px', borderRadius: '16px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 4px 12px rgba(0,0,0,0.04)' }}>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '16px' }}>
+                            {post.author?.[0] || '?'}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111' }}>{post.author}</div>
+                            <div style={{ fontSize: '11px', color: isPhoneDark ? '#9CA3AF' : '#6B7280' }}>{post.timestamp}</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '13px', color: isPhoneDark ? '#D1D5DB' : '#4B5563', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                          {post.content}
+                        </div>
+                        {post.imageUrl && (
+                          <div style={{ marginTop: '12px', borderRadius: '12px', overflow: 'hidden', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb' }}>
+                            <img src={post.imageUrl} alt="Post content" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ fontSize: '13px', color: isPhoneDark ? '#D1D5DB' : '#4B5563', lineHeight: '1.5' }}>
-                    {t('app.community.welcomeMessage', 'Bem-vindo à nossa comunidade! Este é o seu espaço premium para interagir, tirar dúvidas e compartilhar seus resultados. 🎉')}
-                  </div>
-                </div>
+                ) : (
+                  <EmptyState icon={Users} text={t('app.community.emptyState', 'Nenhum conteúdo disponível no momento')} />
+                )}
               </motion.div>
             ) : activeTab === 'conteudo' ? (
-              <motion.div key="conteudo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '24px 20px 80px 20px' }}>
+              <motion.div key="conteudo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '24px 20px 80px 24px' }}>
                 <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '20px', flexShrink: 0 }}>{t('app.content.title', 'Conteúdo')}</div>
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
-                  <div style={{ background: isPhoneDark ? '#1f2937' : '#ffffff', borderRadius: '16px', overflow: 'hidden', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 4px 16px rgba(0,0,0,0.06)' }}>
-                    <div style={{ width: '100%', height: '140px', background: themeColor, opacity: 0.9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                      <Rss size={48} opacity={0.3} />
-                    </div>
-                    <div style={{ padding: '16px' }}>
-                      <div style={{ fontSize: '11px', color: themeColor, fontWeight: 800, marginBottom: '6px', letterSpacing: '0.5px' }}>{t('app.content.badge', 'NOVIDADE')}</div>
-                      <div style={{ fontSize: '15px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '8px' }}>{t('app.content.newLesson', 'Nova aula liberada!')}</div>
-                      <div style={{ fontSize: '13px', color: isPhoneDark ? '#9CA3AF' : '#4B5563', lineHeight: '1.5' }}>{t('app.content.newLessonDesc', 'Acabamos de liberar um conteúdo exclusivo sobre estratégias avançadas. Acesse a aba início e confira o novo módulo!')}</div>
-                    </div>
+                {pushNotifications && pushNotifications.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
+                    {pushNotifications.map(push => (
+                      <div key={push.id} style={{ background: isPhoneDark ? '#1f2937' : '#ffffff', borderRadius: '16px', overflow: 'hidden', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 4px 16px rgba(0,0,0,0.06)' }}>
+                        {push.imageUrl ? (
+                          <div style={{ width: '100%', height: '140px', overflow: 'hidden' }}>
+                            <img src={push.imageUrl} alt={push.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        ) : (
+                          <div style={{ width: '100%', height: '140px', background: themeColor, opacity: 0.9, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                            <Rss size={48} opacity={0.3} />
+                          </div>
+                        )}
+                        <div style={{ padding: '16px' }}>
+                          <div style={{ fontSize: '11px', color: themeColor, fontWeight: 800, marginBottom: '6px', letterSpacing: '0.5px' }}>{t('app.content.badge', 'NOVIDADE')}</div>
+                          <div style={{ fontSize: '15px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '8px' }}>{push.title}</div>
+                          <div style={{ fontSize: '13px', color: isPhoneDark ? '#9CA3AF' : '#4B5563', lineHeight: '1.5' }}>{push.body}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <EmptyState icon={Rss} text={t('app.content.emptyState', 'Nenhum conteúdo disponível no momento')} />
+                )}
               </motion.div>
             ) : (
               <motion.div key="inicio" initial={{ x: '-30%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '-30%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className="absolute inset-0 flex flex-col">
                 <AnimatePresence mode="wait" initial={false}>
                   {selectedMockupModule ? (
-                    <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmoduleId ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`} style={{ padding: selectedMockupSubmoduleId ? '0' : '20px 20px 80px 20px' }}>
+                    <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmodule ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`} style={{ padding: selectedMockupSubmodule ? '0' : '20px 20px 80px 20px' }}>
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'space-between',
-                        padding: selectedMockupSubmoduleId ? '12px 16px 8px' : '10px 0 8px', 
+                        padding: selectedMockupSubmodule ? '12px 16px 8px' : '10px 0 8px', 
                         flexShrink: 0 
                       }}>
-                        <button onClick={() => { if (selectedMockupSubmoduleId) setSelectedMockupSubmoduleId(null); else setSelectedMockupModuleId(null); }} style={{ background: 'transparent', border: 'none', color: isPhoneDark ? '#ffffff' : '#111111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '13px', fontWeight: 700 }}>
+                        <button onClick={() => { if (selectedMockupSubmodule) setSelectedMockupSubmoduleId(null); else setSelectedMockupModuleId(null); }} style={{ background: 'transparent', border: 'none', color: isPhoneDark ? '#ffffff' : '#111111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '13px', fontWeight: 700 }}>
                           <ArrowLeft size={16} /> {t('app.modules.back', 'Voltar')}
                         </button>
-
-                        {selectedMockupSubmoduleId && (
+                        {selectedMockupSubmodule && (
                           <div className="flex items-center">
                             {!isCurrentLessonCompleted ? (
                               !canCompleteLesson ? (
@@ -692,7 +856,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                           })()}
 
                           {(selectedMockupModule.subs?.length || 0) === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '24px 0', color: isPhoneDark ? '#9CA3AF' : '#6B7280', fontSize: '12px' }}>{t('app.modules.noLessons', 'Nenhuma aula adicionada')}</div>
+                            <EmptyState icon={PackageOpen} text={t('app.modules.noLessons', 'Nenhuma aula adicionada')} />
                           ) : (
                             <div className={selectedMockupModule.subs.length === 1 ? 'grid grid-cols-1 w-[66%] mx-auto gap-4' : selectedMockupModule.subs.length === 2 ? 'grid grid-cols-2 gap-4' : 'grid grid-cols-3 gap-3'}>
                               {selectedMockupModule.subs.map((sub, index) => (
@@ -756,7 +920,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                       </div>
 
                       {modules.length === 0 ? (
-                        <div className="phone-empty-state" style={{ padding: '40px 20px', textAlign: 'center', color: isPhoneDark ? '#9CA3AF' : '#6B7280', fontSize: '13px', fontWeight: 500, border: 'none', background: 'transparent' }}>{t('app.modules.emptyState', 'Nenhum módulo criado')}</div>
+                        <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState', 'Nenhum módulo criado')} />
                       ) : (
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                           {modules.map((mod, idx) => {
@@ -854,7 +1018,33 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         <div className="phone-bottom-nav">
           <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => { setActiveTab('inicio'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Home size={20} /><span>{t('nav.home', 'Início')}</span></div>
           <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => { setActiveTab('conteudo'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Rss size={20} /><span>{t('nav.content', 'Conteúdo')}</span></div>
-          <div className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} onClick={() => setActiveTab('comunidade')}><Users size={20} /><span>{t('nav.community', 'Comunidade')}</span></div>
+          <div 
+            className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} 
+            onClick={() => { 
+              setActiveTab('comunidade'); 
+              localStorage.setItem('last_viewed_announcement', String(Date.now()));
+              setHasNewAnnouncement(false);
+            }}
+          >
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <Users size={20} />
+              {hasNewAnnouncement && (
+                <span 
+                  style={{ 
+                    position: 'absolute', 
+                    top: '-2px', 
+                    right: '-2px', 
+                    width: '8px', 
+                    height: '8px', 
+                    backgroundColor: '#ef4444', 
+                    borderRadius: '50%', 
+                    border: isPhoneDark ? '1px solid #1a1a24' : '1px solid #ffffff' 
+                  }} 
+                />
+              )}
+            </div>
+            <span>{t('nav.community', 'Comunidade')}</span>
+          </div>
           <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>{t('nav.profile', 'Perfil')}</span></div>
           {pwaConfig.supportConfig?.type !== 'none' && (
             <div className={`phone-nav-item ${activeTab === 'suporte' ? 'active' : ''}`} onClick={() => setActiveTab('suporte')}><Headset size={20} /><span>{t('nav.support')}</span></div>

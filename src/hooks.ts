@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Project, ToastMessage, ToastType, BuilderBlock } from './types';
 import { projectService } from './services/projectService';
 import { useAppStore } from './store/useAppStore';
-import JSZip from 'jszip';
-import { handleExportZIP } from './utils/exportPWA';
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -132,10 +130,6 @@ export function useBuilderActions(showToast: (msg: string, type?: ToastType) => 
   const updateSubmoduleContent = useAppStore(state => state.updateSubmoduleContent);
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
-  const handleExportZip = async () => {
-    await handleExportZIP(showToast);
-  };
-
   const handlePublish = () => {
     showToast('Iniciando deploy na edge...', 'loading');
     setTimeout(() => showToast('App serviço publicado com sucesso!', 'success'), 2000);
@@ -163,7 +157,6 @@ export function useBuilderActions(showToast: (msg: string, type?: ToastType) => 
   };
 
   return {
-    handleExportZip,
     handlePublish,
     handleDeleteModule,
     handleDeleteSubmodule,

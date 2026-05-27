@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector, persist } from 'zustand/middleware';
-import { AppState, AppView, PwaConfig, BuilderBlock, SupportedLocale } from '../types';
+import { AppState, AppView, PwaConfig, BuilderBlock, SupportedLocale, FeedPost } from '../types';
 import { INITIAL_MODULES, INITIAL_PWA_CONFIG } from '../constants';
 
 // O projectService foi REMOVIDO pois agora somos 100% Local-First!
@@ -51,6 +51,11 @@ interface AppStore extends AppState {
   resetMockupOnboarding: () => void;
   isNewProjectModalOpen: boolean;
   setIsNewProjectModalOpen: (open: boolean) => void;
+  setFeedPosts: (posts: FeedPost[]) => void;
+  addFeedPost: (post: FeedPost) => void;
+  deleteFeedPost: (id: number) => void;
+  addPushNotification: (push: any) => void;
+  deletePushNotification: (id: number) => void;
 }
 
 const initialState: AppState = {
@@ -74,7 +79,9 @@ const initialState: AppState = {
     dropOffByModule: [],
     gamificationStats: { activeStreaks: 0, celebrationTriggers: 0 },
     pwaAdoption: { web: 0, installed: 0 }
-  }
+  },
+  feedPosts: [],
+  pushNotifications: []
 };
 
 export const useAppStore = create<AppStore>()(
@@ -201,7 +208,8 @@ export const useAppStore = create<AppStore>()(
         })),
 
         deleteSubmodule: (payload) => set((state) => ({
-          modules: state.modules.map(m => m.id === payload.modId ? { ...m, subs: m.subs.filter(s => s.id !== payload.subId) } : m)
+          modules: state.modules.map(m => m.id === payload.modId ? { ...m, subs: m.subs.filter(s => s.id !== payload.subId) } : m),
+          editingSubmodule: state.editingSubmodule?.subId === payload.subId ? null : state.editingSubmodule
         })),
 
         renameSubmodule: (payload) => set((state) => ({
@@ -289,6 +297,11 @@ export const useAppStore = create<AppStore>()(
         setSplash: (active) => set({ splashActive: active }),
         setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
         resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
+        setFeedPosts: (posts) => set({ feedPosts: posts }),
+        addFeedPost: (post) => set((state) => ({ feedPosts: [post, ...state.feedPosts] })),
+        deleteFeedPost: (id) => set((state) => ({ feedPosts: state.feedPosts.filter(p => p.id !== id) })),
+        addPushNotification: (push) => set((state) => ({ pushNotifications: [push, ...(state.pushNotifications || [])] })),
+        deletePushNotification: (id) => set((state) => ({ pushNotifications: (state.pushNotifications || []).filter(p => p.id !== id) })),
       }), {
       name: 'appify-v2-database',
     })
@@ -315,6 +328,8 @@ useAppStore.subscribe(
         splashActive: state.splashActive,
         mockupOnboardingCompleted: state.mockupOnboardingCompleted,
         analytics: state.analytics,
+        feedPosts: state.feedPosts,
+        pushNotifications: state.pushNotifications,
       };
 
       // Injeta os dados da tela DE VOLTA na lista de projetos (state.projects) silenciosamente

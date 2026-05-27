@@ -4,6 +4,23 @@ export type StepStatus = 'done' | 'active' | 'todo';
 export type AppView = 'projects' | 'builder';
 export type ToastType = 'success' | 'error' | 'loading';
 
+export interface PushNotification {
+  id: number;
+  title: string;
+  body: string;
+  imageUrl?: string;
+  createdAt: number;
+}
+
+export interface FeedPost {
+  id: number;
+  author: string;
+  content: string;
+  imageUrl?: string;
+  timestamp: string;
+  createdAt?: number;
+}
+
 export interface Award {
   id: string;
   title: string;
@@ -180,6 +197,8 @@ export interface AppState {
   splashActive: boolean;
   mockupOnboardingCompleted: boolean;
   analytics: AnalyticsData;
+  feedPosts: FeedPost[];
+  pushNotifications?: PushNotification[];
 }
 
 export interface Project {

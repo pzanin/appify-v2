@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
 import { Bell, Send, Image as ImageIcon, Calendar, Rss, Users, User, Trash2, MessageSquare, Megaphone, LayoutGrid, Check, BarChart3, Settings, Pencil, ImagePlus, X as XIcon, Plus, Hash, Zap, Ghost, Trash, UploadCloud } from 'lucide-react';
 import { ToastType } from '../types';
+import { useAppStore } from '../store/useAppStore';
 
 interface EngagementHubProps {
   showToast: (msg: string, type?: ToastType) => void;
 }
 
-interface Post {
-  id: number;
-  author: string;
-  content: string;
-  imageUrl?: string;
-  timestamp: string;
-}
+// Post interface removed in favor of FeedPost in types.ts
 
 export function EngagementHub({ showToast }: EngagementHubProps) {
   const [activeTab, setActiveTab] = useState<'push' | 'feed' | 'community'>('push');
@@ -56,9 +51,14 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   };
 
   // Feed States
-  const [posts, setPosts] = useState<Post[]>([
-    { id: 1, author: 'Admin', content: 'Bem-vindo ao app! 🎉', timestamp: 'Agora' }
-  ]);
+  const feedPosts = useAppStore(state => state.feedPosts) || [];
+  const addFeedPost = useAppStore(state => state.addFeedPost);
+  const deleteFeedPost = useAppStore(state => state.deleteFeedPost);
+
+  // Push States
+  const pushNotifications = useAppStore(state => state.pushNotifications) || [];
+  const addPushNotification = useAppStore(state => state.addPushNotification);
+  const deletePushNotification = useAppStore(state => state.deletePushNotification);
   const [authorName, setAuthorName] = useState('');
   const [postContent, setPostContent] = useState('');
   const [feedImageFile, setFeedImageFile] = useState<File | null>(null);
@@ -145,11 +145,19 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   };
 
   const handleSendPush = () => {
-    if (!pushTitle || !pushMsg) {
+    if (!pushTitle?.trim() || !pushMsg?.trim()) {
       showToast('Preencha título e mensagem!', 'error');
       return;
     }
-    showToast('Push agendado com sucesso!', 'success');
+    const newPush = {
+      id: Date.now(),
+      title: pushTitle.trim(),
+      body: pushMsg.trim(),
+      imageUrl: pushImgPreview || undefined,
+      createdAt: Date.now()
+    };
+    addPushNotification(newPush);
+    showToast('Push enviado / agendado!', 'success');
     setPushTitle('');
     setPushMsg('');
     removeImage();
@@ -164,14 +172,15 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
       showToast('Preencha autor e conteúdo!', 'error');
       return;
     }
-    const newPost: Post = {
+    const newPost = {
       id: Date.now(),
       author: authorName.trim(),
       content: postContent.trim(),
       imageUrl: feedImagePreview || undefined,
-      timestamp: 'Agora'
+      timestamp: feedDate ? new Date(feedDate).toLocaleString('pt-BR') : 'Agora mesmo',
+      createdAt: Date.now()
     };
-    setPosts([newPost, ...posts]);
+    addFeedPost(newPost);
     setAuthorName('');
     setPostContent('');
     setFeedImageFile(null);
@@ -181,7 +190,7 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
   };
 
   const handleDeletePost = (id: number) => {
-    setPosts(posts.filter(p => p.id !== id));
+    deleteFeedPost(id);
     showToast('Post removido.', 'success');
   };
 
@@ -326,9 +335,13 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                   <input 
                     type="datetime-local"
                     className="vpb-input" 
-                    style={{ height: '80px', padding: '12px' }}
+                    style={{ height: '80px', padding: '12px', cursor: 'pointer' }}
                     value={pushDate}
                     onChange={(e) => setPushDate(e.target.value)}
+                    onClick={(e) => {
+                      const el = e.target as HTMLInputElement;
+                      if (typeof el.showPicker === 'function') el.showPicker();
+                    }}
                   />
                 </div>
               </div>
@@ -356,18 +369,34 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
             </div>
             <div className="eng-card-body">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {[
-                  { titulo: 'Bem-vindo!', msg: 'Aproveite seu novo aplicativo.', tempo: 'Agora' },
-                  { titulo: 'Novo conteúdo', msg: 'Sua aula de hoje está disponível.', tempo: '2h atrás' }
-                ].map((item, idx) => (
-                  <div key={idx} style={{ background: 'var(--surface2)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', position: 'relative' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <div style={{ fontWeight: 700, fontSize: '13px' }}>{item.titulo}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--muted)' }}>{item.tempo}</div>
+                {pushNotifications && pushNotifications.length > 0 ? (
+                  pushNotifications.map((item) => (
+                    <div key={item.id} style={{ background: 'var(--surface2)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', position: 'relative' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '13px' }}>{item.title}</div>
+                        <div style={{ fontSize: '10px', color: 'var(--muted)' }}>
+                          {new Date(item.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px' }}>
+                        <div style={{ flex: 1 }}>{item.body}</div>
+                        <button 
+                          onClick={() => deletePushNotification(item.id)}
+                          style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                        >
+                          <Trash2 size={12} className="delete-hover" />
+                        </button>
+                      </div>
+                      {item.imageUrl && (
+                        <div style={{ marginTop: '8px', borderRadius: '6px', overflow: 'hidden', maxHeight: '100px' }}>
+                          <img src={item.imageUrl} alt="Push image" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{item.msg}</div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', opacity: 0.5, padding: '20px 0', fontSize: '12px' }}>Nenhum push enviado.</div>
+                )}
               </div>
             </div>
           </div>
@@ -440,9 +469,13 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
                 <input 
                   type="datetime-local"
                   className="vpb-input" 
-                  style={{ marginBottom: '4px' }}
+                  style={{ marginBottom: '4px', cursor: 'pointer' }}
                   value={feedDate}
                   onChange={(e) => setFeedDate(e.target.value)}
+                  onClick={(e) => {
+                    const el = e.target as HTMLInputElement;
+                    if (typeof el.showPicker === 'function') el.showPicker();
+                  }}
                 />
                 <p style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 500 }}>
                   Deixe em branco para publicar imediatamente.
@@ -463,7 +496,7 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
             </div>
             <div className="eng-card-body">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {posts.map(post => (
+                {feedPosts.map(post => (
                   <div key={post.id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

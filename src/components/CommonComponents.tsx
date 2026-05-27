@@ -9,12 +9,11 @@ import { AppifyLogo } from './AppLogo';
 // --- Header ---
 interface HeaderProps {
   handleOpenProject: (id: number, name: string) => void;
-  handleExportZip: () => void;
   handlePublish: () => void;
   showToast: (msg: string, type?: ToastType) => void;
 }
 
-export function Header({ handleOpenProject, handleExportZip, handlePublish, showToast }: HeaderProps) {
+export function Header({ handleOpenProject, handlePublish, showToast }: HeaderProps) {
   const currentView = useAppStore(state => state.currentView);
   const setView = useAppStore(state => state.setView);
   const setSplash = useAppStore(state => state.setSplash);
@@ -38,7 +37,6 @@ export function Header({ handleOpenProject, handleExportZip, handlePublish, show
             >
               <Eye size={16} /> Preview PWA
             </button>
-            <button className="btn-ghost" onClick={handleExportZip}><Download size={16} /> Exportar ZIP</button>
             <button className="btn-primary" onClick={handlePublish}><Sparkles size={16} /> Publicar</button>
           </>
         ) : (

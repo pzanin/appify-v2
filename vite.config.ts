@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 const isPwaBuild = process.env.VITE_BUILD_TARGET === 'pwa';
 
 export default defineConfig({
+  publicDir: isPwaBuild ? false : 'public',
   plugins: [
     react(),
     tailwindcss(),

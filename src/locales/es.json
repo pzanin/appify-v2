@@ -3,9 +3,9 @@
   "app": {
     "login": { "title": "Accede a tu cuenta", "emailPlaceholder": "Ingresa tu correo", "button": "ENTRAR" },
     "profile": { "title": "Mi Perfil", "fileFormat": "Solo archivos .JPG o .JPEG", "namePlaceholder": "Nombre Completo", "nameDefault": "Nombre del Alumno", "emailPlaceholder": "Correo (Llave de Acceso)", "saveButton": "Guardar Cambios" },
-    "community": { "title": "Comunidad", "admin": "Admin", "justNow": "Justo ahora", "welcomeMessage": "¡Bienvenido a nuestra comunidad! Este es tu espacio premium para interactuar, hacer preguntas y compartir tus resultados. 🎉" },
-    "content": { "title": "Contenido", "badge": "NUEVO", "newLesson": "¡Nueva clase liberada!", "newLessonDesc": "Acabamos de lanzar contenido exclusivo sobre estrategias avanzadas. ¡Ve a la pestaña de inicio para revisar el nuevo módulo!" },
-    "modules": { "title": "Módulos", "emptyState": "Ningún módulo creado", "back": "Volver", "lessonSingle": "clase", "lessonPlural": "clases", "noLessons": "Ninguna clase añadida" },
+    "community": { "title": "Comunidad", "admin": "Admin", "justNow": "Justo ahora", "welcomeMessage": "¡Bienvenido a nuestra comunidad! Este es tu espacio premium para interactuar, hacer preguntas y compartir tus resultados. 🎉", "emptyState": "Ningún contenido disponible en este momento" },
+    "content": { "title": "Contenido", "badge": "NUEVO", "newLesson": "¡Nueva clase liberada!", "newLessonDesc": "Acabamos de lanzar contenido exclusivo sobre estrategias avanzadas. ¡Ve a la pestaña de inicio para revisar el nuevo módulo!", "emptyState": "Ningún contenido disponible en este momento" },
+    "modules": { "title": "Módulos", "emptyState": "Ningún módulo creado", "back": "Volver", "lessonSingle": "clase", "lessonPlural": "clases", "noLessons": "Ninguna clase añadida", "completed": "completado", "completed_status": "Completada" },
     "upsell": { "lockedTitle": "Contenido Bloqueado", "lockedMessagePart1": "Para acceder al módulo", "lockedMessagePart2": "necesitas adquirir esta mejora.", "checkoutButton": "Ir al Checkout", "cancelButton": "Cancelar" },
     "header": { "theme": "Cambiar Tema", "notifications": "Notificaciones", "install": "Instalar" },
     "support": { "title": "¿Cómo podemos ayudarte?", "description": "Nuestro equipo está listo para resolver tus dudas e qualquer problema.", "copyEmail": "Copiar Correo", "openWa": "Abrir WhatsApp", "copied": "¡Copiado!", "emailLabel": "CORREO DE CONTACTO" },

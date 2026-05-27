@@ -8,9 +8,9 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { Version, ToastType } from '../types';
 import { getSupabaseClient, resetClient } from '../services/supabaseService';
+import { handleExportZIP } from '../utils/exportPWA';
 
-import * as _JSZip from 'jszip';
-const JSZip = (_JSZip as any).default || _JSZip;
+
 
 interface PublicationHubProps {
   showToast: (msg: string, type?: ToastType) => void;
@@ -102,88 +102,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
   // EXPORT LOGIC
   const handleExportZip = async () => {
     try {
-      showToast('Iniciando geração do ZIP...', 'loading');
-      
-      const zip = new JSZip();
-
-      // index.html
-      const indexHtml = `
-<!DOCTYPE html>
-<html lang="${pwaConfig.language || 'pt-BR'}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${pwaConfig.appName}</title>
-    <meta name="theme-color" content="${pwaConfig.themeColor}">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icons/icon-192.png">
-    <style>
-      body { margin: 0; padding: 0; background: ${pwaConfig.themeColor}; display: flex; align-items: center; justify-content: center; height: 100vh; color: white; font-family: sans-serif; }
-    </style>
-</head>
-<body>
-    <div id="app">App carregando...</div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js');
-        });
-      }
-    </script>
-</body>
-</html>`;
-
-      // manifest.json
-      const manifestJson = JSON.stringify({
-        "name": pwaConfig.appName,
-        "short_name": pwaConfig.appName,
-        "theme_color": pwaConfig.themeColor,
-        "background_color": pwaConfig.themeColor,
-        "display": pwaConfig.display || "standalone",
-        "orientation": pwaConfig.orientation || "portrait",
-        "start_url": pwaConfig.startUrl || "/",
-        "lang": pwaConfig.language || "pt-BR",
-        "icons": [
-          { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-          { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
-        ]
-      }, null, 2);
-
-      // access-config.json
-      const accessConfigJson = JSON.stringify({
-        "version": pwaConfig.version,
-        "modules": modules.map(m => ({
-          id: m.id,
-          name: m.name,
-          access: "free" // Hardcoded for now as per instructions "access: m.accessLevel || 'free'"
-        }))
-      }, null, 2);
-
-      // sw.js
-      const swJs = `
-const CACHE = 'app-v${pwaConfig.version}';
-self.addEventListener('install', e => e.waitUntil(
-  caches.open(CACHE).then(c => c.addAll(['./', './index.html']))
-));
-self.addEventListener('fetch', e => e.respondWith(
-  caches.match(e.request).then(r => r || self.fetch(e.request))
-));`;
-
-      zip.file("index.html", indexHtml);
-      zip.file("manifest.json", manifestJson);
-      zip.file("sw.js", swJs);
-      zip.file("access-config.json", accessConfigJson);
-      
-      const iconsFolder = zip.folder("icons");
-      iconsFolder.file("README.txt", "Coloque aqui icon-192.png e icon-512.png");
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const url = window.URL.createObjectURL(content);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${pwaConfig.appName || 'app'}-v${pwaConfig.version}.zip`;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      await handleExportZIP(showToast);
 
       // Add to history
       setVersions(prev => [{
@@ -192,8 +111,6 @@ self.addEventListener('fetch', e => e.respondWith(
         notes: pwaConfig.changelogNotes || 'Lançamento manual',
         status: 'publicado'
       }, ...prev]);
-
-      showToast('ZIP gerado com sucesso! Faça o upload no GitHub.', 'success');
     } catch (err) {
       console.error(err);
       showToast('Erro ao gerar ZIP.', 'error');

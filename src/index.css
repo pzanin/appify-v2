@@ -295,7 +295,7 @@
   flex-direction: column; 
   flex-shrink: 0; 
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  --p-bg: #0d1117; 
+  --p-bg: #091218; 
   --p-surface: rgba(22, 27, 34, 0.7); 
   --p-text: #ffffff; 
   --p-muted: #8b949e; 

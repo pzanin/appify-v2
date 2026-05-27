@@ -10,6 +10,24 @@ interface PWARuntimeProps {
   setIsPhoneDark: (val: boolean) => void; 
 }
 
+interface EmptyStateProps {
+  icon: any;
+  text: string;
+}
+
+function EmptyState({ icon: Icon, text }: EmptyStateProps) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px', textAlign: 'center', height: '100%', flex: 1 }}>
+      <div style={{ opacity: 0.15, marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={48} />
+      </div>
+      <p style={{ fontSize: '13px', fontWeight: 600, opacity: 0.4, lineHeight: 1.5, margin: 0, maxWidth: '240px' }}>
+        {text}
+      </p>
+    </div>
+  );
+}
+
 export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const { t } = useTranslation();
   const appName = useAppStore(state => state.appName);
@@ -19,8 +37,51 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const activeLocale = useAppStore(state => state.activeLocale);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
+  const feedPosts = useAppStore(state => state.feedPosts) || [];
+  const pushNotifications = useAppStore(state => state.pushNotifications) || [];
+  const currentProjectId = useAppStore(state => state.currentProjectId);
 
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
+  const [hasNewAnnouncement, setHasNewAnnouncement] = useState<boolean>(false);
+  const [hasNewPush, setHasNewPush] = useState<boolean>(false);
+  const [activePushBanner, setActivePushBanner] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (feedPosts && feedPosts.length > 0) {
+      const latestPost = feedPosts[0];
+      const latestTime = latestPost.createdAt || latestPost.id;
+      const lastViewed = Number(localStorage.getItem('last_viewed_announcement') || '0');
+      if (latestTime > lastViewed) {
+        setHasNewAnnouncement(true);
+      } else {
+        setHasNewAnnouncement(false);
+      }
+    } else {
+      setHasNewAnnouncement(false);
+    }
+  }, [feedPosts]);
+
+  useEffect(() => {
+    if (pushNotifications && pushNotifications.length > 0) {
+      const latestPush = pushNotifications[0];
+      const latestTime = latestPush.createdAt || latestPush.id;
+      const lastViewed = Number(localStorage.getItem('last_viewed_push') || '0');
+      if (latestTime > lastViewed) {
+        setHasNewPush(true);
+        if (Date.now() - latestTime < 10000) {
+          setActivePushBanner(latestPush);
+          const timer = setTimeout(() => {
+            setActivePushBanner(null);
+          }, 5000);
+          return () => clearTimeout(timer);
+        }
+      } else {
+        setHasNewPush(false);
+      }
+    } else {
+      setHasNewPush(false);
+    }
+  }, [pushNotifications]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -29,8 +90,15 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
   const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);
-  const [userName, setUserName] = useState("Nome do Aluno");
-  const [userEmail, setUserEmail] = useState("email@exemplo.com");
+
+  // Reset states when project changes
+  useEffect(() => {
+    setSelectedMockupModuleId(null);
+    setSelectedMockupSubmoduleId(null);
+    setActiveTab('inicio');
+  }, [currentProjectId]);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   
   const awards = pwaConfig?.gamification?.awardsConfig || [];
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
@@ -54,6 +122,17 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const themeColor = pwaConfig?.themeColor || '#7c6fff';
   const displayAppName = pwaConfig?.appName || appName;
   const gamification = pwaConfig?.gamification || { enabled: false, progressStyle: 'none', enableStreaks: false, streakIcon: '🔥', enableCelebration: false };
+
+  const navItems = [
+    { id: 'inicio', icon: Home, label: t('nav.home', 'Início') },
+    { id: 'conteudo', icon: Rss, label: t('nav.content', 'Conteúdo') },
+    { id: 'comunidade', icon: Users, label: t('nav.community', 'Comunidade') },
+    { id: 'perfil', icon: User, label: t('nav.profile', 'Perfil') }
+  ];
+
+  if (pwaConfig?.supportConfig?.type && pwaConfig.supportConfig.type !== 'none') {
+    navItems.push({ id: 'suporte', icon: Headset, label: t('nav.support', 'Suporte') });
+  }
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
 
   const getModuleProgress = (index: number) => {
@@ -110,7 +189,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    if (selectedMockupSubmoduleId) {
+    if (selectedMockupSubmodule) {
       const timeGate = selectedMockupSubmodule?.gamificationConfig?.timeGateSeconds || 0;
       setCanCompleteLesson(timeGate === 0);
       setLessonCompletionTimer(timeGate);
@@ -153,7 +232,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#000000', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
       <div 
-        className={`w-full h-full flex flex-col overflow-hidden relative ${isPhoneDark ? 'bg-[#0d1117] text-white' : 'bg-[#f6f8fa] text-[#1f2328]'}`}
+        className={`w-full h-full flex flex-col overflow-hidden relative ${isPhoneDark ? 'bg-[#091218] text-white' : 'bg-[#f6f8fa] text-[#1f2328]'}`}
         style={{ 
           fontFamily: pwaConfig?.fontFamily || 'inherit',
           '--dynamic-theme': themeColor,
@@ -176,6 +255,52 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
           }
         `}</style>
 
+        <AnimatePresence>
+          {activePushBanner && (
+            <motion.div
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 12, opacity: 1 }}
+              exit={{ y: -100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+              onClick={() => {
+                setActiveTab('inicio');
+                setActivePushBanner(null);
+                localStorage.setItem('last_viewed_push', String(Date.now()));
+                setHasNewPush(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: '40px',
+                left: '12px',
+                right: '12px',
+                background: isPhoneDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                padding: '12px 16px',
+                borderRadius: '18px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                border: isPhoneDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.05)',
+                zIndex: 999,
+                cursor: 'pointer',
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'center'
+              }}
+            >
+              <div style={{ width: '36px', height: '36px', background: themeColor, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+                <Bell size={18} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={{ fontWeight: 800, fontSize: '13px', color: isPhoneDark ? '#fff' : '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activePushBanner.title}
+                </div>
+                <div style={{ fontSize: '12px', color: isPhoneDark ? '#9ca3af' : '#4b5563', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activePushBanner.body}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 pt-12 pb-4 relative z-10" style={{ background: themeColor, color: pwaConfig?.textColor || '#FFFFFF' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), transparent)', pointerEvents: 'none' }} />
@@ -195,8 +320,29 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
             <div onClick={() => setIsPhoneDark(!isPhoneDark)} className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity">
               {isPhoneDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
             </div>
-            <div onClick={() => setOnboardingStep(2)} className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity">
+            <div 
+              onClick={() => {
+                localStorage.setItem('last_viewed_push', String(Date.now()));
+                setHasNewPush(false);
+                setOnboardingStep(2);
+              }} 
+              className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity relative"
+            >
               <Bell size={18} strokeWidth={2.5} />
+              {hasNewPush && (
+                <span 
+                  style={{ 
+                    position: 'absolute', 
+                    top: '-2px', 
+                    right: '-2px', 
+                    width: '6px', 
+                    height: '6px', 
+                    backgroundColor: '#ef4444', 
+                    borderRadius: '50%', 
+                    border: isPhoneDark ? '1px solid #1f2937' : '1px solid #ffffff' 
+                  }} 
+                />
+              )}
             </div>
           </div>
         </div>
@@ -236,7 +382,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
             {splashActive && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }} transition={{ duration: 0.6 }} className="absolute inset-0 z-[1000] flex flex-col items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${themeColor}, ${themeColor}dd, #1a1a24)` }}>
                 <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, type: 'spring', damping: 15 }} className="w-24 h-24 mb-6 relative">
-                  {pwaConfig?.iconBase64 ? <img src={pwaConfig.iconBase64} alt="Icon" className="w-full h-full rounded-[28px] shadow-2xl" /> : <div className="w-full h-full bg-white/10 backdrop-blur-lg rounded-[28px] border border-white/20 flex items-center justify-center"><Smartphone size={48} /></div>}
+                  {pwaConfig?.iconBase64 ? <img src={pwaConfig.iconBase64} alt="Icon" className="w-full h-full rounded-[28px] shadow-2xl" /> : <div className="w-full h-full rounded-[28px] flex items-center justify-center" style={{ background: '#1F2937', border: '1px solid rgba(255,255,255,0.1)' }}><Smartphone size={48} /></div>}
                 </motion.div>
                 <h2 className="text-3xl font-black tracking-tighter">{displayAppName}</h2>
                 <div className="absolute bottom-16 w-36 h-1 bg-white/10 rounded-full overflow-hidden">
@@ -255,14 +401,14 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                       <div className={`w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-4 ${isPhoneDark ? 'bg-gray-800 border-white/5' : 'bg-white border-black/5 shadow-sm'}`} style={{ color: themeColor }}>
                         {mockProfileImg ? <img src={mockProfileImg} alt="Perfil" className="w-full h-full object-cover" /> : <User size={40} />}
                       </div>
-                      <div className="absolute bottom-0 right-0 w-8 h-8 bg-theme flex items-center justify-center text-white rounded-full border-4 shadow-lg" style={{ background: themeColor, borderColor: isPhoneDark ? '#0d1117' : '#f6f8fa' }}>
+                      <div className="absolute bottom-0 right-0 w-8 h-8 bg-theme flex items-center justify-center text-white rounded-full border-4 shadow-lg" style={{ background: themeColor, borderColor: isPhoneDark ? '#091218' : '#f6f8fa' }}>
                         <Plus size={14} strokeWidth={3} />
                       </div>
                     </label>
                  </div>
                  <div className="w-full space-y-4 mb-8">
-                    <input type="text" className={`w-full p-4 rounded-2xl text-sm font-bold outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 text-gray-300' : 'bg-white text-gray-700 shadow-sm border border-black/5'}`} value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Nome do Aluno" />
-                    <input type="email" className={`w-full p-4 rounded-2xl text-sm font-bold border border-dashed outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`} value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder="email@exemplo.com" />
+                    <input type="text" className={`w-full p-4 rounded-2xl text-sm font-bold outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 text-gray-300' : 'bg-white text-gray-700 shadow-sm border border-black/5'}`} value={userName} onChange={(e) => setUserName(e.target.value)} placeholder={t('app.profile.namePlaceholder', 'Nome Completo')} />
+                    <input type="email" className={`w-full p-4 rounded-2xl text-sm font-bold border border-dashed outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`} value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder={t('app.profile.emailPlaceholder', 'E-mail (Chave de Acesso)')} />
                  </div>
 
                  {pwaConfig?.gamification?.enablePoints && (
@@ -287,53 +433,110 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                  )}
                  <button className="w-full py-5 rounded-2xl font-black text-white shadow-2xl transition-transform active:scale-95" style={{ background: themeColor, boxShadow: `0 12px 24px ${themeColor}44` }}>{t('app.profile.saveButton', 'Salvar Alterações')}</button>
               </motion.div>
+            ) : activeTab === 'suporte' ? (
+              <motion.div key="suporte" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">
+                <div style={{ width: '80px', height: '80px', background: `${themeColor}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: themeColor, flexShrink: 0 }}>
+                  <Headset size={40} />
+                </div>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '12px', color: isPhoneDark ? 'white' : '#111', textAlign: 'center' }}>{t('app.support.title')}</h2>
+                <p style={{ fontSize: '14px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', lineHeight: 1.6, marginBottom: '32px', textAlign: 'center' }}>{t('app.support.description')}</p>
+
+                {pwaConfig?.supportConfig?.type === 'whatsapp' ? (
+                  <button 
+                    onClick={() => window.open(`https://wa.me/${pwaConfig.supportConfig.contact}`, '_blank')}
+                    style={{ width: '100%', padding: '18px', background: '#25D366', color: 'white', borderRadius: '18px', border: 'none', fontWeight: 700, fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 4px 12px rgba(37, 211, 102, 0.2)', flexShrink: 0 }}
+                  >
+                    <MessageCircle size={20} /> {t('app.support.openWa')}
+                  </button>
+                ) : (
+                  <div style={{ width: '100%', background: isPhoneDark ? '#1F2937' : '#F9FAFB', padding: '20px', borderRadius: '24px', border: `1px solid ${isPhoneDark ? '#374151' : '#E5E7EB'}`, flexShrink: 0 }}>
+                    <p style={{ fontSize: '11px', fontWeight: 800, color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '8px', letterSpacing: '0.5px' }}>{t('app.support.emailLabel')}</p>
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: isPhoneDark ? 'white' : '#111', marginBottom: '16px', wordBreak: 'break-all', lineHeight: '1.4' }}>{pwaConfig?.supportConfig?.contact || 'suporte@sua-plataforma.com'}</p>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(pwaConfig?.supportConfig?.contact || '');
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      style={{ width: '100%', padding: '12px', background: isPhoneDark ? '#374151' : 'white', color: isPhoneDark ? 'white' : '#111', borderRadius: '14px', border: `1px solid ${isPhoneDark ? '#4B5563' : '#E5E7EB'}`, fontWeight: 600, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      {copied ? <Check size={18} color="#22c55e" /> : <Copy size={18} />}
+                      {copied ? t('app.support.copied') : t('app.support.copyEmail')}
+                    </button>
+                  </div>
+                )}
+              </motion.div>
             ) : activeTab === 'comunidade' ? (
               <motion.div key="comunidade" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex flex-col px-6 pt-8 pb-32 custom-scrollbar">
                  <div className={`text-2xl font-black mb-6 ${isPhoneDark ? 'text-white' : 'text-gray-900'}`}>{t('app.community.title', 'Comunidade')}</div>
-                 <div className={`p-5 rounded-3xl border ${isPhoneDark ? 'bg-white/5 border-white/5' : 'bg-white shadow-sm border-black/5'}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black" style={{ background: themeColor }}>A</div>
-                      <div>
-                        <div className="text-sm font-black">Admin</div>
-                        <div className="text-[10px] uppercase font-bold opacity-50">Agora mesmo</div>
-                      </div>
-                    </div>
-                    <p className="text-sm leading-relaxed opacity-80">{t('app.community.welcomeMessage', 'Bem-vindo à nossa comunidade! Este é o seu espaço premium para interagir e tirar dúvidas.')}</p>
-                 </div>
+                 {feedPosts && feedPosts.length > 0 ? (
+                   <div className="flex flex-col gap-4">
+                     {feedPosts.map(post => (
+                       <div key={post.id} className={`p-5 rounded-3xl border ${isPhoneDark ? 'bg-white/5 border-white/5' : 'bg-white shadow-sm border-black/5'}`}>
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black" style={{ background: themeColor }}>{post.author?.[0] || '?'}</div>
+                            <div>
+                              <div className="text-sm font-black">{post.author}</div>
+                              <div className="text-[10px] uppercase font-bold opacity-50">{post.timestamp}</div>
+                            </div>
+                          </div>
+                          <p className="text-sm leading-relaxed opacity-80 whitespace-pre-wrap">{post.content}</p>
+                          {post.imageUrl && (
+                            <div className="mt-4 rounded-xl overflow-hidden border border-black/5">
+                              <img src={post.imageUrl} alt="Post content" className="w-full h-auto object-cover" />
+                            </div>
+                          )}
+                       </div>
+                     ))}
+                   </div>
+                 ) : (
+                   <EmptyState icon={Users} text={t('app.community.emptyState', 'Nenhum conteúdo disponível no momento')} />
+                 )}
               </motion.div>
             ) : activeTab === 'conteudo' ? (
               <motion.div key="conteudo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex-1 flex flex-col px-6 pt-8 pb-32 custom-scrollbar">
                 <div className={`text-2xl font-black mb-6 ${isPhoneDark ? 'text-white' : 'text-gray-900'}`}>{t('app.content.title', 'Conteúdo')}</div>
-                <div className="w-full space-y-4">
-                  <div className={`rounded-3xl overflow-hidden border ${isPhoneDark ? 'bg-gray-800 border-white/5' : 'bg-white border-black/5 shadow-sm'}`}>
-                    <div className="w-full h-36 flex items-center justify-center text-white" style={{ background: themeColor, opacity: 0.9 }}>
-                      <Rss size={48} className="opacity-30" />
-                    </div>
-                    <div className="p-5">
-                      <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: themeColor }}>{t('app.content.badge', 'NOVIDADE')}</div>
-                      <div className={`text-base font-black mb-2 ${isPhoneDark ? 'text-white' : 'text-gray-900'}`}>{t('app.content.newLesson', 'Nova aula liberada!')}</div>
-                      <p className={`text-xs leading-relaxed ${isPhoneDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('app.content.newLessonDesc', 'Acabamos de liberar um conteúdo exclusivo sobre estratégias avançadas. Acesse a aba início e confira o novo módulo!')}</p>
-                    </div>
+                {pushNotifications && pushNotifications.length > 0 ? (
+                  <div className="w-full space-y-4">
+                    {pushNotifications.map(push => (
+                      <div key={push.id} className={`rounded-3xl overflow-hidden border ${isPhoneDark ? 'bg-gray-800 border-white/5' : 'bg-white border-black/5 shadow-sm'}`}>
+                        {push.imageUrl ? (
+                          <div className="w-full h-36 overflow-hidden">
+                            <img src={push.imageUrl} alt={push.title} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-full h-36 flex items-center justify-center text-white" style={{ background: themeColor, opacity: 0.9 }}>
+                            <Rss size={48} className="opacity-30" />
+                          </div>
+                        )}
+                        <div className="p-5">
+                          <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: themeColor }}>{t('app.content.badge', 'NOVIDADE')}</div>
+                          <div className={`text-base font-black mb-2 ${isPhoneDark ? 'text-white' : 'text-gray-900'}`}>{push.title}</div>
+                          <p className={`text-xs leading-relaxed ${isPhoneDark ? 'text-gray-400' : 'text-gray-500'}`}>{push.body}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <EmptyState icon={Rss} text={t('app.content.emptyState', 'Nenhum conteúdo disponível no momento')} />
+                )}
               </motion.div>
             ) : (
               <motion.div key="inicio" initial={{ x: '-30%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '-30%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className="absolute inset-0 flex flex-col">
                 <AnimatePresence mode="wait" initial={false}>
                   {selectedMockupModule ? (
-                    <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmoduleId ? 'overflow-hidden' : 'custom-scrollbar'}`} style={{ padding: selectedMockupSubmoduleId ? '0' : '20px 20px 80px 20px' }}>
+                    <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmodule ? 'overflow-hidden' : 'custom-scrollbar'}`} style={{ padding: selectedMockupSubmodule ? '0' : '20px 20px 80px 20px' }}>
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'space-between',
-                        padding: selectedMockupSubmoduleId ? '12px 16px 8px' : '10px 0 8px', 
+                        padding: selectedMockupSubmodule ? '12px 16px 8px' : '10px 0 8px', 
                         flexShrink: 0 
                       }}>
-                        <button onClick={() => { if (selectedMockupSubmoduleId) setSelectedMockupSubmoduleId(null); else setSelectedMockupModuleId(null); }} style={{ background: 'transparent', border: 'none', color: isPhoneDark ? '#ffffff' : '#111111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '13px', fontWeight: 700 }}>
+                        <button onClick={() => { if (selectedMockupSubmodule) setSelectedMockupSubmoduleId(null); else setSelectedMockupModuleId(null); }} style={{ background: 'transparent', border: 'none', color: isPhoneDark ? '#ffffff' : '#111111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '13px', fontWeight: 700 }}>
                           <ArrowLeft size={16} /> {t('app.modules.back', 'Voltar')}
                         </button>
-
-                        {selectedMockupSubmoduleId && (
+                        {selectedMockupSubmodule && (
                           <div className="flex items-center">
                             {!isCurrentLessonCompleted ? (
                               !canCompleteLesson ? (
@@ -440,7 +643,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                           })()}
 
                           {(selectedMockupModule.subs?.length || 0) === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '24px 0', color: isPhoneDark ? '#9CA3AF' : '#6B7280', fontSize: '12px' }}>{t('app.modules.noLessons', 'Nenhuma aula adicionada')}</div>
+                            <EmptyState icon={PackageOpen} text={t('app.modules.noLessons', 'Nenhuma aula adicionada')} />
                           ) : (
                             <div className={selectedMockupModule.subs.length === 1 ? 'grid grid-cols-1 w-[66%] mx-auto gap-4' : selectedMockupModule.subs.length === 2 ? 'grid grid-cols-2 gap-4' : 'grid grid-cols-3 gap-3'}>
                               {selectedMockupModule.subs.map((sub, index) => (
@@ -504,7 +707,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                       </div>
 
                       {modules.length === 0 ? (
-                        <div className="phone-empty-state" style={{ padding: '40px 20px', textAlign: 'center', color: isPhoneDark ? '#9CA3AF' : '#6B7280', fontSize: '13px', fontWeight: 500, border: 'none', background: 'transparent' }}>{t('app.modules.emptyState', 'Nenhum módulo criado')}</div>
+                        <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState', 'Nenhum módulo criado')} />
                       ) : (
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                           {modules.map((mod, idx) => {
@@ -601,19 +804,38 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
 
         {/* BOTTOM NAVIGATION */}
         <nav className="pwa-bottom-nav absolute bottom-0 left-0 right-0 px-6 pt-4 pb-8 flex justify-between items-center z-[100]">
-          {[
-            { id: 'inicio', icon: Home, label: t('nav.home', 'Início') },
-            { id: 'conteudo', icon: Rss, label: t('nav.content', 'Conteúdo') },
-            { id: 'comunidade', icon: Users, label: t('nav.community', 'Comunidade') },
-            { id: 'perfil', icon: User, label: t('nav.profile', 'Perfil') }
-          ].map(item => (
+          {navItems.map(item => (
             <button 
               key={item.id} 
-              onClick={() => { setActiveTab(item.id); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}
+              onClick={() => { 
+                setActiveTab(item.id); 
+                setSelectedMockupModuleId(null); 
+                setSelectedMockupSubmoduleId(null); 
+                if (item.id === 'comunidade') {
+                  localStorage.setItem('last_viewed_announcement', String(Date.now()));
+                  setHasNewAnnouncement(false);
+                }
+              }}
               className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === item.id ? 'scale-110' : 'opacity-40 hover:opacity-100'}`}
               style={{ color: activeTab === item.id ? themeColor : 'inherit', background: 'transparent', border: 'none', cursor: 'pointer' }}
             >
-              <item.icon size={22} strokeWidth={activeTab === item.id ? 3 : 2} />
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <item.icon size={22} strokeWidth={activeTab === item.id ? 3 : 2} />
+                {item.id === 'comunidade' && hasNewAnnouncement && (
+                  <span 
+                    style={{ 
+                      position: 'absolute', 
+                      top: '-2px', 
+                      right: '-2px', 
+                      width: '8px', 
+                      height: '8px', 
+                      backgroundColor: '#ef4444', 
+                      borderRadius: '50%', 
+                      border: isPhoneDark ? '1px solid #1f2937' : '1px solid #ffffff' 
+                    }} 
+                  />
+                )}
+              </div>
               <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
             </button>
           ))}
@@ -622,7 +844,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
         {/* ONBOARDING MODAL */}
         <AnimatePresence>
           {onboardingStep > 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm z-[150] flex flex-col justify-end">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[150] flex flex-col justify-end" style={{ background: 'rgba(9, 18, 24, 0.92)' }}>
               <div className="absolute inset-0" onClick={() => { setOnboardingStep(0); setMockupOnboardingCompleted(true); }} />
               <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className={`relative rounded-t-[40px] p-8 text-center ${isPhoneDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} border-t border-[var(--border)]`}>
                 <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '120px', height: '120px', background: themeColor, filter: 'blur(60px)', opacity: 0.1, pointerEvents: 'none' }} />

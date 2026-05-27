@@ -26,6 +26,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 import { useAppStore } from './store/useAppStore';
 import { useToast, useProjects, useBuilderActions } from './hooks';
 import { Header } from './components/CommonComponents';
+import i18n from './i18n';
 import { AppifyLogo } from './components/AppLogo';
 import { PhoneMockup } from './components/PhoneMockup';
 import ProjectsDashboard from './components/ProjectsDashboard';
@@ -34,7 +35,7 @@ import BuilderLayout from './components/BuilderLayout';
 // Lazy loading exclusivo para o PWA no build final
 const PWARuntime = React.lazy(() => import('./components/PWARuntime').then(m => ({ default: m.PWARuntime })));
 
-const buildTarget = import.meta.env.VITE_BUILD_TARGET;
+const buildTarget = (import.meta as any).env?.VITE_BUILD_TARGET;
 
 function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, setIsPhoneDark: (val: boolean) => void }) {
   const [loaded, setLoaded] = React.useState(false);
@@ -49,6 +50,11 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
       .then(data => {
         // Hidrata o Zustand com os dados do cliente de forma segura
         useAppStore.setState(data);
+        
+        // Altera o idioma do i18n para corresponder ao configurado no PWA
+        const lang = data.activeLocale || data.pwaConfig?.language || 'pt-BR';
+        i18n.changeLanguage(lang.split('-')[0]);
+        
         setLoaded(true);
       })
       .catch(err => {
@@ -57,12 +63,42 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
       });
   }, []);
 
+  // Mensagens dinâmicas agnósticas antes de inicializar o PWA (i18n Compliance)
+  const browserLang = navigator.language || 'pt';
+  const isEn = browserLang.startsWith('en');
+  const isEs = browserLang.startsWith('es');
+  const isFr = browserLang.startsWith('fr');
+
   if (error) {
-    return <div style={{width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#ff4a4a', fontFamily: 'sans-serif'}}>Ocorreu um erro ao carregar os dados do aplicativo.</div>;
+    const errorText = isEn 
+      ? 'An error occurred while loading the application data.' 
+      : isEs 
+      ? 'Ocurrió un error al cargar los datos de la aplicación.' 
+      : isFr 
+      ? 'Une erreur est survenue lors du chargement des données de l\'application.' 
+      : 'Ocorreu um erro ao carregar os dados do aplicativo.';
+
+    return (
+      <div style={{width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#ff4a4a', fontFamily: 'sans-serif', padding: '20px', textAlign: 'center'}}>
+        {errorText}
+      </div>
+    );
   }
 
   if (!loaded) {
-    return <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#fff', fontFamily: 'sans-serif', fontSize: '18px'}}>Carregando App...</div>;
+    const loadingText = isEn 
+      ? 'Loading App...' 
+      : isEs 
+      ? 'Cargando App...' 
+      : isFr 
+      ? 'Chargement de l\'App...' 
+      : 'Carregando App...';
+
+    return (
+      <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#fff', fontFamily: 'sans-serif', fontSize: '18px'}}>
+        {loadingText}
+      </div>
+    );
   }
 
   // SÓ MONTA O APP QUANDO OS DADOS ESTIVEREM 100% PRONTOS
@@ -122,7 +158,6 @@ function AppContent() {
     <>
       <Header 
         handleOpenProject={handleOpenProject} 
-        handleExportZip={builderActions.handleExportZip} 
         handlePublish={builderActions.handlePublish} 
         showToast={showToast}
       />
