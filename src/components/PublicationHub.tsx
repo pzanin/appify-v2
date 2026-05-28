@@ -158,106 +158,195 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
     }
   };
 
-  const generateSqlSchema = () => {
+  const generateSqlSchema = async () => {
     const sql = `-- =============================================
--- Schema gerado pela Plataforma
+-- Schema Zero-Trust para PWA (OTP Passwordless)
 -- App: ${pwaConfig.appName} | v${pwaConfig.version}
 -- Gerado em: ${new Date().toISOString()}
+-- Arquitetura: Zero-Trust (Confiança Zero) & Isolamento de Inquilinos
 -- =============================================
 
--- USUÁRIOS (extende auth.users do Supabase)
+-- =============================================
+-- 1. CRIAÇÃO DE TABELAS
+-- =============================================
+
+-- PERFIS DOS ALUNOS
 create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
+  email text,
   full_name text,
   avatar_url text,
   created_at timestamptz default now()
 );
 
--- PLANOS DE ACESSO
-create table if not exists public.plans (
+-- PROGRESSO DE AULAS (Gamificação & Rastreamento)
+create table if not exists public.user_progress (
   id uuid default gen_random_uuid() primary key,
-  name text not null,
-  price_cents integer default 0,
-  period text default 'monthly',
-  created_at timestamptz default now()
+  user_id uuid references public.profiles(id) on delete cascade,
+  module_id text,
+  lesson_id text,
+  completed boolean default false,
+  completed_at timestamptz default now(),
+  constraint user_progress_user_lesson_unique unique(user_id, lesson_id)
 );
 
--- MÓDULOS DO APP
-create table if not exists public.modules (
-  id text primary key,
-  name text not null,
-  access_level text default 'free', -- 'free' | 'paid' | 'locked'
-  order_index integer default 0,
-  created_at timestamptz default now()
-);
-
--- Inserir módulos atuais
-${modules.map((mod, idx) => `insert into public.modules (id, name, access_level, order_index)
-values ('${mod.id}', '${mod.name}', 'free', ${idx})
-on conflict (id) do update set name = excluded.name;`).join('\n')}
-
--- CONTROLE DE ACESSO
-create table if not exists public.user_access (
+-- MURAL / FEED (Comunidade)
+create table if not exists public.community_posts (
   id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade,
-  module_id text references public.modules(id) on delete cascade,
-  plan_id uuid references public.plans(id),
-  granted_at timestamptz default now(),
-  expires_at timestamptz,
-  unique(user_id, module_id)
-);
-
--- TOKENS DE PUSH
-create table if not exists public.push_tokens (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade,
-  token text not null,
-  platform text default 'web',
-  created_at timestamptz default now()
-);
-
--- POSTS DO FEED
-create table if not exists public.feed_posts (
-  id uuid default gen_random_uuid() primary key,
-  author_id uuid references auth.users(id) on delete cascade,
+  author_id uuid references public.profiles(id) on delete cascade,
   content text not null,
   image_url text,
-  status text default 'published', -- 'published' | 'pending' | 'rejected'
   created_at timestamptz default now()
 );
 
--- ROW LEVEL SECURITY
+-- =============================================
+-- 2. ATIVAR ROW LEVEL SECURITY (TODAS AS TABELAS)
+-- =============================================
+
 alter table public.profiles enable row level security;
-alter table public.user_access enable row level security;
-alter table public.feed_posts enable row level security;
+alter table public.user_progress enable row level security;
+alter table public.community_posts enable row level security;
 
--- POLICIES
-create policy "Usuário vê próprio perfil"
-  on public.profiles for select using (auth.uid() = id);
+-- =============================================
+-- 3. REVOGAR ACESSO DA ROLE ANON (Zero-Trust)
+-- =============================================
 
-create policy "Usuário vê próprio acesso"
-  on public.user_access for select using (auth.uid() = user_id);
+revoke all on public.profiles from anon;
+revoke all on public.user_progress from anon;
+revoke all on public.community_posts from anon;
 
-create policy "Posts publicados são públicos"
-  on public.feed_posts for select using (status = 'published');
+-- =============================================
+-- 4. CONCEDER ACESSO À ROLE AUTHENTICATED
+-- =============================================
 
-create policy "Autor pode criar post"
-  on public.feed_posts for insert with check (auth.uid() = author_id);
+grant select, update on public.profiles to authenticated;
+grant select, insert, update, delete on public.user_progress to authenticated;
+grant select, insert, delete on public.community_posts to authenticated;
 
--- FUNÇÃO: verificar acesso ao módulo
-create or replace function public.has_module_access(module_id text)
-returns boolean as $$
-  select exists (
-    select 1 from public.user_access ua
-    where ua.user_id = auth.uid()
-      and ua.module_id = $1
-      and (ua.expires_at is null or ua.expires_at > now())
+-- =============================================
+-- 5. POLÍTICAS DE ISOLAMENTO (RLS POLICIES)
+-- =============================================
+
+-- ─── PROFILES ───
+-- Leitura/Atualização: auth.uid() = id
+create policy "profiles_read_write_own"
+  on public.profiles for all
+  to authenticated
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+-- ─── USER_PROGRESS ───
+-- Leitura/Inserção/Atualização/Deleção: auth.uid() = user_id
+create policy "user_progress_all_own"
+  on public.user_progress for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ─── COMMUNITY_POSTS ───
+-- Leitura: Autenticados (auth.role() = 'authenticated')
+create policy "community_posts_read_authenticated"
+  on public.community_posts for select
+  to authenticated
+  using (auth.role() = 'authenticated');
+
+-- Inserção/Deleção: auth.uid() = author_id
+create policy "community_posts_write_own"
+  on public.community_posts for insert
+  to authenticated
+  with check (auth.uid() = author_id);
+
+create policy "community_posts_delete_own"
+  on public.community_posts for delete
+  to authenticated
+  using (auth.uid() = author_id);
+
+-- =============================================
+-- 6. TRIGGER DE AUTOMAÇÃO (Criação de Perfil no OTP/Login)
+-- =============================================
+
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, full_name, avatar_url)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'full_name', ''),
+    coalesce(new.raw_user_meta_data ->> 'avatar_url', '')
   );
-$$ language sql security definer;`;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger: auto-criar perfil no signup
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- =============================================
+-- ✅ Schema Zero-Trust relacional configurado!
+-- =============================================`;
 
     setSqlContent(sql);
     setSqlGenerated(true);
-    showToast('Schema SQL gerado!', 'success');
+
+    if (pwaConfig.supabaseUrl && supabaseServiceKey) {
+      showToast('Aplicando schema no Supabase local...', 'loading');
+      try {
+        let success = false;
+        
+        // 1. Tenta rodar via Studio local (porta 54323) se a URL do Supabase for localhost/127.0.0.1
+        if (pwaConfig.supabaseUrl.includes('localhost') || pwaConfig.supabaseUrl.includes('127.0.0.1')) {
+          try {
+            const localStudioUrl = 'http://localhost:54323/api/pg-api/default/query';
+            const response = await fetch(localStudioUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: sql })
+            });
+            if (response.ok) {
+              success = true;
+              showToast('Schema aplicado com sucesso no Supabase local! ✓', 'success');
+            }
+          } catch (e) {
+            console.warn('Falha na tentativa direta via Studio local, tentando RPC...', e);
+          }
+        }
+
+        // 2. Tenta rodar via RPC execute_sql usando a Service Role Key
+        if (!success) {
+          const rpcUrl = `${pwaConfig.supabaseUrl}/rest/v1/rpc/execute_sql`;
+          const response = await fetch(rpcUrl, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseServiceKey,
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ query: sql })
+          });
+
+          if (response.ok) {
+            success = true;
+            showToast('Schema Zero-Trust aplicado via Service Role Key! ✓', 'success');
+          } else {
+            const errBody = await response.json().catch(() => ({}));
+            console.error('Erro ao executar via RPC:', errBody);
+          }
+        }
+
+        if (!success) {
+          showToast('Schema gerado! Copie e cole no SQL Editor do Supabase.', 'success');
+        }
+      } catch (err) {
+        console.error('Erro de rede ao aplicar schema:', err);
+        showToast('Schema gerado! Copie para rodar manualmente.', 'success');
+      }
+    } else {
+      showToast('Schema Zero-Trust gerado!', 'success');
+    }
   };
 
   const envVars = `VITE_SUPABASE_URL=${pwaConfig.supabaseUrl || ''}
@@ -547,15 +636,18 @@ VITE_APP_THEME=${pwaConfig.themeColor || ''}`;
                 </div>
               </div>
 
-              {/* SEÇÃO 2: SQL SCHEMA */}
+              {/* SEÇÃO 2: SQL SCHEMA (ZERO-TRUST) */}
               <div style={{ marginBottom: '32px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Gerar Schema do Banco</h4>
-                  <span style={{ fontSize: '11px', color: 'var(--muted)' }}>(Execute no SQL Editor do Supabase)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800 }}>Gerar Schema Zero-Trust</h4>
+                  <span style={{ background: 'rgba(107, 255, 184, 0.12)', color: 'var(--accent3)', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>RLS</span>
                 </div>
+                <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '16px', lineHeight: '1.5' }}>
+                  Gera um schema com RLS em todas as tabelas, bloqueio da role <code style={{ background: 'var(--surface2)', padding: '1px 4px', borderRadius: '3px', fontSize: '11px' }}>anon</code> e políticas de isolamento por <code style={{ background: 'var(--surface2)', padding: '1px 4px', borderRadius: '3px', fontSize: '11px' }}>auth.uid()</code>. Execute no SQL Editor do Supabase.
+                </p>
 
                 <button className="btn-ghost" style={{ marginBottom: '16px' }} onClick={generateSqlSchema}>
-                  Gerar Schema SQL
+                  🛡️ Gerar Schema Zero-Trust
                 </button>
 
                 {sqlGenerated && (
