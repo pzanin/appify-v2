@@ -150,8 +150,8 @@ export function useBuilderActions(showToast: (msg: string, type?: ToastType) => 
     showToast('Sub-módulo adicionado com sucesso.', 'success');
   };
 
-  const onUpdateSubmoduleContent = (modId: number, subId: number, content: string, builderData: BuilderBlock[]) => {
-    updateSubmoduleContent({ modId, subId, content, builderData });
+  const onUpdateSubmoduleContent = (modId: number, subId: number, content: string, builderData: BuilderBlock[], htmlMode?: 'visual' | 'code') => {
+    updateSubmoduleContent({ modId, subId, content, contentHtml: content, builderData, htmlMode });
     setEditingSubmodule(null);
     showToast('Página salva e renderizada com sucesso!', 'success');
   };

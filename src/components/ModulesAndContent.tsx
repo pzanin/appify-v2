@@ -10,7 +10,7 @@ import { useAppStore } from '../store/useAppStore';
 
 interface ModulesAndContentProps { 
   submodule: SubModule; 
-  onSave: (html: string, builderData: BuilderBlock[]) => void; 
+  onSave: (html: string, builderData: BuilderBlock[], htmlMode?: 'visual' | 'code') => void; 
   onClose: () => void; 
 }
 
@@ -67,7 +67,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   
   const [blocks, setBlocks] = useState<BuilderBlock[]>(submodule.builder_data || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
+  const [viewMode, setViewMode] = useState<'visual' | 'code'>(submodule.htmlMode || 'visual');
   const [submoduleName, setSubmoduleName] = useState(submodule.name || '');
   
   // Content Type & URL state
@@ -112,12 +112,13 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
         contentHtml: contentType === 'html' ? finalHtml : '',
         content: contentType === 'html' ? finalHtml : '', // Legacy sync
         builderData: finalBlocks,
+        htmlMode: contentType === 'html' ? viewMode : undefined,
         gamificationConfig: {
           timeGateSeconds,
           enableCelebration
         }
       });
-      onSave(finalHtml, finalBlocks);
+      onSave(finalHtml, finalBlocks, contentType === 'html' ? viewMode : undefined);
     }
   };
 

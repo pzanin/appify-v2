@@ -39,6 +39,7 @@ interface AppStore extends AppState {
     contentType?: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
     contentUrl?: string;
     contentHtml?: string;
+    htmlMode?: 'visual' | 'code';
     gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean }
   }) => void;
   updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked'; dripDays?: number; checkoutUrl?: string }) => void;
@@ -197,6 +198,7 @@ export const useAppStore = create<AppStore>()(
                 contentHtml: '',
                 contentUrl: '',
                 builder_data: [],
+                htmlMode: 'visual',
                 gamificationConfig: {
                   timeGateSeconds: 0,
                   enableCelebration: state.pwaConfig.gamification?.enableCelebration || false
@@ -230,6 +232,7 @@ export const useAppStore = create<AppStore>()(
                 contentType: payload.contentType ?? sub.contentType,
                 builder_data: payload.builderData ?? sub.builder_data,
                 name: payload.name ?? sub.name,
+                htmlMode: payload.htmlMode ?? sub.htmlMode,
                 gamificationConfig: payload.gamificationConfig ?? sub.gamificationConfig
               } : sub)
             }

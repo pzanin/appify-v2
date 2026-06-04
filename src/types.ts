@@ -221,6 +221,7 @@ export interface SubModule {
   contentHtml?: string;
   content_html?: string; // Maintain for compatibility
   builder_data?: BuilderBlock[];
+  htmlMode?: 'visual' | 'code';
   coverImageUrl?: string;
   externalLink?: string;
   gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean };

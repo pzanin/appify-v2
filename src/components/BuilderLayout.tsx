@@ -16,7 +16,7 @@ import { SupportConfig } from './SupportConfig';
 import { GamificationConfig } from './GamificationConfig';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 
-interface BuilderLayoutProps { isPhoneDark: boolean; setIsPhoneDark: (val: boolean) => void; handleDeleteModule: (id: number) => void; handleDeleteSubmodule: (modId: number, subId: number) => void; handleAddSubmodule: (modId: number) => void; handleUpdateSubmoduleContent: (modId: number, subId: number, content: string, data: BuilderBlock[]) => void; showToast: (msg: string, type?: ToastType) => void; }
+interface BuilderLayoutProps { isPhoneDark: boolean; setIsPhoneDark: (val: boolean) => void; handleDeleteModule: (id: number) => void; handleDeleteSubmodule: (modId: number, subId: number) => void; handleAddSubmodule: (modId: number) => void; handleUpdateSubmoduleContent: (modId: number, subId: number, content: string, data: BuilderBlock[], mode?: 'visual' | 'code') => void; showToast: (msg: string, type?: ToastType) => void; }
 
 export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDeleteModule, handleDeleteSubmodule, handleAddSubmodule, handleUpdateSubmoduleContent, showToast }: BuilderLayoutProps) {
   const activeStep = useAppStore(state => state.activeStep);
@@ -45,7 +45,7 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
       {activeSubToEdit && editingSubmodule && (
         <ModulesAndContent 
           submodule={activeSubToEdit} 
-          onSave={(html, data) => handleUpdateSubmoduleContent(editingSubmodule.modId, editingSubmodule.subId, html, data)} 
+          onSave={(html, data, mode) => handleUpdateSubmoduleContent(editingSubmodule.modId, editingSubmodule.subId, html, data, mode)} 
           onClose={() => setEditingSubmodule(null)}
         />
       )}
