@@ -212,6 +212,34 @@ export interface Project {
   logoBase64?: string;
 }
 
+export interface ProjectFile {
+  schemaVersion: 1;
+  project: Project;
+  workspace: AppState;
+}
+
+export interface ProjectOperationResult {
+  canceled?: boolean;
+  project?: Project;
+}
+
+export interface AppifyDesktopApi {
+  projects: {
+    list: () => Promise<Project[]>;
+    create: (name: string, workspace: AppState) => Promise<Project>;
+    open: (id: number) => Promise<ProjectFile>;
+    save: (id: number, workspace: AppState) => Promise<Project>;
+    duplicate: (id: number) => Promise<Project>;
+    remove: (id: number) => Promise<void>;
+    exportBackup: (id: number) => Promise<ProjectOperationResult>;
+    importBackup: () => Promise<ProjectOperationResult>;
+  };
+  lifecycle: {
+    onBeforeClose: (listener: () => void | Promise<void>) => () => void;
+    readyToClose: () => void;
+  };
+}
+
 export interface SubModule {
   id: number;
   name: string;

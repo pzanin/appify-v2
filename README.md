@@ -1,20 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Appify 0.9 Local
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/e4a1d168-40a4-4287-9487-ba9c3514f28c
+Criador privado de PWAs em Electron. Os projetos do construtor são salvos em disco; Supabase é opcional e pertence apenas aos PWAs gerados.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Pré-requisitos:** Node.js 22+.
 
 
-1. Install dependencies:
+1. Instale as dependências:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Execute o aplicativo Electron:
    `npm run dev`
+
+No Windows, os projetos ficam por padrão em:
+
+`Documentos/Appify/Projects/NomeDoProjeto-ID/`
+
+Cada projeto contém `project.json`, `assets/`, `pages/` e `build/`.
+
+## Verificações
+
+- `npm run lint`: validação TypeScript (a branch atual ainda possui erros legados fora da fundação local).
+- `npm run build`: compila renderer, processo principal e preload.
+- `npm run build:pwa`: recompila o template exportável do PWA.
+- `npm run build:app`: gera o instalador Windows; execute no Windows ou em CI com o ambiente de empacotamento adequado.

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FolderOpen, Plus, X, Search, ChevronDown } from 'lucide-react';
+import { FolderOpen, Plus, X, Search, ChevronDown, Upload } from 'lucide-react';
 import { Project } from '../types';
 import { ProjectCard } from './CommonComponents';
 import { useAppStore } from '../store/useAppStore';
@@ -9,9 +9,12 @@ interface ProjectsDashboardProps {
   handleOpenProject: (id: number, name: string) => void; 
   handleToggleProjectStatus: (id: number) => void; 
   handleDeleteProject: (id: number) => void; 
+  handleDuplicateProject: (id: number) => void;
+  handleExportBackup: (id: number) => void;
+  handleImportBackup: () => void;
 }
 
-export default function ProjectsDashboard({ projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject }: ProjectsDashboardProps) {
+export default function ProjectsDashboard({ projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject, handleDuplicateProject, handleExportBackup, handleImportBackup }: ProjectsDashboardProps) {
   const isNewProjectModalOpen = useAppStore(state => state.isNewProjectModalOpen);
   const setIsNewProjectModalOpen = useAppStore(state => state.setIsNewProjectModalOpen);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +28,7 @@ export default function ProjectsDashboard({ projects, handleOpenProject, handleT
           <h1 className="projects-title">Meus Aplicativos</h1>
           <p className="projects-subtitle">Crie, gerencie e publique suas experiências digitais.</p>
         </div>
+        <button className="btn-ghost" onClick={handleImportBackup}><Upload size={16} /> Importar backup</button>
       </div>
 
       {safeProjects.length === 0 ? (
@@ -85,6 +89,8 @@ export default function ProjectsDashboard({ projects, handleOpenProject, handleT
                 handleOpenProject={handleOpenProject} 
                 handleToggleProjectStatus={handleToggleProjectStatus} 
                 handleDeleteProject={handleDeleteProject}
+                handleDuplicateProject={handleDuplicateProject}
+                handleExportBackup={handleExportBackup}
               />
             ))}
           </div>

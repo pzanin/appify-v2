@@ -5,7 +5,6 @@ import {
   Image as ImageIcon, Lock
 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { projectService } from '../services/projectService';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { ICON_MAP } from '../constants';
 

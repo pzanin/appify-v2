@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-// import electron from 'vite-plugin-electron/simple';
+import electron from 'vite-plugin-electron/simple';
 
 const isPwaBuild = process.env.VITE_BUILD_TARGET === 'pwa';
 
@@ -10,11 +10,14 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // electron({
-    //   main: {
-    //     entry: 'electron/main.ts',
-    //   },
-    // }),
+    ...(!isPwaBuild ? [electron({
+      main: {
+        entry: 'electron/main.ts',
+      },
+      preload: {
+        input: 'electron/preload.ts',
+      },
+    })] : []),
   ],
 
   server: {
@@ -28,7 +31,6 @@ export default defineConfig({
       'react',
       'react-dom',
       'react/jsx-runtime',
-      '@supabase/supabase-js',
       'jszip',
       'lucide-react',
       'motion',

@@ -23,7 +23,8 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const appData = {
       appName: state.appName,
       modules: state.modules,
-      pwaConfig: cleanPwaConfig
+      pwaConfig: cleanPwaConfig,
+      activeLocale: state.activeLocale,
     };
 
     const zip = new JSZip();

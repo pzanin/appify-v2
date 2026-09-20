@@ -9,8 +9,8 @@ interface LocaleSwitcherProps {
 }
 
 export function LocaleSwitcher({ showToast }: LocaleSwitcherProps) {
-  const activeLocaleCode = useAppStore(state => state.activeLocale);
-  const setLocale = useAppStore(state => state.setLocale);
+  const activeLocaleCode = useAppStore(state => state.builderLocale);
+  const setBuilderLocale = useAppStore(state => state.setBuilderLocale);
   
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -28,8 +28,8 @@ export function LocaleSwitcher({ showToast }: LocaleSwitcherProps) {
   }, []);
 
   const handleSelect = (code: typeof SUPPORTED_LOCALES[number]['code'], label: string) => {
-    setLocale(code);
-    showToast(`Idioma alterado para ${label}`, 'success');
+    setBuilderLocale(code);
+    showToast(`Idioma do Appify alterado para ${label}`, 'success');
     setIsOpen(false);
   };
 

@@ -29,12 +29,14 @@ function EmptyState({ icon: Icon, text }: EmptyStateProps) {
 }
 
 export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   const appName = useAppStore(state => state.appName);
   const modules = useAppStore(state => state.modules);
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const splashActive = useAppStore(state => state.splashActive);
   const activeLocale = useAppStore(state => state.activeLocale);
+  const pwaLanguage = pwaConfig.language || activeLocale;
+  const t = i18n.getFixedT(pwaLanguage.split('-')[0]);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
   const feedPosts = useAppStore(state => state.feedPosts) || [];

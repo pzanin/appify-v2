@@ -1,15 +1,16 @@
 import { create } from 'zustand';
-import { subscribeWithSelector, persist } from 'zustand/middleware';
-import { AppState, AppView, PwaConfig, BuilderBlock, SupportedLocale, FeedPost } from '../types';
+import { subscribeWithSelector } from 'zustand/middleware';
+import { AppState, AppView, PwaConfig, BuilderBlock, SupportedLocale, FeedPost, Project } from '../types';
 import { INITIAL_MODULES, INITIAL_PWA_CONFIG } from '../constants';
-
-// O projectService foi REMOVIDO pois agora somos 100% Local-First!
+import { projectService } from '../services/projectService';
+import i18n from '../i18n';
 
 interface AppStore extends AppState {
-  projects: any[]; // Usando any[] para evitar erros de tipagem com o objeto customizado que criaremos
-  setProjects: (projects: any[] | ((prev: any[]) => any[])) => void;
+  projects: Project[];
+  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
   isLoading: boolean;
   currentProjectId: number | null;
+  builderLocale: SupportedLocale;
   setIsLoading: (loading: boolean) => void;
   loadProject: (id: number) => Promise<void>;
   initializeProjects: () => Promise<void>;
@@ -47,6 +48,7 @@ interface AppStore extends AppState {
   duplicateSubmodule: (payload: { modId: number; subId: number }) => void;
   moveSubmodule: (payload: { fromModId: number; subId: number; toModId: number }) => void;
   setLocale: (locale: SupportedLocale) => void;
+  setBuilderLocale: (locale: SupportedLocale) => void;
   setSplash: (active: boolean) => void;
   setMockupOnboardingCompleted: (completed: boolean) => void;
   resetMockupOnboarding: () => void;
@@ -85,9 +87,38 @@ const initialState: AppState = {
   pushNotifications: []
 };
 
+export function createInitialProjectWorkspace(name = 'Meu App'): AppState {
+  return {
+    ...initialState,
+    appName: name,
+    pwaConfig: { ...INITIAL_PWA_CONFIG, appName: name },
+    modules: [],
+    analytics: { ...initialState.analytics },
+    feedPosts: [],
+    pushNotifications: [],
+  };
+}
+
+export function getProjectWorkspaceSnapshot(state = useAppStore.getState()): AppState {
+  return {
+    currentView: state.currentView,
+    activeStep: state.activeStep,
+    appName: state.appName,
+    modules: state.modules,
+    selectedModuleId: state.selectedModuleId,
+    pwaConfig: state.pwaConfig,
+    editingSubmodule: state.editingSubmodule,
+    activeLocale: state.activeLocale,
+    splashActive: state.splashActive,
+    mockupOnboardingCompleted: state.mockupOnboardingCompleted,
+    analytics: state.analytics,
+    feedPosts: state.feedPosts,
+    pushNotifications: state.pushNotifications,
+  };
+}
+
 export const useAppStore = create<AppStore>()(
   subscribeWithSelector(
-    persist(
       (set, get) => ({
         ...initialState,
         projects: [],
@@ -96,29 +127,21 @@ export const useAppStore = create<AppStore>()(
         })),
         isLoading: false,
         currentProjectId: null,
+        builderLocale: (localStorage.getItem('appify-builder-locale') as SupportedLocale) || 'pt-BR',
         isNewProjectModalOpen: false,
 
         setIsLoading: (loading) => set({ isLoading: loading }),
         setIsNewProjectModalOpen: (open) => set({ isNewProjectModalOpen: open }),
 
         loadProject: async (id) => {
-          set((state) => {
-            // CÉREBRO LOCAL: Procura os dados dentro da própria memória do Appify
-            const project = state.projects.find((p: any) => p.id === id);
-            if (project && project.savedWorkspace) {
-              // Se encontrou o projeto salvo, carrega ele pra tela
-              return { ...project.savedWorkspace, currentProjectId: id, isLoading: false };
-            }
-            // Se for um projeto novinho, zera o painel
-            return { ...initialState, currentProjectId: id, isLoading: false, currentView: 'builder' };
-          });
+          set({ isLoading: true });
+          const document = await projectService.openProject(id);
+          set({ ...document.workspace, currentProjectId: id, currentView: 'builder', isLoading: false });
         },
 
         initializeProjects: async () => {
-          set((state) => {
-            if (state.currentProjectId) return { isLoading: false };
-            return { isLoading: false, currentView: 'projects', activeStep: 0 };
-          });
+          const projects = await projectService.getProjects();
+          set({ projects, isLoading: false, currentView: 'projects', activeStep: 0, currentProjectId: null });
         },
 
         setView: (view) => set({ currentView: view }),
@@ -297,6 +320,11 @@ export const useAppStore = create<AppStore>()(
         }),
 
         setLocale: (locale) => set({ activeLocale: locale }),
+        setBuilderLocale: (locale) => {
+          localStorage.setItem('appify-builder-locale', locale);
+          void i18n.changeLanguage(locale.split('-')[0]);
+          set({ builderLocale: locale });
+        },
         setSplash: (active) => set({ splashActive: active }),
         setMockupOnboardingCompleted: (completed) => set({ mockupOnboardingCompleted: completed }),
         resetMockupOnboarding: () => set({ mockupOnboardingCompleted: false }),
@@ -305,43 +333,66 @@ export const useAppStore = create<AppStore>()(
         deleteFeedPost: (id) => set((state) => ({ feedPosts: state.feedPosts.filter(p => p.id !== id) })),
         addPushNotification: (push) => set((state) => ({ pushNotifications: [push, ...(state.pushNotifications || [])] })),
         deletePushNotification: (id) => set((state) => ({ pushNotifications: (state.pushNotifications || []).filter(p => p.id !== id) })),
-      }), {
-      name: 'appify-v2-database',
-    })
+      })
   ));
 
-// MOTOR DE SALVAMENTO LOCAL (Sem internet!)
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 useAppStore.subscribe(
-  (state) => state,
+  (state) => ({
+    currentProjectId: state.currentProjectId,
+    isLoading: state.isLoading,
+    currentView: state.currentView,
+    activeStep: state.activeStep,
+    appName: state.appName,
+    modules: state.modules,
+    selectedModuleId: state.selectedModuleId,
+    pwaConfig: state.pwaConfig,
+    editingSubmodule: state.editingSubmodule,
+    activeLocale: state.activeLocale,
+    splashActive: state.splashActive,
+    mockupOnboardingCompleted: state.mockupOnboardingCompleted,
+    analytics: state.analytics,
+    feedPosts: state.feedPosts,
+    pushNotifications: state.pushNotifications,
+  }),
   (state) => {
-    if (!state.currentProjectId || state.isLoading) return;
+    if (!state.currentProjectId || state.isLoading) {
+      if (saveTimer) clearTimeout(saveTimer);
+      return;
+    }
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      // Empacota o que está na tela
-      const currentWorkspace: AppState = {
-        currentView: state.currentView,
-        activeStep: state.activeStep,
-        appName: state.appName,
-        modules: state.modules,
-        selectedModuleId: state.selectedModuleId,
-        pwaConfig: state.pwaConfig,
-        editingSubmodule: state.editingSubmodule,
-        activeLocale: state.activeLocale,
-        splashActive: state.splashActive,
-        mockupOnboardingCompleted: state.mockupOnboardingCompleted,
-        analytics: state.analytics,
-        feedPosts: state.feedPosts,
-        pushNotifications: state.pushNotifications,
-      };
-
-      // Injeta os dados da tela DE VOLTA na lista de projetos (state.projects) silenciosamente
-      useAppStore.getState().setProjects((prevProjects: any[]) =>
-        prevProjects.map((p) =>
-          p.id === state.currentProjectId ? { ...p, savedWorkspace: currentWorkspace } : p
-        )
-      );
+    saveTimer = setTimeout(async () => {
+      const currentWorkspace = getProjectWorkspaceSnapshot(state as AppStore);
+      try {
+        const savedProject = await projectService.saveProject(state.currentProjectId, currentWorkspace);
+        useAppStore.getState().setProjects(prevProjects => prevProjects.map(project => (
+          project.id === savedProject.id ? savedProject : project
+        )));
+      } catch (error) {
+        console.error('[Appify] Falha no autosave local:', error);
+      }
     }, 1000);
   },
-  { fireImmediately: false }
+  {
+    fireImmediately: false,
+    equalityFn: (previous, current) => (
+      previous.currentProjectId === current.currentProjectId
+      && previous.isLoading === current.isLoading
+      && previous.currentView === current.currentView
+      && previous.activeStep === current.activeStep
+      && previous.appName === current.appName
+      && previous.modules === current.modules
+      && previous.selectedModuleId === current.selectedModuleId
+      && previous.pwaConfig === current.pwaConfig
+      && previous.editingSubmodule === current.editingSubmodule
+      && previous.activeLocale === current.activeLocale
+      && previous.splashActive === current.splashActive
+      && previous.mockupOnboardingCompleted === current.mockupOnboardingCompleted
+      && previous.analytics === current.analytics
+      && previous.feedPosts === current.feedPosts
+      && previous.pushNotifications === current.pushNotifications
+    ),
+  }
 );
+
+void i18n.changeLanguage(useAppStore.getState().builderLocale.split('-')[0]);

@@ -23,7 +23,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
-import { useAppStore } from './store/useAppStore';
+import { getProjectWorkspaceSnapshot, useAppStore } from './store/useAppStore';
+import { projectService } from './services/projectService';
 import { useToast, useProjects, useBuilderActions } from './hooks';
 import { Header } from './components/CommonComponents';
 import i18n from './i18n';
@@ -115,8 +116,33 @@ function AppContent() {
   const [isPhoneDark, setIsPhoneDark] = useState<boolean>(true);
 
   const { toasts, showToast } = useToast();
-  const { projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject } = useProjects(showToast);
+  const {
+    projects,
+    handleOpenProject,
+    handleToggleProjectStatus,
+    handleDeleteProject,
+    handleDuplicateProject,
+    handleExportBackup,
+    handleImportBackup,
+  } = useProjects(showToast);
   const builderActions = useBuilderActions(showToast);
+
+  React.useEffect(() => {
+    const lifecycle = window.appifyDesktop?.lifecycle;
+    if (!lifecycle) return;
+    return lifecycle.onBeforeClose(async () => {
+      try {
+        const state = useAppStore.getState();
+        if (state.currentProjectId) {
+          await projectService.saveProject(state.currentProjectId, getProjectWorkspaceSnapshot(state));
+        }
+      } catch (error) {
+        console.error('[Appify] Falha ao salvar antes de fechar:', error);
+      } finally {
+        lifecycle.readyToClose();
+      }
+    });
+  }, []);
 
   // Check if we are in standalone/production mode via URL
   const isStandaloneMode = new URLSearchParams(window.location.search).get('mode') === 'app';
@@ -144,7 +170,7 @@ function AppContent() {
         <AppifyLogo className="text-5xl mb-4 animate-pulse" />
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--muted)' }}>
           <Loader2 className="spin" size={24} />
-          <span style={{ fontFamily: 'Syne', fontWeight: 500 }}>Conectando ao Supabase...</span>
+          <span style={{ fontFamily: 'Syne', fontWeight: 500 }}>Abrindo projetos locais...</span>
         </div>
         <style>{`
           .spin { animation: spin 1s linear infinite; }
@@ -169,6 +195,9 @@ function AppContent() {
             handleOpenProject={handleOpenProject} 
             handleToggleProjectStatus={handleToggleProjectStatus} 
             handleDeleteProject={handleDeleteProject}
+            handleDuplicateProject={handleDuplicateProject}
+            handleExportBackup={handleExportBackup}
+            handleImportBackup={handleImportBackup}
           />
         ) : (
           <BuilderLayout 

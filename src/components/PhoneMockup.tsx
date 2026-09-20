@@ -27,7 +27,7 @@ function EmptyState({ icon: Icon, text }: EmptyStateProps) {
 }
 
 export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
   const appName = useAppStore(state => state.appName);
   const modules = useAppStore(state => state.modules);
   const activeStep = useAppStore(state => state.activeStep);
@@ -35,6 +35,8 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const currentView = useAppStore(state => state.currentView);
   const splashActive = useAppStore(state => state.splashActive);
   const activeLocale = useAppStore(state => state.activeLocale);
+  const pwaLanguage = pwaConfig.language || activeLocale;
+  const t = i18n.getFixedT(pwaLanguage.split('-')[0]);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
   const feedPosts = useAppStore(state => state.feedPosts) || [];

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Project, ToastMessage, ToastType, BuilderBlock } from './types';
+import { ToastMessage, ToastType, BuilderBlock } from './types';
 import { projectService } from './services/projectService';
-import { useAppStore } from './store/useAppStore';
+import { createInitialProjectWorkspace, useAppStore } from './store/useAppStore';
 
 export function useToast() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -16,75 +16,49 @@ export function useToast() {
 }
 
 export function useProjects(showToast: (msg: string, type?: ToastType) => void) {
-  const setAppName = useAppStore(state => state.setAppName);
   const setView = useAppStore(state => state.setView);
   const loadProject = useAppStore(state => state.loadProject);
   const initializeProjects = useAppStore(state => state.initializeProjects);
   const setIsLoading = useAppStore(state => state.setIsLoading);
-  const currentView = useAppStore(state => state.currentView);
-
   const projects = useAppStore(state => state.projects);
   const setProjects = useAppStore(state => state.setProjects);
-
-  const fetchProjects = async () => {
-    // Check if we already have local projects, if local first we might not need to fetch
-    // But for safety let's sync if there are any from supabase
-    const data = await projectService.getProjects();
-    if (data && data.length > 0) {
-      setProjects(data);
-    }
-  };
 
   useEffect(() => {
     async function init() {
       setIsLoading(true);
-      await fetchProjects();
-      await initializeProjects();
+      try {
+        await initializeProjects();
+      } catch (error) {
+        console.error(error);
+        setIsLoading(false);
+        showToast('Não foi possível abrir a pasta local de projetos.', 'error');
+      }
     }
-    init();
+    void init();
   }, []);
-
-  useEffect(() => {
-    if (currentView === 'projects') {
-      fetchProjects();
-    }
-  }, [currentView]);
-
-  useEffect(() => {
-    if (projects.length > 0) {
-      projectService.saveProjects(projects);
-    }
-  }, [projects]);
 
   const handleOpenProject = async (projectId: number, projectName: string) => {
     showToast('Carregando projeto...', 'loading');
     if (projectId === 0) {
       try {
-        const result = await projectService.createProject(projects, projectName || 'Novo App');
-        setProjects(result.projects);
-        await loadProject(result.newlyCreated.id);
-        setView('builder');
+        const name = projectName || 'Novo App';
+        const project = await projectService.createProject(name, createInitialProjectWorkspace(name));
+        setProjects(prev => [project, ...prev]);
+        await loadProject(project.id);
         showToast('Projeto criado com sucesso!', 'success');
-      } catch (err: any) {
-        // If Supabase fails, fallback to local creation
-        const newProject = {
-          id: Date.now(),
-          name: projectName || 'Novo App',
-          status: 'Rascunho' as const,
-          lastEdited: new Date().toISOString(),
-          users: 0,
-          color: '#7c6fff',
-          url: `${(projectName || 'Novo App').toLowerCase().replace(/\s+/g, '')}.vapp.pro`
-        };
-        setProjects(prev => [...prev, newProject]);
-        await loadProject(newProject.id);
-        setView('builder');
-        showToast('Projeto criado localmente com sucesso!', 'success');
+      } catch (error) {
+        console.error(error);
+        showToast('Falha ao criar o projeto local.', 'error');
       }
     } else {
-      await loadProject(projectId);
-      setView('builder');
-      showToast('Projeto pronto!', 'success');
+      try {
+        await loadProject(projectId);
+        showToast('Projeto pronto!', 'success');
+      } catch (error) {
+        console.error(error);
+        setView('projects');
+        showToast('Não foi possível abrir o projeto.', 'error');
+      }
     }
   };
 
@@ -103,22 +77,67 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
   };
 
   const handleDeleteProject = async (projectId: number) => {
-    const confirmed = window.confirm("Tem certeza que deseja excluir este app? Esta ação não pode ser desfeita.");
+    const confirmed = window.confirm(
+      projectService.isDesktop()
+        ? 'Tem certeza que deseja mover este app para a Lixeira?'
+        : 'Tem certeza que deseja excluir este app?'
+    );
     if (!confirmed) return;
 
     try {
       showToast('Excluindo projeto...', 'loading');
       await projectService.deleteProject(projectId);
       setProjects(prev => prev.filter(p => p.id !== projectId));
-      showToast('Projeto excluído com sucesso!', 'success');
-    } catch (err: any) {
-      // Local fallback
-      setProjects(prev => prev.filter(p => p.id !== projectId));
-      showToast('Projeto excluído localmente com sucesso!', 'success');
+      showToast(projectService.isDesktop() ? 'Projeto movido para a Lixeira.' : 'Projeto excluído.', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Não foi possível excluir o projeto.', 'error');
     }
   };
 
-  return { projects, handleOpenProject, handleToggleProjectStatus, handleDeleteProject };
+  const handleDuplicateProject = async (projectId: number) => {
+    try {
+      const duplicated = await projectService.duplicateProject(projectId);
+      setProjects(prev => [duplicated, ...prev]);
+      showToast('Projeto duplicado com sucesso!', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Não foi possível duplicar o projeto.', 'error');
+    }
+  };
+
+  const handleExportBackup = async (projectId: number) => {
+    try {
+      const result = await projectService.exportBackup(projectId);
+      if (!result.canceled) showToast('Backup exportado com sucesso!', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Não foi possível exportar o backup.', 'error');
+    }
+  };
+
+  const handleImportBackup = async () => {
+    try {
+      const result = await projectService.importBackup();
+      if (result.project) {
+        setProjects(prev => [result.project!, ...prev]);
+        showToast('Projeto importado com sucesso!', 'success');
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('Não foi possível importar o backup.', 'error');
+    }
+  };
+
+  return {
+    projects,
+    handleOpenProject,
+    handleToggleProjectStatus,
+    handleDeleteProject,
+    handleDuplicateProject,
+    handleExportBackup,
+    handleImportBackup,
+  };
 }
 
 export function useBuilderActions(showToast: (msg: string, type?: ToastType) => void) {

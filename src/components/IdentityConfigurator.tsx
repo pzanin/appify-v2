@@ -8,7 +8,6 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { GOOGLE_FONTS } from '../constants';
 import { SupportedLocale, ToastType } from '../types';
-import { useTranslation } from 'react-i18next';
 
 interface IdentityConfiguratorProps {
   showToast: (msg: string, type?: ToastType) => void;
@@ -18,7 +17,6 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const updatePwaConfig = useAppStore(state => state.updatePwaConfig);
   const setLocale = useAppStore(state => state.setLocale);
-  const { i18n } = useTranslation();
 
   const fileInputLogo = useRef<HTMLInputElement>(null);
   const fileInputIcon = useRef<HTMLInputElement>(null);
@@ -163,7 +161,6 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
                 const lang = e.target.value;
                 updatePwaConfig({ language: lang });
                 setLocale(lang as SupportedLocale);
-                i18n.changeLanguage(lang.split('-')[0]);
               }}
             >
               <option value="pt-BR">🇧🇷 Português (BR)</option>

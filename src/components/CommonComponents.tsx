@@ -61,9 +61,11 @@ export interface ProjectCardProps {
   handleOpenProject: (id: number, name: string) => void;
   handleToggleProjectStatus: (id: number) => void;
   handleDeleteProject: (id: number) => void;
+  handleDuplicateProject: (id: number) => void;
+  handleExportBackup: (id: number) => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProject, handleToggleProjectStatus, handleDeleteProject }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProject, handleToggleProjectStatus, handleDeleteProject, handleDuplicateProject, handleExportBackup }) => {
   return (
     <div 
       className="project-card" 
@@ -85,6 +87,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proj, handleOpenProjec
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            className="icon-btn duplicate-project-btn"
+            title="Duplicar Projeto"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDuplicateProject(proj.id);
+            }}
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            className="icon-btn duplicate-project-btn"
+            title="Exportar Backup"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExportBackup(proj.id);
+            }}
+          >
+            <Download size={16} />
+          </button>
           <button 
             className="icon-btn delete-project-btn" 
             title="Excluir Projeto"
