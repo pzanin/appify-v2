@@ -12,7 +12,7 @@
     "gamification": { "streak": "Streak", "days": "days", "completed": "Completed", "keepGoing": "Keep it up!", "points": "Points", "achievements": "Achievements", "badges": "Badges", "myCollection": "My Collection" }
   },
   "onboarding": {
-    "install": { "title": "Install App", "subtitle": "Add our app to your home screen.", "confirm": "Install Now", "understood": "Got it", "skip": "Not Now", "iosStep1": "1. Tap the Share icon", "iosStep2": "2. Select \"Add to Home Screen\"", "iosStep3": "3. Turn on \"Open as Web App\" and tap Add", "androidHelp": "Open the browser menu and choose \"Install app\" or \"Add to Home screen\"." },
+    "install": { "title": "Put the app on your phone screen", "subtitle": "This makes it easier to open again without looking for the address.", "confirm": "Install on my phone", "understood": "Got it", "skip": "Continue without installing", "iosLabel": "On iPhone or iPad", "iosStep1": "Tap Safari's Share button", "iosStep2": "Choose \"Add to Home Screen\"", "iosStep3": "Turn on \"Open as Web App\" and tap Add", "iosFinish": "Then open the app using the new icon on your phone screen.", "iosConfirm": "Got it, I'll install it", "androidStep1": "Tap the blue button below", "androidStep2": "Confirm the installation when your phone asks", "manualTitle": "Didn't the confirmation appear?", "androidHelp": "Open the browser menu and choose \"Install app\" or \"Add to Home screen\".", "safeNote": "It's free and you can remove it whenever you want." },
     "push": { "title": "Notifications", "subtitle": "Enable notifications so you never miss out.", "confirm": "Enable", "skip": "Not Now" }
   }
 }
