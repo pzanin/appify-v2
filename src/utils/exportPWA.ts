@@ -8,6 +8,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
   try {
     const state = useAppStore.getState();
     const appName = state.appName || 'Meu App';
+    const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
     
     // Extrai apenas os dados necessários do construtor
     const { description, noIndex, showAdvanced, ...cleanPwaConfig } = state.pwaConfig || {};
@@ -24,7 +25,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       appName: state.appName,
       modules: state.modules,
       pwaConfig: cleanPwaConfig,
-      activeLocale: state.activeLocale,
+      activeLocale: pwaLanguage,
     };
 
     const zip = new JSZip();
@@ -36,6 +37,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const manifest = {
       name: appName,
       short_name: appName,
+      lang: pwaLanguage,
       start_url: ".", // Host-agnostic: funciona em subdiretórios (Vercel, Netlify, Github Pages)
       display: "standalone",
       background_color: state.pwaConfig?.defaultTheme === 'dark' ? '#091218' : '#ffffff',
@@ -62,6 +64,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       const htmlRes = await fetch('/pwa-template/index.html');
       if (htmlRes.ok) {
         let htmlText = await htmlRes.text();
+        htmlText = htmlText.replace(/<html lang="[^"]*">/, `<html lang="${pwaLanguage}">`);
 
         // Injeta o registro do Service Worker se não existir
         if (!htmlText.includes('serviceWorker in navigator') && !htmlText.includes('serviceWorker\' in navigator')) {
