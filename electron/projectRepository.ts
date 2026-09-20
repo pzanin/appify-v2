@@ -1,10 +1,44 @@
 import { promises as fs } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import type { AppState, Project, ProjectFile } from '../src/types';
 
 const PROJECT_FILE = 'project.json';
 const PROJECT_BACKUP_FILE = 'project.json.bak';
 const PROJECT_DIRECTORIES = ['assets', 'pages', 'build'] as const;
+const DATA_IMAGE_PATTERN = /data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,([A-Za-z0-9+/=]+)/gi;
+const ASSET_REFERENCE_PATTERN = /assets\/(asset-[a-f0-9]{24}\.(?:png|jpg|webp|gif|svg))/gi;
+const MANAGED_PAGE_PATTERN = /^lesson-\d+-\d+\.html$/;
+
+function transformStrings(value: unknown, transform: (text: string) => string): unknown {
+  if (typeof value === 'string') return transform(value);
+  if (Array.isArray(value)) return value.map(item => transformStrings(item, transform));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, transformStrings(item, transform)]));
+  }
+  return value;
+}
+
+function collectStringMatches(value: unknown, pattern: RegExp) {
+  const matches = new Set<string>();
+  transformStrings(value, text => {
+    for (const match of text.matchAll(new RegExp(pattern.source, pattern.flags))) matches.add(match[0]);
+    return text;
+  });
+  return matches;
+}
+
+function imageExtension(mimeSubtype: string) {
+  if (/^jpe?g$/i.test(mimeSubtype)) return 'jpg';
+  if (/^svg\+xml$/i.test(mimeSubtype)) return 'svg';
+  return mimeSubtype.toLowerCase();
+}
+
+function imageMimeType(extension: string) {
+  if (extension === 'jpg') return 'image/jpeg';
+  if (extension === 'svg') return 'image/svg+xml';
+  return `image/${extension}`;
+}
 
 function safeFolderName(name: string) {
   const cleaned = name
@@ -152,6 +186,7 @@ export class ProjectRepository {
   }
 
   async readBackup(id: number): Promise<ProjectFile> {
+    // open() rehydrates local asset references, keeping the JSON backup self-contained.
     return this.open(id);
   }
 
@@ -190,7 +225,7 @@ export class ProjectRepository {
   private async readFromDirectory(directory: string): Promise<ProjectFile> {
     const target = path.join(directory, PROJECT_FILE);
     try {
-      return await this.readDocument(target);
+      return await this.hydrateAssetReferences(directory, await this.readDocument(target));
     } catch (primaryError) {
       const candidates = [path.join(directory, PROJECT_BACKUP_FILE)];
       const entries = await fs.readdir(directory).catch(() => [] as string[]);
@@ -206,7 +241,7 @@ export class ProjectRepository {
           const recovered = await this.readDocument(candidate);
           await fs.copyFile(candidate, target);
           console.warn(`[Appify] Projeto recuperado automaticamente a partir de ${path.basename(candidate)}.`);
-          return recovered;
+          return await this.hydrateAssetReferences(directory, recovered);
         } catch {
           // Try the next recovery candidate.
         }
@@ -219,7 +254,8 @@ export class ProjectRepository {
     const target = path.join(directory, PROJECT_FILE);
     const backup = path.join(directory, PROJECT_BACKUP_FILE);
     const temporary = path.join(directory, `${PROJECT_FILE}.${process.pid}.${Date.now()}.tmp`);
-    const serialized = `${JSON.stringify(document, null, 2)}\n`;
+    const storedDocument = await this.externalizeDataImages(directory, document);
+    const serialized = `${JSON.stringify(storedDocument, null, 2)}\n`;
 
     await fs.writeFile(temporary, serialized, 'utf8');
     await this.readDocument(temporary);
@@ -237,6 +273,9 @@ export class ProjectRepository {
       await fs.copyFile(temporary, target);
       await this.readDocument(target);
       await fs.rm(temporary, { force: true });
+      await this.writeLessonPages(directory, storedDocument.workspace).catch(error => {
+        console.warn('[Appify] Não foi possível atualizar as cópias em pages/.', error);
+      });
     } catch (error) {
       if (hasBackup) {
         await fs.copyFile(backup, target).catch(() => undefined);
@@ -250,5 +289,86 @@ export class ProjectRepository {
     const document = JSON.parse(raw) as unknown;
     assertProjectFile(document);
     return document;
+  }
+
+  private async externalizeDataImages(directory: string, document: ProjectFile): Promise<ProjectFile> {
+    const dataUrls = collectStringMatches(document, DATA_IMAGE_PATTERN);
+    if (dataUrls.size === 0) return document;
+
+    const assetsDirectory = path.join(directory, 'assets');
+    await fs.mkdir(assetsDirectory, { recursive: true });
+    const replacements = new Map<string, string>();
+
+    for (const dataUrl of dataUrls) {
+      const match = /^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,([A-Za-z0-9+/=]+)$/i.exec(dataUrl);
+      if (!match) continue;
+      const bytes = Buffer.from(match[2], 'base64');
+      if (bytes.length === 0) continue;
+      const extension = imageExtension(match[1]);
+      const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 24);
+      const filename = `asset-${hash}.${extension}`;
+      await fs.writeFile(path.join(assetsDirectory, filename), bytes);
+      replacements.set(dataUrl, `assets/${filename}`);
+    }
+
+    return transformStrings(document, text => {
+      let result = text;
+      for (const [dataUrl, reference] of replacements) result = result.split(dataUrl).join(reference);
+      return result;
+    }) as ProjectFile;
+  }
+
+  private async hydrateAssetReferences(directory: string, document: ProjectFile): Promise<ProjectFile> {
+    const references = collectStringMatches(document, ASSET_REFERENCE_PATTERN);
+    if (references.size === 0) return document;
+    const replacements = new Map<string, string>();
+
+    await Promise.all([...references].map(async reference => {
+      const filename = path.basename(reference);
+      try {
+        const bytes = await fs.readFile(path.join(directory, 'assets', filename));
+        const extension = path.extname(filename).slice(1).toLowerCase();
+        replacements.set(reference, `data:${imageMimeType(extension)};base64,${bytes.toString('base64')}`);
+      } catch (error) {
+        console.warn(`[Appify] Asset local ausente: ${filename}`, error);
+      }
+    }));
+
+    return transformStrings(document, text => {
+      let result = text;
+      for (const [reference, dataUrl] of replacements) result = result.split(reference).join(dataUrl);
+      return result;
+    }) as ProjectFile;
+  }
+
+  private async writeLessonPages(directory: string, workspace: AppState) {
+    const pagesDirectory = path.join(directory, 'pages');
+    await fs.mkdir(pagesDirectory, { recursive: true });
+    const existing = await fs.readdir(pagesDirectory).catch(() => [] as string[]);
+    await Promise.all(existing
+      .filter(filename => MANAGED_PAGE_PATTERN.test(filename))
+      .map(filename => fs.rm(path.join(pagesDirectory, filename), { force: true })));
+
+    const writes: Promise<void>[] = [];
+    for (const module of workspace.modules) {
+      for (const lesson of module.subs || []) {
+        if (lesson.contentType !== 'html') continue;
+        const content = lesson.contentHtml || lesson.content_html || '';
+        if (!content.trim()) continue;
+        const pageContent = content.replace(
+          /([="'(])assets\/(asset-[a-f0-9]{24}\.(?:png|jpg|webp|gif|svg))/gi,
+          '$1../assets/$2',
+        );
+        const html = /<html[\s>]/i.test(pageContent)
+          ? pageContent
+          : `<!doctype html>\n<html lang="${workspace.pwaConfig.language || 'pt-BR'}">\n<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>\n<body>${pageContent}</body>\n</html>\n`;
+        writes.push(fs.writeFile(
+          path.join(pagesDirectory, `lesson-${module.id}-${lesson.id}.html`),
+          html,
+          'utf8',
+        ));
+      }
+    }
+    await Promise.all(writes);
   }
 }
