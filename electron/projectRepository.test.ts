@@ -83,7 +83,7 @@ test('externalizes images, writes pages and rehydrates projects and backups', as
     assert.equal(importedDocument.workspace.pwaConfig.iconBase64, ONE_PIXEL_PNG);
 
     const build = await repository.writeBuildArchive(project.id, 'Teste Assets-pwa.zip', new Uint8Array([80, 75, 3, 4]));
-    assert.equal(build.filename, 'Teste Assets-pwa.zip');
+    assert.match(build.filename, /^Teste Assets-pwa-\d{8}-\d{6}\.zip$/);
     assert.deepEqual(
       [...await fs.readFile(path.join(projectDirectory, 'build', build.filename))],
       [80, 75, 3, 4],
