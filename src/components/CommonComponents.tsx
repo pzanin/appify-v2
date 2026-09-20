@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy } from 'lucide-react';
+import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Project, ToastType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
@@ -18,6 +18,35 @@ export function Header({ handleOpenProject, handlePublish, showToast }: HeaderPr
   const setView = useAppStore(state => state.setView);
   const setSplash = useAppStore(state => state.setSplash);
   const setIsNewProjectModalOpen = useAppStore(state => state.setIsNewProjectModalOpen);
+  const saveStatus = useAppStore(state => state.saveStatus);
+  const lastSavedAt = useAppStore(state => state.lastSavedAt);
+  const saveNow = useAppStore(state => state.saveNow);
+
+  const handleSave = React.useCallback(async () => {
+    const saved = await saveNow();
+    showToast(saved ? 'Projeto salvo no computador.' : 'Não foi possível salvar o projeto.', saved ? 'success' : 'error');
+  }, [saveNow, showToast]);
+
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (currentView === 'builder' && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        void handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentView, handleSave]);
+
+  const saveLabel = saveStatus === 'saving'
+    ? 'Salvando...'
+    : saveStatus === 'pending'
+      ? 'Alterações pendentes'
+      : saveStatus === 'error'
+        ? 'Erro ao salvar'
+        : lastSavedAt
+          ? `Salvo às ${new Date(lastSavedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+          : 'Salvo';
 
   return (
     <header className="header">
@@ -28,6 +57,16 @@ export function Header({ handleOpenProject, handlePublish, showToast }: HeaderPr
           <>
             <button className="btn-ghost" onClick={() => setView('projects')}><ArrowLeft size={16} /> Meus Projetos</button>
             <LocaleSwitcher showToast={showToast} />
+            <span className={`save-status save-status-${saveStatus}`} title={saveLabel}>
+              {saveStatus === 'saving' && <Loader2 size={14} className="spin" />}
+              {saveStatus === 'error' && <AlertCircle size={14} />}
+              {saveStatus === 'saved' && <CheckCircle2 size={14} />}
+              {saveStatus === 'pending' && <span className="save-pending-dot" />}
+              {saveLabel}
+            </span>
+            <button className="btn-ghost" onClick={() => void handleSave()} disabled={saveStatus === 'saving'} title="Salvar agora (Ctrl+S)">
+              <Save size={16} /> Salvar
+            </button>
             <button 
               className="btn-ghost" 
               onClick={() => {

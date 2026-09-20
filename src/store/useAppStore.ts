@@ -5,12 +5,17 @@ import { INITIAL_MODULES, INITIAL_PWA_CONFIG } from '../constants';
 import { projectService } from '../services/projectService';
 import i18n from '../i18n';
 
+export type SaveStatus = 'saved' | 'pending' | 'saving' | 'error';
+
 interface AppStore extends AppState {
   projects: Project[];
   setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void;
   isLoading: boolean;
   currentProjectId: number | null;
   builderLocale: SupportedLocale;
+  saveStatus: SaveStatus;
+  lastSavedAt: string | null;
+  saveNow: () => Promise<boolean>;
   setIsLoading: (loading: boolean) => void;
   loadProject: (id: number) => Promise<void>;
   initializeProjects: () => Promise<void>;
@@ -117,6 +122,10 @@ export function getProjectWorkspaceSnapshot(state = useAppStore.getState()): App
   };
 }
 
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let savePromise: Promise<boolean> | null = null;
+let workspaceRevision = 0;
+
 export const useAppStore = create<AppStore>()(
   subscribeWithSelector(
       (set, get) => ({
@@ -128,20 +137,80 @@ export const useAppStore = create<AppStore>()(
         isLoading: false,
         currentProjectId: null,
         builderLocale: (localStorage.getItem('appify-builder-locale') as SupportedLocale) || 'pt-BR',
+        saveStatus: 'saved',
+        lastSavedAt: null,
         isNewProjectModalOpen: false,
 
         setIsLoading: (loading) => set({ isLoading: loading }),
         setIsNewProjectModalOpen: (open) => set({ isNewProjectModalOpen: open }),
+        saveNow: async () => {
+          if (saveTimer) {
+            clearTimeout(saveTimer);
+            saveTimer = null;
+          }
+          if (savePromise) return savePromise;
+
+          const state = get();
+          if (!state.currentProjectId) return false;
+          const revisionAtStart = workspaceRevision;
+          set({ saveStatus: 'saving' });
+
+          savePromise = (async () => {
+            try {
+              const savedProject = await projectService.saveProject(
+                state.currentProjectId!,
+                getProjectWorkspaceSnapshot(state),
+              );
+              set(current => ({
+                projects: current.projects.map(project => (
+                  project.id === savedProject.id ? savedProject : project
+                )),
+                saveStatus: workspaceRevision === revisionAtStart ? 'saved' : 'pending',
+                lastSavedAt: new Date().toISOString(),
+              }));
+              return true;
+            } catch (error) {
+              console.error('[Appify] Falha ao salvar projeto local:', error);
+              set({ saveStatus: 'error' });
+              return false;
+            } finally {
+              savePromise = null;
+              if (workspaceRevision !== revisionAtStart && get().currentProjectId) {
+                if (saveTimer) clearTimeout(saveTimer);
+                saveTimer = setTimeout(() => {
+                  void get().saveNow();
+                }, 300);
+              }
+            }
+          })();
+
+          return savePromise;
+        },
 
         loadProject: async (id) => {
           set({ isLoading: true });
           const document = await projectService.openProject(id);
-          set({ ...document.workspace, currentProjectId: id, currentView: 'builder', isLoading: false });
+          set({
+            ...document.workspace,
+            currentProjectId: id,
+            currentView: 'builder',
+            isLoading: false,
+            saveStatus: 'saved',
+            lastSavedAt: document.project.lastEdited,
+          });
         },
 
         initializeProjects: async () => {
           const projects = await projectService.getProjects();
-          set({ projects, isLoading: false, currentView: 'projects', activeStep: 0, currentProjectId: null });
+          set({
+            projects,
+            isLoading: false,
+            currentView: 'projects',
+            activeStep: 0,
+            currentProjectId: null,
+            saveStatus: 'saved',
+            lastSavedAt: null,
+          });
         },
 
         setView: (view) => set({ currentView: view }),
@@ -336,7 +405,6 @@ export const useAppStore = create<AppStore>()(
       })
   ));
 
-let saveTimer: ReturnType<typeof setTimeout> | null = null;
 useAppStore.subscribe(
   (state) => ({
     currentProjectId: state.currentProjectId,
@@ -360,17 +428,11 @@ useAppStore.subscribe(
       if (saveTimer) clearTimeout(saveTimer);
       return;
     }
+    workspaceRevision += 1;
+    useAppStore.setState({ saveStatus: 'pending' });
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      const currentWorkspace = getProjectWorkspaceSnapshot(state as AppStore);
-      try {
-        const savedProject = await projectService.saveProject(state.currentProjectId, currentWorkspace);
-        useAppStore.getState().setProjects(prevProjects => prevProjects.map(project => (
-          project.id === savedProject.id ? savedProject : project
-        )));
-      } catch (error) {
-        console.error('[Appify] Falha no autosave local:', error);
-      }
+    saveTimer = setTimeout(() => {
+      void useAppStore.getState().saveNow();
     }, 1000);
   },
   {
