@@ -192,7 +192,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
   const safeLinkUrl = (value?: string) => {
     const url = value?.trim() || '#';
-    return /^(https?:\/\/|mailto:|tel:|#|\/)/i.test(url) ? url : '#';
+    if (/^(https?:\/\/|mailto:|tel:|#|\/)/i.test(url)) return url;
+    if (/^(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[\/?#].*)?$/i.test(url)) return `https://${url}`;
+    return '#';
   };
 
   const getBlockInnerHtml = (mod: BuilderBlock) => {
@@ -401,7 +403,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <iframe
                         title="Preview do HTML personalizado"
                         srcDoc={prepareResponsiveHtml(contentHtml)}
-                        sandbox="allow-scripts allow-same-origin"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                       />
                     </div>
                   </div>
