@@ -11,6 +11,7 @@ const api: AppifyDesktopApi = {
     remove: id => ipcRenderer.invoke('projects:remove', { id }),
     exportBackup: id => ipcRenderer.invoke('projects:export-backup', { id }),
     importBackup: () => ipcRenderer.invoke('projects:import-backup'),
+    saveBuild: (id, filename, bytes) => ipcRenderer.invoke('projects:save-build', { id, filename, bytes }),
   },
   lifecycle: {
     onBeforeClose: listener => {
