@@ -784,7 +784,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                     srcDoc={prepareResponsiveHtml(selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || '')}
                                     title="Conteúdo da Aula" 
                                     className="absolute inset-0 w-full h-full border-none block" 
-                                    sandbox="allow-scripts allow-same-origin" 
+                                    sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                                     style={{ background: '#ffffff' }} 
                                   />
                                 );
