@@ -190,6 +190,31 @@ export class ProjectRepository {
     return this.open(id);
   }
 
+  async writeBuildArchive(id: number, filename: string, bytes: Uint8Array) {
+    const directory = await this.findDirectory(id);
+    const buildDirectory = path.join(directory, 'build');
+    await fs.mkdir(buildDirectory, { recursive: true });
+    const safeFilename = `${safeFolderName(path.basename(filename, path.extname(filename)))}.zip`;
+    const target = path.join(buildDirectory, safeFilename);
+    const temporary = path.join(buildDirectory, `${safeFilename}.${process.pid}.${Date.now()}.tmp`);
+
+    await fs.writeFile(temporary, bytes);
+    const stats = await fs.stat(temporary);
+    if (stats.size === 0) {
+      await fs.rm(temporary, { force: true });
+      throw new Error('O pacote PWA gerado está vazio.');
+    }
+    await fs.copyFile(temporary, target);
+    await fs.rm(temporary, { force: true });
+    await fs.writeFile(path.join(buildDirectory, 'build-info.json'), `${JSON.stringify({
+      filename: safeFilename,
+      generatedAt: new Date().toISOString(),
+      size: stats.size,
+    }, null, 2)}\n`, 'utf8');
+
+    return { filename: safeFilename, filePath: target, size: stats.size };
+  }
+
   private async createStructure(directory: string) {
     await fs.mkdir(directory, { recursive: false });
     await Promise.all(PROJECT_DIRECTORIES.map(name => fs.mkdir(path.join(directory, name), { recursive: true })));
