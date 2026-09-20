@@ -48,7 +48,7 @@ export interface PwaConfig {
   logoBase64: string | null;
   iconBase64: string | null;
   domain: string;
-  language: string;
+  language: SupportedLocale;
   description: string;
   noIndex: boolean;
   showAdvanced?: boolean;

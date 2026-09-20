@@ -34,8 +34,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const modules = useAppStore(state => state.modules);
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const splashActive = useAppStore(state => state.splashActive);
-  const activeLocale = useAppStore(state => state.activeLocale);
-  const pwaLanguage = pwaConfig.language || activeLocale;
+  const pwaLanguage = pwaConfig.language || 'pt-BR';
   const t = i18n.getFixedT(pwaLanguage.split('-')[0]);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
@@ -219,7 +218,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     setIsTransitioning(true);
     const timer = setTimeout(() => setIsTransitioning(false), 300);
     return () => clearTimeout(timer);
-  }, [activeLocale]);
+  }, [pwaLanguage]);
 
   const getResponsiveHtml = (html: string) => {
     if (!html) return '';

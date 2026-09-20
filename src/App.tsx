@@ -53,7 +53,7 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
         useAppStore.setState(data);
         
         // Altera o idioma do i18n para corresponder ao configurado no PWA
-        const lang = data.activeLocale || data.pwaConfig?.language || 'pt-BR';
+        const lang = data.pwaConfig?.language || data.activeLocale || 'pt-BR';
         i18n.changeLanguage(lang.split('-')[0]);
         
         setLoaded(true);

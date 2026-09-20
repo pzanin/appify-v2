@@ -23,7 +23,7 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
   const modules = useAppStore(state => state.modules);
   const selectedModuleId = useAppStore(state => state.selectedModuleId);
   const editingSubmodule = useAppStore(state => state.editingSubmodule);
-  const activeLocale = useAppStore(state => state.activeLocale);
+  const pwaLanguage = useAppStore(state => state.pwaConfig.language);
   
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
   const setSelectedModule = useAppStore(state => state.setSelectedModule);
@@ -74,10 +74,10 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
                 alignItems: 'center',
                 gap: '6px'
               }}
-              title="Idioma de produção ativo"
+              title="Idioma configurado para o PWA"
             >
-              <span>{SUPPORTED_LOCALES.find(l => l.code === activeLocale)?.flag}</span>
-              <span>{SUPPORTED_LOCALES.find(l => l.code === activeLocale)?.label}</span>
+              <span>{SUPPORTED_LOCALES.find(l => l.code === pwaLanguage)?.flag}</span>
+              <span>{SUPPORTED_LOCALES.find(l => l.code === pwaLanguage)?.label}</span>
             </div>
           </div>
           <div className="progress-bar-wrap"><span>{progressPercent}% completo</span><div className="progress-bar"><div className="progress-fill" style={{ width: `${progressPercent}%` }}></div></div></div>

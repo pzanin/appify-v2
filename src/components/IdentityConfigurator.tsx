@@ -16,7 +16,7 @@ interface IdentityConfiguratorProps {
 export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const updatePwaConfig = useAppStore(state => state.updatePwaConfig);
-  const setLocale = useAppStore(state => state.setLocale);
+  const setPwaLocale = useAppStore(state => state.setPwaLocale);
 
   const fileInputLogo = useRef<HTMLInputElement>(null);
   const fileInputIcon = useRef<HTMLInputElement>(null);
@@ -153,14 +153,12 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
           </div>
 
           <div>
-            <label className="vpb-label">IDIOMA BASE</label>
+            <label className="vpb-label">IDIOMA DO PWA</label>
             <select 
               className="vpb-input" 
               value={pwaConfig.language || 'pt-BR'}
               onChange={(e) => {
-                const lang = e.target.value;
-                updatePwaConfig({ language: lang });
-                setLocale(lang as SupportedLocale);
+                setPwaLocale(e.target.value as SupportedLocale);
               }}
             >
               <option value="pt-BR">🇧🇷 Português (BR)</option>
@@ -169,7 +167,7 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
               <option value="fr">🇫🇷 Français</option>
             </select>
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: '-8px' }}>
-              Este é o idioma em que seu app será entregue ao usuário final.
+              Define os textos internos do PWA e não altera o idioma da interface do Appify.
             </p>
           </div>
 

@@ -52,7 +52,7 @@ interface AppStore extends AppState {
   reorderSubmodule: (payload: { modId: number; dragId: number; overId: number }) => void;
   duplicateSubmodule: (payload: { modId: number; subId: number }) => void;
   moveSubmodule: (payload: { fromModId: number; subId: number; toModId: number }) => void;
-  setLocale: (locale: SupportedLocale) => void;
+  setPwaLocale: (locale: SupportedLocale) => void;
   setBuilderLocale: (locale: SupportedLocale) => void;
   setSplash: (active: boolean) => void;
   setMockupOnboardingCompleted: (completed: boolean) => void;
@@ -92,6 +92,27 @@ const initialState: AppState = {
   pushNotifications: []
 };
 
+const supportedLocaleCodes: SupportedLocale[] = ['pt-BR', 'en-US', 'es', 'fr'];
+
+function normalizePwaLocale(value: unknown): SupportedLocale {
+  return supportedLocaleCodes.includes(value as SupportedLocale)
+    ? value as SupportedLocale
+    : 'pt-BR';
+}
+
+function normalizeProjectWorkspace(workspace: AppState): AppState {
+  const language = normalizePwaLocale(workspace.pwaConfig?.language || workspace.activeLocale);
+  return {
+    ...workspace,
+    activeLocale: language,
+    pwaConfig: {
+      ...INITIAL_PWA_CONFIG,
+      ...workspace.pwaConfig,
+      language,
+    },
+  };
+}
+
 export function createInitialProjectWorkspace(name = 'Meu App'): AppState {
   return {
     ...initialState,
@@ -113,7 +134,7 @@ export function getProjectWorkspaceSnapshot(state = useAppStore.getState()): App
     selectedModuleId: state.selectedModuleId,
     pwaConfig: state.pwaConfig,
     editingSubmodule: state.editingSubmodule,
-    activeLocale: state.activeLocale,
+    activeLocale: state.pwaConfig.language,
     splashActive: state.splashActive,
     mockupOnboardingCompleted: state.mockupOnboardingCompleted,
     analytics: state.analytics,
@@ -190,8 +211,9 @@ export const useAppStore = create<AppStore>()(
         loadProject: async (id) => {
           set({ isLoading: true });
           const document = await projectService.openProject(id);
+          const workspace = normalizeProjectWorkspace(document.workspace);
           set({
-            ...document.workspace,
+            ...workspace,
             currentProjectId: id,
             currentView: 'builder',
             isLoading: false,
@@ -388,7 +410,10 @@ export const useAppStore = create<AppStore>()(
           return { modules: newModules };
         }),
 
-        setLocale: (locale) => set({ activeLocale: locale }),
+        setPwaLocale: (locale) => set((state) => ({
+          activeLocale: locale,
+          pwaConfig: { ...state.pwaConfig, language: locale },
+        })),
         setBuilderLocale: (locale) => {
           localStorage.setItem('appify-builder-locale', locale);
           void i18n.changeLanguage(locale.split('-')[0]);

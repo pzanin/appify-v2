@@ -38,6 +38,7 @@ export function LocaleSwitcher({ showToast }: LocaleSwitcherProps) {
       <button 
         className="btn-ghost" 
         onClick={() => setIsOpen(!isOpen)}
+        title="Idioma da interface do Appify"
         style={{ 
           minWidth: '90px', 
           height: '36px', 

@@ -34,8 +34,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const currentView = useAppStore(state => state.currentView);
   const splashActive = useAppStore(state => state.splashActive);
-  const activeLocale = useAppStore(state => state.activeLocale);
-  const pwaLanguage = pwaConfig.language || activeLocale;
+  const pwaLanguage = pwaConfig.language || 'pt-BR';
   const t = i18n.getFixedT(pwaLanguage.split('-')[0]);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
@@ -204,7 +203,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
     setIsTransitioning(true);
     const timer = setTimeout(() => setIsTransitioning(false), 300);
     return () => clearTimeout(timer);
-  }, [activeLocale]);
+  }, [pwaLanguage]);
 
   useEffect(() => {
     if (feedPosts && feedPosts.length > 0) {
