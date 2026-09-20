@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
+import { projectService } from '../services/projectService';
 
 export const handleExportZIP = async (showToast?: (msg: string, type: 'success' | 'error' | 'loading') => void) => {
   if (showToast) showToast('Iniciando empacotamento do PWA...', 'loading');
@@ -193,9 +194,25 @@ self.addEventListener('fetch', (event) => {
 
     // 5. Empacota tudo e salva no computador
     const content = await zip.generateAsync({ type: 'blob' });
-    saveAs(content, `${appName.toLowerCase().replace(/\s+/g, '-')}-pwa.zip`);
+    const filename = `${appName.toLowerCase().replace(/\s+/g, '-')}-pwa.zip`;
+    let buildCopyFailed = false;
+    if (projectService.isDesktop() && state.currentProjectId) {
+      try {
+        const bytes = new Uint8Array(await content.arrayBuffer());
+        await projectService.saveBuild(state.currentProjectId, filename, bytes);
+      } catch (error) {
+        buildCopyFailed = true;
+        console.error('Não foi possível salvar a cópia em build/:', error);
+      }
+    }
+    saveAs(content, filename);
 
-    if (showToast) showToast('PWA exportado com sucesso!', 'success');
+    if (showToast) {
+      showToast(
+        buildCopyFailed ? 'PWA baixado, mas a cópia em build/ falhou.' : 'PWA exportado com sucesso!',
+        buildCopyFailed ? 'error' : 'success',
+      );
+    }
   } catch (error) {
     console.error('Erro ao gerar o ZIP do PWA:', error);
     if (showToast) showToast('Erro ao exportar PWA.', 'error');
