@@ -12,7 +12,7 @@
     "gamification": { "streak": "Ofensiva", "days": "dias", "completed": "Concluído", "keepGoing": "Continue assim!", "points": "Pontos", "achievements": "Conquistas", "badges": "Medalhas", "myCollection": "Minha Coleção" }
   },
   "onboarding": {
-    "install": { "title": "Instalar App", "subtitle": "Adicione nosso app à sua tela inicial.", "confirm": "Instalar Agora", "understood": "Entendi", "skip": "Agora Não", "iosStep1": "1. Toque no ícone de Compartilhar", "iosStep2": "2. Selecione \"Adicionar à Tela de Início\"", "iosStep3": "3. Ative \"Abrir como Aplicativo Web\" e toque em Adicionar", "androidHelp": "Abra o menu do navegador e escolha \"Instalar aplicativo\" ou \"Adicionar à tela inicial\"." },
+    "install": { "title": "Coloque o app na tela do celular", "subtitle": "Assim fica mais fácil abrir novamente, sem precisar procurar o endereço.", "confirm": "Instalar no meu celular", "understood": "Entendi", "skip": "Continuar sem instalar", "iosLabel": "No iPhone ou iPad", "iosStep1": "Toque no botão Compartilhar do Safari", "iosStep2": "Escolha \"Adicionar à Tela de Início\"", "iosStep3": "Ative \"Abrir como Aplicativo Web\" e toque em Adicionar", "iosFinish": "Depois, abra o aplicativo pelo novo ícone na tela do celular.", "iosConfirm": "Entendi, vou instalar", "androidStep1": "Toque no botão azul abaixo", "androidStep2": "Confirme a instalação quando o celular perguntar", "manualTitle": "A confirmação não apareceu?", "androidHelp": "Abra o menu do navegador e escolha \"Instalar aplicativo\" ou \"Adicionar à tela inicial\".", "safeNote": "É gratuito e você poderá remover quando quiser." },
     "push": { "title": "Notificações", "subtitle": "Ative as notificações para não perder nada.", "confirm": "Ativar", "skip": "Agora Não" }
   }
 }
