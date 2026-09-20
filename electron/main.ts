@@ -27,6 +27,14 @@ function requireWorkspace(value: unknown): AppState {
   return value as AppState;
 }
 
+function requireBuildBytes(value: unknown) {
+  if (!(value instanceof Uint8Array)) throw new Error('Arquivo de build inválido.');
+  if (value.byteLength === 0 || value.byteLength > 500 * 1024 * 1024) {
+    throw new Error('O arquivo de build deve ter entre 1 byte e 500 MB.');
+  }
+  return value;
+}
+
 function registerProjectHandlers() {
   ipcMain.handle('projects:list', () => repository.list());
   ipcMain.handle('projects:create', (_event, payload: { name?: unknown; workspace?: unknown }) => {
@@ -63,6 +71,14 @@ function registerProjectHandlers() {
     const raw = await fs.readFile(result.filePaths[0], 'utf8');
     const project = await repository.importDocument(JSON.parse(raw) as unknown);
     return { canceled: false, project };
+  });
+  ipcMain.handle('projects:save-build', (_event, payload: { id?: unknown; filename?: unknown; bytes?: unknown }) => {
+    const filename = typeof payload?.filename === 'string' ? payload.filename.slice(0, 160) : 'appify-pwa.zip';
+    return repository.writeBuildArchive(
+      requireProjectId(payload?.id),
+      filename,
+      requireBuildBytes(payload?.bytes),
+    );
   });
   ipcMain.on('app:close-ready', event => {
     BrowserWindow.fromWebContents(event.sender)?.destroy();
