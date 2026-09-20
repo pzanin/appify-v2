@@ -6,6 +6,7 @@ import electron from 'vite-plugin-electron/simple';
 const isPwaBuild = process.env.VITE_BUILD_TARGET === 'pwa';
 
 export default defineConfig({
+  base: isPwaBuild ? './' : '/',
   publicDir: isPwaBuild ? false : 'public',
   plugins: [
     react(),
