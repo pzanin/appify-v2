@@ -25,7 +25,8 @@ export function usePWAInstall() {
     // 2. Detect iOS
     const checkIOS = () => {
       const userAgent = window.navigator.userAgent.toLowerCase();
-      const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+      const isIOSDevice = /iphone|ipad|ipod/.test(userAgent)
+        || (userAgent.includes('macintosh') && window.navigator.maxTouchPoints > 1);
       setIsIOS(isIOSDevice);
     };
 
@@ -35,12 +36,19 @@ export function usePWAInstall() {
       setInstallPromptEvent(e);
     };
 
+    const handleAppInstalled = () => {
+      setInstallPromptEvent(null);
+      setIsStandalone(true);
+    };
+
     checkStandalone();
     checkIOS();
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
