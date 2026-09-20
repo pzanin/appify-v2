@@ -68,6 +68,11 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     setInstallAttempted(false);
   };
 
+  const openInstallAssistant = () => {
+    setInstallAttempted(false);
+    setOnboardingStep(1);
+  };
+
   const handleInstall = async () => {
     if (isIOS) {
       dismissInstall();
@@ -347,7 +352,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
             {!isStandalone && (
               <button
                 type="button"
-                onClick={() => { setInstallAttempted(false); setOnboardingStep(1); }}
+                onClick={openInstallAssistant}
                 aria-label={t('app.header.install', 'Instalar')}
                 title={t('app.header.install', 'Instalar')}
                 className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
@@ -885,44 +890,83 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
           {onboardingStep > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[150] flex flex-col justify-end" style={{ background: 'rgba(9, 18, 24, 0.92)' }}>
               <div className="absolute inset-0" onClick={() => { setOnboardingStep(0); setMockupOnboardingCompleted(true); }} />
-              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className={`relative rounded-t-[40px] p-8 text-center ${isPhoneDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} border-t border-[var(--border)]`}>
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="appify-onboarding-title"
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className={`relative rounded-t-[40px] px-6 pt-7 pb-8 text-center max-h-[94%] overflow-y-auto ${isPhoneDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} border-t border-[var(--border)]`}
+              >
                 <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '120px', height: '120px', background: themeColor, filter: 'blur(60px)', opacity: 0.1, pointerEvents: 'none' }} />
 
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: `${themeColor}15`, color: themeColor }}>
-                  {onboardingStep === 1 ? <Download size={32} /> : <Bell size={32} />}
+                <div className="w-[72px] h-[72px] rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: `${themeColor}15`, color: themeColor }}>
+                  {onboardingStep === 1 ? <Smartphone size={38} /> : <Bell size={32} />}
                 </div>
 
-                <h3 className="text-xl font-black mb-3">
-                  {onboardingStep === 1 ? t('onboarding.install.title', 'Instalar App') : t('onboarding.push.title', 'Notificações')}
+                <h3 id="appify-onboarding-title" className="text-2xl font-black mb-3 leading-tight">
+                  {onboardingStep === 1 ? t('onboarding.install.title', 'Coloque o app na tela do celular') : t('onboarding.push.title', 'Notificações')}
                 </h3>
-                <p className="text-sm opacity-60 mb-8 leading-relaxed">
-                  {onboardingStep === 1 ? t('onboarding.install.subtitle', 'Adicione nosso app à sua tela inicial para acesso instantâneo.') : t('onboarding.push.subtitle', 'Ative as notificações para receber lembretes e novidades em tempo real.')}
+                <p className="text-base opacity-70 mb-6 leading-relaxed">
+                  {onboardingStep === 1 ? t('onboarding.install.subtitle', 'Assim fica mais fácil abrir novamente, sem precisar procurar o endereço.') : t('onboarding.push.subtitle', 'Ative as notificações para receber lembretes e novidades em tempo real.')}
                 </p>
 
                 {onboardingStep === 1 && isIOS && (
-                  <div className="text-left rounded-2xl p-4 mb-5 space-y-3" style={{ background: isPhoneDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' }}>
-                    <div className="flex items-center gap-3"><Share size={18} /><span className="text-sm font-semibold">{t('onboarding.install.iosStep1', '1. Toque no ícone de Compartilhar')}</span></div>
-                    <div className="flex items-center gap-3"><Plus size={18} /><span className="text-sm font-semibold">{t('onboarding.install.iosStep2', '2. Selecione “Adicionar à Tela de Início”')}</span></div>
-                    <div className="flex items-center gap-3"><Check size={18} /><span className="text-sm font-semibold">{t('onboarding.install.iosStep3', '3. Ative “Abrir como Aplicativo Web” e toque em Adicionar')}</span></div>
+                  <div className="text-left mb-5 space-y-3">
+                    <div className="text-center mb-3"><span className="inline-flex rounded-full px-4 py-2 text-sm font-black" style={{ background: `${themeColor}15`, color: themeColor }}>{t('onboarding.install.iosLabel', 'No iPhone ou iPad')}</span></div>
+                    {[
+                      { icon: Share, text: t('onboarding.install.iosStep1', 'Toque no botão Compartilhar do Safari') },
+                      { icon: Plus, text: t('onboarding.install.iosStep2', 'Escolha “Adicionar à Tela de Início”') },
+                      { icon: Check, text: t('onboarding.install.iosStep3', 'Ative “Abrir como Aplicativo Web” e toque em Adicionar') },
+                    ].map(({ icon: StepIcon, text }, index) => (
+                      <div key={index} className="flex items-center gap-4 rounded-2xl p-4" style={{ background: isPhoneDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.045)' }}>
+                        <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-black text-white" style={{ background: themeColor }}>{index + 1}</div>
+                        <StepIcon size={22} style={{ color: themeColor, flexShrink: 0 }} />
+                        <span className="text-base font-bold leading-snug">{text}</span>
+                      </div>
+                    ))}
+                    <p className="text-center text-sm font-semibold opacity-60 pt-1">{t('onboarding.install.iosFinish', 'Depois, abra o aplicativo pelo novo ícone na tela do celular.')}</p>
+                  </div>
+                )}
+
+                {onboardingStep === 1 && !isIOS && !installAttempted && (
+                  <div className="text-left rounded-2xl p-5 mb-5 space-y-4" style={{ background: isPhoneDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.045)' }}>
+                    <div className="flex items-center gap-3"><div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-black text-white" style={{ background: themeColor }}>1</div><span className="text-base font-bold">{t('onboarding.install.androidStep1', 'Toque no botão azul abaixo')}</span></div>
+                    <div className="flex items-center gap-3"><div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-black text-white" style={{ background: themeColor }}>2</div><span className="text-base font-bold">{t('onboarding.install.androidStep2', 'Confirme a instalação quando o celular perguntar')}</span></div>
                   </div>
                 )}
 
                 {onboardingStep === 1 && !isIOS && !isInstallAvailable && installAttempted && (
-                  <div className="rounded-2xl p-4 mb-5 text-sm leading-relaxed" style={{ background: isPhoneDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' }}>
-                    {t('onboarding.install.androidHelp', 'Abra o menu do navegador e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.')}
+                  <div className="text-left rounded-2xl p-5 mb-5" style={{ background: isPhoneDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.045)' }}>
+                    <div className="font-black text-base mb-2">{t('onboarding.install.manualTitle', 'A confirmação não apareceu?')}</div>
+                    <p className="text-base leading-relaxed opacity-80 m-0">{t('onboarding.install.androidHelp', 'Abra o menu do navegador e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.')}</p>
+                  </div>
+                )}
+
+                {onboardingStep === 1 && (
+                  <div className="flex items-center justify-center gap-2 text-sm font-semibold opacity-60 mb-5">
+                    <CheckCircle size={18} style={{ color: themeColor }} />
+                    <span>{t('onboarding.install.safeNote', 'É gratuito e você poderá remover quando quiser.')}</span>
                   </div>
                 )}
 
                 <button 
                   onClick={() => {
-                    if (onboardingStep === 1) void handleInstall();
+                    if (onboardingStep === 1 && !isIOS && installAttempted && !isInstallAvailable) dismissInstall();
+                    else if (onboardingStep === 1) void handleInstall();
                     else { setOnboardingStep(0); setMockupOnboardingCompleted(true); }
                   }}
-                  className="w-full py-5 rounded-2xl font-black text-white shadow-xl mb-3"
-                  style={{ background: themeColor, border: 'none', cursor: 'pointer' }}
+                  className="w-full min-h-[60px] px-5 py-4 rounded-2xl text-lg font-black text-white shadow-xl mb-3"
+                  style={{ background: themeColor, border: 'none', cursor: 'pointer', touchAction: 'manipulation' }}
                 >
                   {onboardingStep === 1
-                    ? (isIOS ? t('onboarding.install.understood', 'Entendi') : t('onboarding.install.confirm', 'Instalar Agora'))
+                    ? (isIOS
+                      ? t('onboarding.install.iosConfirm', 'Entendi, vou instalar')
+                      : installAttempted && !isInstallAvailable
+                        ? t('onboarding.install.understood', 'Entendi')
+                        : t('onboarding.install.confirm', 'Instalar no meu celular'))
                     : t('onboarding.push.confirm', 'Ativar')}
                 </button>
                 <button 
@@ -930,10 +974,10 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                     if (onboardingStep === 1) dismissInstall();
                     else { setOnboardingStep(0); setMockupOnboardingCompleted(true); }
                   }} 
-                  className="w-full py-3 font-bold opacity-40"
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  className="w-full min-h-[48px] py-3 text-base font-bold opacity-60"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', touchAction: 'manipulation' }}
                 >
-                  {t('onboarding.install.skip', 'Agora Não')}
+                  {onboardingStep === 1 ? t('onboarding.install.skip', 'Continuar sem instalar') : t('onboarding.push.skip', 'Agora Não')}
                 </button>
               </motion.div>
             </motion.div>
