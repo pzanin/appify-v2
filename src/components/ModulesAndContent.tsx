@@ -137,20 +137,20 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const getDefaultProps = (type: string, subtype?: string) => {
     const base = { bgColor: '#ffffff', padding: '20', align: 'left', fontFamily: 'DM Sans', fontSize: '16', color: '#333333' };
     switch(type) {
-      case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', fontSize: '32', align: 'center', padding: '40', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
+      case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'link': return { ...base, text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', align: 'center' };
-      case 'spacer': return { ...base, height: '40', bgColor: 'transparent', align: 'left' };
+      case 'spacer': return { ...base, height: '40', bgColor: 'transparent', padding: '0', align: 'left' };
       case 'divider': return { ...base, dividerColor: '#e5e7eb', thickness: '1', padding: '10', align: 'center' };
       case 'container':
         switch(subtype) {
-          case 'hero': return { ...base, bgColor: '#6b8af0', padding: '80', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', fontSize: '48', titleFontSize: '48', titleFontWeight: '700', titleMarginBottom: '16' };
-          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '40', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '24', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
-          case 'threeColumn': return { ...base, bgColor: '#ffffff', padding: '40', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '24', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
-          case 'imageText': return { ...base, bgColor: '#ffffff', padding: '40', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'hero': return { ...base, bgColor: '#6b8af0', padding: '60', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', titleFontFamily: 'Syne', titleFontSize: '42', titleFontWeight: '700', titleMarginBottom: '16' };
+          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'threeColumn': return { ...base, bgColor: '#ffffff', padding: '20', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '18', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'imageText': return { ...base, bgColor: '#ffffff', padding: '24', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'testimonial': return { ...base, bgColor: '#f9fafb', padding: '40', quote: '"Este é um depoimento incrível sobre nosso produto ou serviço."', author: 'Nome do Cliente', role: 'Cargo/Empresa', quoteColor: '#6b8af0', quoteSize: '18' };
-          case 'cta': return { ...base, bgColor: '#111118', padding: '60', align: 'center', title: 'Pronto para começar?', subtitle: 'Faça uma ação agora mesmo', titleColor: '#ffffff', subtitleColor: '#d1d5db', buttonText: 'Clique aqui', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontSize: '36', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'cta': return { ...base, bgColor: '#111118', padding: '48', align: 'center', title: 'Pronto para começar?', subtitle: 'Faça uma ação agora mesmo', titleColor: '#ffffff', subtitleColor: '#d1d5db', buttonText: 'Clique aqui', url: 'https://', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '36', titleFontWeight: '700', titleMarginBottom: '12' };
         }
     }
     return base;
@@ -201,6 +201,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     const tfs = p.titleFontSize || p.fontSize || '32';
     const tfw = p.titleFontWeight || '700';
     const tmb = p.titleMarginBottom || '8';
+    const tff = p.titleFontFamily || p.fontFamily || 'DM Sans';
+    const titleStyle = `font-family:'${tff}',sans-serif;font-size:${tfs}px;font-weight:${tfw};`;
     // Helper: resolve image styling for standalone image block
     const imgH = p.imgHeight && p.imgHeight !== 'auto' ? `height:${p.imgHeight}px;` : 'height:auto;';
     const imgR = `border-radius:${p.imgBorderRadius || 0}px;`;
@@ -212,9 +214,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     const itImgF = `object-fit:${p.imageObjectFit || 'cover'};`;
 
     switch(mod.type) {
-      case 'header': return `<h1 style="font-size:${tfs}px;font-weight:${tfw};margin:0 0 ${tmb}px;">${p.title}</h1><p style="font-size:${parseInt(String(tfs))*0.5}px;opacity:0.7;margin:0;">${p.subtitle}</p>`;
+      case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${p.title}</h1><p style="opacity:0.7;margin:0;">${p.subtitle}</p>`;
       case 'text': return `<p style="margin:0;">${p.content}</p>`;
-      case 'image': return p.src ? `<img src="${p.src}" alt="${p.alt}" style="max-width:${p.width}%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:8px;">Clique para adicionar imagem</div>`;
+      case 'image': return p.src ? `<img src="${p.src}" alt="${p.alt}" style="width:${p.width || 100}% !important;max-width:100%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:8px;">Clique para adicionar imagem</div>`;
       case 'link': {
         const href = safeLinkUrl(p.url);
         const external = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
@@ -224,16 +226,20 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
       case 'divider': return `<hr style="border:none;border-top:${p.thickness}px solid ${p.dividerColor};margin:0;">`;
       case 'container':
         switch(mod.subtype) {
-          case 'hero': return `<h1 style="font-size:${tfs}px;font-weight:${tfw};color:${p.titleColor};margin:0 0 ${tmb}px;">${p.title}</h1><p style="font-size:${parseInt(String(tfs))*0.4}px;color:${p.subtitleColor};margin:0;">${p.subtitle}</p>`;
-          case 'twoColumn': return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.leftTitle}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.leftText}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.rightTitle}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.rightText}</p></div></div>`;
-          case 'threeColumn': return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.col1Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col1Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.col2Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col2Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.col3Title}</h3><p style="margin:0;font-size:14px;line-height:1.6;">${p.col3Text}</p></div></div>`;
+          case 'hero': return `<h1 style="${titleStyle}color:${p.titleColor};margin:0 0 ${tmb}px;">${p.title}</h1><p style="color:${p.subtitleColor};margin:0;">${p.subtitle}</p>`;
+          case 'twoColumn': return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${p.leftTitle}</h3><p style="margin:0;line-height:1.6;">${p.leftText}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:8px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${p.rightTitle}</h3><p style="margin:0;line-height:1.6;">${p.rightText}</p></div></div>`;
+          case 'threeColumn': return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${p.col1Title}</h3><p style="margin:0;line-height:1.6;">${p.col1Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${p.col2Title}</h3><p style="margin:0;line-height:1.6;">${p.col2Text}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:8px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${p.col3Title}</h3><p style="margin:0;line-height:1.6;">${p.col3Text}</p></div></div>`;
           case 'imageText': {
             const imgHtml = p.imageSrc ? `<img src="${p.imageSrc}" alt="${p.imageAlt}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Clique para adicionar imagem</div>`;
-            const titleH = `<h3 style="margin:0 0 ${tmb}px;font-weight:${tfw};font-size:${tfs}px;">${p.title}</h3>`;
-            return p.imagePosition === 'left' ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;"><div>${imgHtml}</div><div>${titleH}<p style="margin:0;line-height:1.8;">${p.text}</p></div></div>` : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;"><div>${titleH}<p style="margin:0;line-height:1.8;">${p.text}</p></div><div>${imgHtml}</div></div>`;
+            const titleH = `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${p.title}</h3>`;
+            return p.imagePosition === 'left' ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;align-items:center;"><div>${imgHtml}</div><div>${titleH}<p style="margin:0;line-height:1.8;">${p.text}</p></div></div>` : `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;align-items:center;"><div>${titleH}<p style="margin:0;line-height:1.8;">${p.text}</p></div><div>${imgHtml}</div></div>`;
           }
-          case 'testimonial': return `<div style="background:${p.bgColor};padding:${p.padding}px;border-radius:12px;border-left:4px solid ${p.quoteColor};"><p style="font-size:${p.quoteSize}px;font-style:italic;margin:0 0 16px;line-height:1.8;color:${p.color};">${p.quote}</p><p style="margin:0 0 4px;font-weight:700;color:${p.color};">${p.author}</p><p style="margin:0;font-size:14px;color:#6b7280;">${p.role}</p></div>`;
-          case 'cta': return `<h2 style="font-size:${tfs}px;font-weight:${tfw};color:${p.titleColor};margin:0 0 ${tmb}px;">${p.title}</h2><p style="font-size:18px;color:${p.subtitleColor};margin:0 0 24px;">${p.subtitle}</p><a href="#" style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:14px 32px;border-radius:6px;text-decoration:none;font-weight:600;font-size:16px;">${p.buttonText}</a>`;
+          case 'testimonial': return `<div style="padding-left:20px;border-left:4px solid ${p.quoteColor};"><p style="font-size:${p.quoteSize}px;font-style:italic;margin:0 0 16px;line-height:1.8;color:${p.color};">${p.quote}</p><p style="margin:0 0 4px;font-weight:700;color:${p.color};">${p.author}</p><p style="margin:0;font-size:14px;color:#6b7280;">${p.role}</p></div>`;
+          case 'cta': {
+            const href = safeLinkUrl(p.url);
+            const external = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
+            return `<h2 style="${titleStyle}color:${p.titleColor};margin:0 0 ${tmb}px;">${p.title}</h2><p style="color:${p.subtitleColor};margin:0 0 24px;">${p.subtitle}</p><a href="${href}"${external} style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:14px 32px;border-radius:6px;text-decoration:none;font-weight:600;">${p.buttonText}</a>`;
+          }
         }
     }
     return '';
@@ -248,7 +254,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     }).join('\n');
     
     const uniqueFonts = Array.from(new Set<string>(
-      blocks.map(b => b.props.fontFamily).filter((font): font is string => typeof font === 'string' && font.length > 0)
+      blocks.flatMap(b => [b.props.fontFamily, b.props.titleFontFamily]).filter((font): font is string => typeof font === 'string' && font.length > 0)
     ));
     const fontLinks = uniqueFonts.map(font => {
       const fontName = font.replace(/\s+/g, '+');
@@ -595,6 +601,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <input type="color" className="vpb-color-picker" value={selectedBlock.props.columnBgColor || '#ffffff'} onChange={e => updateProp('columnBgColor', e.target.value)} />
                         <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.columnBgColor || '#ffffff'} onChange={e => updateProp('columnBgColor', e.target.value)} />
                       </div>
+                      <label className="vpb-label">Espaço Interno das Colunas ({selectedBlock.props.columnPadding || 20}px)</label>
+                      <input type="range" min="8" max="48" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.columnPadding || 20} onChange={e => updateProp('columnPadding', e.target.value)} />
                     </>
                   )}
 
@@ -617,6 +625,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <input type="color" className="vpb-color-picker" value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
                         <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
                       </div>
+                      <label className="vpb-label">Espaço Interno dos Cards ({selectedBlock.props.cardPadding || 18}px)</label>
+                      <input type="range" min="8" max="48" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.cardPadding || 18} onChange={e => updateProp('cardPadding', e.target.value)} />
                     </>
                   )}
 
@@ -647,6 +657,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <option value="contain">Conter (Contain)</option>
                         <option value="fill">Esticar (Fill)</option>
                       </select>
+                      <label className="vpb-label">Texto Alternativo da Imagem</label>
+                      <input className="vpb-input" value={selectedBlock.props.imageAlt || ''} onChange={e => updateProp('imageAlt', e.target.value)} />
                       <label className="vpb-label">Posição da Imagem</label>
                       <select className="vpb-input" value={selectedBlock.props.imagePosition || 'left'} onChange={e => updateProp('imagePosition', e.target.value)}>
                         <option value="left">Esquerda</option>
@@ -686,6 +698,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input className="vpb-input" value={selectedBlock.props.subtitle || ''} onChange={e => updateProp('subtitle', e.target.value)} />
                       <label className="vpb-label">Texto do Botão</label>
                       <input className="vpb-input" value={selectedBlock.props.buttonText || ''} onChange={e => updateProp('buttonText', e.target.value)} />
+                      <label className="vpb-label">Link do Botão</label>
+                      <input className="vpb-input" placeholder="https://..." value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
                       <label className="vpb-label">Cor do Título</label>
                       <div className="vpb-color-row">
                         <input type="color" className="vpb-color-picker" value={selectedBlock.props.titleColor || '#ffffff'} onChange={e => updateProp('titleColor', e.target.value)} />
@@ -714,19 +728,23 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <div className="vpb-prop-group">
                   <span className="vpb-lib-label">Estilos do Bloco</span>
 
-                  <label className="vpb-label">Fonte</label>
-                  <select className="vpb-input" value={selectedBlock.props.fontFamily || 'DM Sans'} onChange={e => updateProp('fontFamily', e.target.value)}>
-                    {GOOGLE_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-                  </select>
+                  {!['image', 'spacer', 'divider'].includes(selectedBlock.type) && (
+                    <>
+                      <label className="vpb-label">Fonte do Texto</label>
+                      <select className="vpb-input" value={selectedBlock.props.fontFamily || 'DM Sans'} onChange={e => updateProp('fontFamily', e.target.value)}>
+                        {GOOGLE_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                      </select>
 
-                  <label className="vpb-label">Tamanho da Fonte ({selectedBlock.props.fontSize || 16}px)</label>
-                  <input type="range" min="10" max="72" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.fontSize || 16} onChange={e => updateProp('fontSize', e.target.value)} />
+                      <label className="vpb-label">Tamanho do Texto ({selectedBlock.props.fontSize || 16}px)</label>
+                      <input type="range" min="10" max="72" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.fontSize || 16} onChange={e => updateProp('fontSize', e.target.value)} />
 
-                  <label className="vpb-label">Cor do Texto</label>
-                  <div className="vpb-color-row">
-                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.color || '#333333'} onChange={e => updateProp('color', e.target.value)} />
-                    <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.color || '#333333'} onChange={e => updateProp('color', e.target.value)} />
-                  </div>
+                      <label className="vpb-label">Cor do Texto</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.color || '#333333'} onChange={e => updateProp('color', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.color || '#333333'} onChange={e => updateProp('color', e.target.value)} />
+                      </div>
+                    </>
+                  )}
 
                   <label className="vpb-label">Cor de Fundo</label>
                   <div className="vpb-color-row">
@@ -761,6 +779,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 {(selectedBlock.type === 'header' || (selectedBlock.type === 'container' && ['hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
                   <div className="vpb-prop-group">
                     <span className="vpb-lib-label">Título Avançado</span>
+
+                    <label className="vpb-label">Fonte do Título</label>
+                    <select className="vpb-input" value={selectedBlock.props.titleFontFamily || selectedBlock.props.fontFamily || 'DM Sans'} onChange={e => updateProp('titleFontFamily', e.target.value)}>
+                      {GOOGLE_FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
 
                     <label className="vpb-label">Tamanho do Título ({selectedBlock.props.titleFontSize || selectedBlock.props.fontSize || 32}px)</label>
                     <input type="range" min="12" max="96" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.titleFontSize || selectedBlock.props.fontSize || 32} onChange={e => updateProp('titleFontSize', e.target.value)} />
