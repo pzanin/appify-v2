@@ -43,7 +43,7 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
   const [error, setError] = React.useState(false);
 
   React.useEffect(() => {
-    fetch('/app-data.json?nocache=' + new Date().getTime())
+    fetch('./app-data.json?nocache=' + new Date().getTime())
       .then(res => {
         if (!res.ok) throw new Error("Não foi possível ler o app-data.json");
         return res.json();
