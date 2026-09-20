@@ -147,6 +147,7 @@ export interface BuilderBlock {
     imgBorderRadius?: string | number;
     imgObjectFit?: 'cover' | 'contain' | 'fill';
     // Advanced title controls
+    titleFontFamily?: string;
     titleFontSize?: string | number;
     titleFontWeight?: string | number;
     titleMarginBottom?: string | number;
