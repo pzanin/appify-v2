@@ -5,6 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { useTranslation } from 'react-i18next';
 import { prepareResponsiveHtml } from '../utils/htmlContent';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface PWARuntimeProps { 
   isPhoneDark: boolean; 
@@ -42,11 +43,44 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const feedPosts = useAppStore(state => state.feedPosts) || [];
   const pushNotifications = useAppStore(state => state.pushNotifications) || [];
   const currentProjectId = useAppStore(state => state.currentProjectId);
+  const { isInstallAvailable, isIOS, isStandalone, triggerInstall } = usePWAInstall();
 
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
+  const [installAttempted, setInstallAttempted] = useState(false);
   const [hasNewAnnouncement, setHasNewAnnouncement] = useState<boolean>(false);
   const [hasNewPush, setHasNewPush] = useState<boolean>(false);
   const [activePushBanner, setActivePushBanner] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (isStandalone) {
+      setOnboardingStep(current => current === 1 ? 0 : current);
+      return;
+    }
+    const storageKey = `appify-install-dismissed-${pwaConfig?.appName || appName}`;
+    if (localStorage.getItem(storageKey)) return;
+    const timer = window.setTimeout(() => setOnboardingStep(current => current === 0 ? 1 : current), 1400);
+    return () => window.clearTimeout(timer);
+  }, [appName, isStandalone, pwaConfig?.appName]);
+
+  const dismissInstall = () => {
+    localStorage.setItem(`appify-install-dismissed-${pwaConfig?.appName || appName}`, '1');
+    setOnboardingStep(0);
+    setInstallAttempted(false);
+  };
+
+  const handleInstall = async () => {
+    if (isIOS) {
+      dismissInstall();
+      return;
+    }
+    if (!isInstallAvailable) {
+      setInstallAttempted(true);
+      return;
+    }
+    const outcome = await triggerInstall();
+    setInstallAttempted(true);
+    if (outcome === 'accepted') dismissInstall();
+  };
 
   useEffect(() => {
     if (feedPosts && feedPosts.length > 0) {
@@ -309,6 +343,18 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                 <span className="text-sm">{gamification.streakIcon}</span>
                 <span className="text-xs font-black">3</span>
               </div>
+            )}
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={() => { setInstallAttempted(false); setOnboardingStep(1); }}
+                aria-label={t('app.header.install', 'Instalar')}
+                title={t('app.header.install', 'Instalar')}
+                className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+                style={{ display: 'inline-flex', color: 'inherit', background: 'transparent', border: 'none', padding: 0 }}
+              >
+                <Download size={18} strokeWidth={2.5} />
+              </button>
             )}
             <div onClick={() => setIsPhoneDark(!isPhoneDark)} className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity">
               {isPhoneDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
@@ -853,19 +899,35 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                   {onboardingStep === 1 ? t('onboarding.install.subtitle', 'Adicione nosso app à sua tela inicial para acesso instantâneo.') : t('onboarding.push.subtitle', 'Ative as notificações para receber lembretes e novidades em tempo real.')}
                 </p>
 
+                {onboardingStep === 1 && isIOS && (
+                  <div className="text-left rounded-2xl p-4 mb-5 space-y-3" style={{ background: isPhoneDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' }}>
+                    <div className="flex items-center gap-3"><Share size={18} /><span className="text-sm font-semibold">{t('onboarding.install.iosStep1', '1. Toque no ícone de Compartilhar')}</span></div>
+                    <div className="flex items-center gap-3"><Plus size={18} /><span className="text-sm font-semibold">{t('onboarding.install.iosStep2', '2. Selecione “Adicionar à Tela de Início”')}</span></div>
+                    <div className="flex items-center gap-3"><Check size={18} /><span className="text-sm font-semibold">{t('onboarding.install.iosStep3', '3. Ative “Abrir como Aplicativo Web” e toque em Adicionar')}</span></div>
+                  </div>
+                )}
+
+                {onboardingStep === 1 && !isIOS && !isInstallAvailable && installAttempted && (
+                  <div className="rounded-2xl p-4 mb-5 text-sm leading-relaxed" style={{ background: isPhoneDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' }}>
+                    {t('onboarding.install.androidHelp', 'Abra o menu do navegador e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.')}
+                  </div>
+                )}
+
                 <button 
                   onClick={() => {
-                    if (onboardingStep === 1) setOnboardingStep(2);
+                    if (onboardingStep === 1) void handleInstall();
                     else { setOnboardingStep(0); setMockupOnboardingCompleted(true); }
-                  }} 
+                  }}
                   className="w-full py-5 rounded-2xl font-black text-white shadow-xl mb-3"
                   style={{ background: themeColor, border: 'none', cursor: 'pointer' }}
                 >
-                  {onboardingStep === 1 ? t('onboarding.install.confirm', 'Instalar Agora') : t('onboarding.push.confirm', 'Ativar')}
+                  {onboardingStep === 1
+                    ? (isIOS ? t('onboarding.install.understood', 'Entendi') : t('onboarding.install.confirm', 'Instalar Agora'))
+                    : t('onboarding.push.confirm', 'Ativar')}
                 </button>
                 <button 
                   onClick={() => {
-                    if (onboardingStep === 1) setOnboardingStep(2);
+                    if (onboardingStep === 1) dismissInstall();
                     else { setOnboardingStep(0); setMockupOnboardingCompleted(true); }
                   }} 
                   className="w-full py-3 font-bold opacity-40"
