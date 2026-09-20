@@ -56,9 +56,9 @@ export function usePWAInstall() {
     if (installPromptEvent) {
       installPromptEvent.prompt();
       const { outcome } = await installPromptEvent.userChoice;
-      if (outcome === 'accepted') {
-        setInstallPromptEvent(null);
-      }
+      // O mesmo evento só pode abrir a confirmação uma vez.
+      // Depois disso, um novo evento do navegador será necessário.
+      setInstallPromptEvent(null);
       return outcome;
     }
     return 'dismissed';
