@@ -83,8 +83,12 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         }
         zip.file('index.html', htmlText);
 
-        // Busca todos os arquivos na pasta assets que o HTML está chamando
-        assetMatches = [...htmlText.matchAll(/(?:src|href)="[^"]*(assets\/[^"]+)"/g)].map(m => m[1]);
+        // Inclui os assets do HTML e o chunk carregado dinamicamente pelo runtime.
+        // Os nomes são estáveis porque estão definidos em vite.config.ts.
+        assetMatches = Array.from(new Set([
+          ...[...htmlText.matchAll(/(?:src|href)="[^"]*(assets\/[^"]+)"/g)].map(m => m[1]),
+          'assets/pwa-engine-chunk.js',
+        ]));
         console.log('Assets encontrados para exportação:', assetMatches);
 
         for (const assetPath of assetMatches) {
@@ -93,10 +97,10 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
             if (res.ok) {
               zip.file(assetPath, await res.blob());
             } else {
-              console.warn(`Asset não encontrado: ${assetPath}`);
+              throw new Error(`Asset obrigatório não encontrado: ${assetPath}`);
             }
           } catch (err) {
-            console.warn(`Erro ao buscar asset: ${assetPath}`, err);
+            throw new Error(`Erro ao incluir ${assetPath} no ZIP.`, { cause: err });
           }
         }
       } else {
