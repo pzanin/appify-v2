@@ -12,7 +12,7 @@
     "gamification": { "streak": "Streak", "days": "days", "completed": "Completed", "keepGoing": "Keep it up!", "points": "Points", "achievements": "Achievements", "badges": "Badges", "myCollection": "My Collection" }
   },
   "onboarding": {
-    "install": { "title": "Install App", "subtitle": "Add our app to your home screen.", "confirm": "Install Now", "skip": "Not Now", "iosStep1": "1. Tap the Share icon", "iosStep2": "2. Select \"Add to Home Screen\"" },
+    "install": { "title": "Install App", "subtitle": "Add our app to your home screen.", "confirm": "Install Now", "understood": "Got it", "skip": "Not Now", "iosStep1": "1. Tap the Share icon", "iosStep2": "2. Select \"Add to Home Screen\"", "iosStep3": "3. Turn on \"Open as Web App\" and tap Add", "androidHelp": "Open the browser menu and choose \"Install app\" or \"Add to Home screen\"." },
     "push": { "title": "Notifications", "subtitle": "Enable notifications so you never miss out.", "confirm": "Enable", "skip": "Not Now" }
   }
 }
