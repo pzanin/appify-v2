@@ -81,6 +81,15 @@ test('externalizes images, writes pages and rehydrates projects and backups', as
     const imported = await repository.importDocument(backup);
     const importedDocument = await repository.open(imported.id);
     assert.equal(importedDocument.workspace.pwaConfig.iconBase64, ONE_PIXEL_PNG);
+
+    const build = await repository.writeBuildArchive(project.id, 'Teste Assets-pwa.zip', new Uint8Array([80, 75, 3, 4]));
+    assert.equal(build.filename, 'Teste Assets-pwa.zip');
+    assert.deepEqual(
+      [...await fs.readFile(path.join(projectDirectory, 'build', build.filename))],
+      [80, 75, 3, 4],
+    );
+    const buildInfo = JSON.parse(await fs.readFile(path.join(projectDirectory, 'build', 'build-info.json'), 'utf8')) as { filename: string; size: number };
+    assert.deepEqual({ filename: buildInfo.filename, size: buildInfo.size }, { filename: build.filename, size: 4 });
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
