@@ -194,7 +194,8 @@ export class ProjectRepository {
     const directory = await this.findDirectory(id);
     const buildDirectory = path.join(directory, 'build');
     await fs.mkdir(buildDirectory, { recursive: true });
-    const safeFilename = `${safeFolderName(path.basename(filename, path.extname(filename)))}.zip`;
+    const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+    const safeFilename = `${safeFolderName(path.basename(filename, path.extname(filename)))}-${timestamp}.zip`;
     const target = path.join(buildDirectory, safeFilename);
     const temporary = path.join(buildDirectory, `${safeFilename}.${process.pid}.${Date.now()}.tmp`);
 
