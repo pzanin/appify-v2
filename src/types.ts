@@ -224,6 +224,12 @@ export interface ProjectOperationResult {
   project?: Project;
 }
 
+export interface ProjectBuildResult {
+  filename: string;
+  filePath: string;
+  size: number;
+}
+
 export interface AppifyDesktopApi {
   projects: {
     list: () => Promise<Project[]>;
@@ -234,6 +240,7 @@ export interface AppifyDesktopApi {
     remove: (id: number) => Promise<void>;
     exportBackup: (id: number) => Promise<ProjectOperationResult>;
     importBackup: () => Promise<ProjectOperationResult>;
+    saveBuild: (id: number, filename: string, bytes: Uint8Array) => Promise<ProjectBuildResult>;
   };
   lifecycle: {
     onBeforeClose: (listener: () => void | Promise<void>) => () => void;
