@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { AppState, Project, ProjectFile } from '../src/types';
 
 const PROJECT_FILE = 'project.json';
+const PROJECT_BACKUP_FILE = 'project.json.bak';
 const PROJECT_DIRECTORIES = ['assets', 'pages', 'build'] as const;
 
 function safeFolderName(name: string) {
@@ -32,6 +33,10 @@ function assertProjectFile(value: unknown): asserts value is ProjectFile {
   if (typeof candidate.project.id !== 'number' || typeof candidate.project.name !== 'string') {
     throw new Error('Metadados do projeto inválidos.');
   }
+}
+
+function isMissingFile(error: unknown) {
+  return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT');
 }
 
 export class ProjectRepository {
@@ -183,16 +188,67 @@ export class ProjectRepository {
   }
 
   private async readFromDirectory(directory: string): Promise<ProjectFile> {
-    const raw = await fs.readFile(path.join(directory, PROJECT_FILE), 'utf8');
-    const document = JSON.parse(raw) as unknown;
-    assertProjectFile(document);
-    return document;
+    const target = path.join(directory, PROJECT_FILE);
+    try {
+      return await this.readDocument(target);
+    } catch (primaryError) {
+      const candidates = [path.join(directory, PROJECT_BACKUP_FILE)];
+      const entries = await fs.readdir(directory).catch(() => [] as string[]);
+      candidates.push(...entries
+        .filter(name => name.startsWith(`${PROJECT_FILE}.`) && name.endsWith('.tmp'))
+        .sort()
+        .reverse()
+        .map(name => path.join(directory, name)));
+      candidates.push(path.join(directory, `${PROJECT_FILE}.tmp`));
+
+      for (const candidate of candidates) {
+        try {
+          const recovered = await this.readDocument(candidate);
+          await fs.copyFile(candidate, target);
+          console.warn(`[Appify] Projeto recuperado automaticamente a partir de ${path.basename(candidate)}.`);
+          return recovered;
+        } catch {
+          // Try the next recovery candidate.
+        }
+      }
+      throw primaryError;
+    }
   }
 
   private async writeDocument(directory: string, document: ProjectFile) {
     const target = path.join(directory, PROJECT_FILE);
-    const temporary = `${target}.tmp`;
-    await fs.writeFile(temporary, `${JSON.stringify(document, null, 2)}\n`, 'utf8');
-    await fs.rename(temporary, target);
+    const backup = path.join(directory, PROJECT_BACKUP_FILE);
+    const temporary = path.join(directory, `${PROJECT_FILE}.${process.pid}.${Date.now()}.tmp`);
+    const serialized = `${JSON.stringify(document, null, 2)}\n`;
+
+    await fs.writeFile(temporary, serialized, 'utf8');
+    await this.readDocument(temporary);
+
+    let hasBackup = false;
+    try {
+      await fs.copyFile(target, backup);
+      hasBackup = true;
+    } catch (error) {
+      if (!isMissingFile(error)) throw error;
+    }
+
+    try {
+      // copyFile is more reliable than replacing an open file with rename on Windows.
+      await fs.copyFile(temporary, target);
+      await this.readDocument(target);
+      await fs.rm(temporary, { force: true });
+    } catch (error) {
+      if (hasBackup) {
+        await fs.copyFile(backup, target).catch(() => undefined);
+      }
+      throw error;
+    }
+  }
+
+  private async readDocument(filePath: string): Promise<ProjectFile> {
+    const raw = await fs.readFile(filePath, 'utf8');
+    const document = JSON.parse(raw) as unknown;
+    assertProjectFile(document);
+    return document;
   }
 }
