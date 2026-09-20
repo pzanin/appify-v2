@@ -12,7 +12,7 @@
     "gamification": { "streak": "Racha", "days": "días", "completed": "Completado", "keepGoing": "¡Sigue así!", "points": "Puntos", "achievements": "Logros", "badges": "Medallas", "myCollection": "Mi Colección" }
   },
   "onboarding": {
-    "install": { "title": "Instalar App", "subtitle": "Añade nuestra app a tu pantalla de inicio.", "confirm": "Instalar Ahora", "skip": "Ahora No", "iosStep1": "1. Toca el icono de Compartir", "iosStep2": "2. Selecciona \"Añadir a la pantalla de inicio\"" },
+    "install": { "title": "Instalar App", "subtitle": "Añade nuestra app a tu pantalla de inicio.", "confirm": "Instalar Ahora", "understood": "Entendido", "skip": "Ahora No", "iosStep1": "1. Toca el icono de Compartir", "iosStep2": "2. Selecciona \"Añadir a la pantalla de inicio\"", "iosStep3": "3. Activa \"Abrir como app web\" y toca Añadir", "androidHelp": "Abre el menú del navegador y elige \"Instalar aplicación\" o \"Añadir a pantalla de inicio\"." },
     "push": { "title": "Notificaciones", "subtitle": "Activa las notificaciones para no perderte nada.", "confirm": "Activar", "skip": "Ahora No" }
   }
 }
