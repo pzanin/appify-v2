@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   ArrowLeft, Check, LayoutGrid, Columns, Grid, Image as ImageIcon, 
   Quote, Zap, Type, AlignLeft, Link as LinkIcon, Minus, 
-  SeparatorHorizontal, Trash2, Layers, Video, Globe, Code
+  SeparatorHorizontal, Trash2, Layers, Video, Globe, Code, Upload, Eye
 } from 'lucide-react';
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
+import { prepareResponsiveHtml } from '../utils/htmlContent';
 
 interface ModulesAndContentProps { 
   submodule: SubModule; 
@@ -73,7 +74,12 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   // Content Type & URL state
   const [contentType, setContentType] = useState<'web' | 'html' | 'youtube' | 'vimeo' | 'panda'>(submodule.contentType || 'html');
   const [contentUrl, setContentUrl] = useState(submodule.contentUrl || '');
-  const [contentHtml, setContentHtml] = useState(submodule.contentHtml || submodule.content_html || '');
+  const [contentHtml, setContentHtml] = useState(
+    submodule.customHtml || (submodule.htmlMode === 'code' ? submodule.contentHtml || submodule.content_html || '' : '')
+  );
+  const [hasCustomHtml, setHasCustomHtml] = useState(Boolean(submodule.customHtml || submodule.htmlMode === 'code'));
+  const [htmlImportStatus, setHtmlImportStatus] = useState('');
+  const htmlFileInputRef = useRef<HTMLInputElement>(null);
   
   // Gamification local state
   const [timeGateSeconds, setTimeGateSeconds] = useState(submodule.gamificationConfig?.timeGateSeconds || 0);
@@ -83,9 +89,12 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   React.useEffect(() => {
     setSubmoduleName(submodule.name || '');
     setBlocks(submodule.builder_data || []);
+    setViewMode(submodule.htmlMode || 'visual');
     setContentType(submodule.contentType || 'html');
     setContentUrl(submodule.contentUrl || '');
-    setContentHtml(submodule.contentHtml || submodule.content_html || '');
+    setContentHtml(submodule.customHtml || (submodule.htmlMode === 'code' ? submodule.contentHtml || submodule.content_html || '' : ''));
+    setHasCustomHtml(Boolean(submodule.customHtml || submodule.htmlMode === 'code'));
+    setHtmlImportStatus('');
     setTimeGateSeconds(submodule.gamificationConfig?.timeGateSeconds || 0);
     setEnableCelebration(submodule.gamificationConfig?.enableCelebration ?? true);
   }, [submodule]);
@@ -96,7 +105,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
     if (contentType === 'html') {
       finalHtml = viewMode === 'visual' ? generateHTML() : contentHtml;
-      finalBlocks = viewMode === 'visual' ? blocks : [];
+      finalBlocks = blocks;
     } else {
       finalHtml = ''; // Will be rendered based on URL/Type in the phone mockup
       finalBlocks = [];
@@ -110,6 +119,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
         contentType,
         contentUrl,
         contentHtml: contentType === 'html' ? finalHtml : '',
+        customHtml: contentType === 'html' && hasCustomHtml ? contentHtml : '',
         content: contentType === 'html' ? finalHtml : '', // Legacy sync
         builderData: finalBlocks,
         htmlMode: contentType === 'html' ? viewMode : undefined,
@@ -153,6 +163,38 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, propKey: any) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { updateProp(propKey, ev.target?.result); }; reader.readAsDataURL(file); };
 
+  const handleHtmlImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/\.html?$/i.test(file.name)) {
+      setHtmlImportStatus('Escolha um arquivo .html ou .htm.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setHtmlImportStatus('O arquivo é maior que 5 MB. Reduza-o antes de importar.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const importedHtml = typeof reader.result === 'string' ? reader.result : '';
+      const hasRelativeAssets = /(?:src|href)=["'](?!https?:|data:|#|mailto:|tel:|\/)[^"']+/i.test(importedHtml);
+      setContentHtml(importedHtml);
+      setHasCustomHtml(true);
+      setHtmlImportStatus(hasRelativeAssets
+        ? `${file.name} importado. Atenção: arquivos locais referenciados por caminho relativo não foram incorporados.`
+        : `${file.name} importado. Confira o preview antes de salvar.`);
+      setViewMode('code');
+    };
+    reader.onerror = () => setHtmlImportStatus('Não foi possível ler o arquivo HTML.');
+    reader.readAsText(file);
+  };
+
+  const safeLinkUrl = (value?: string) => {
+    const url = value?.trim() || '#';
+    return /^(https?:\/\/|mailto:|tel:|#|\/)/i.test(url) ? url : '#';
+  };
+
   const getBlockInnerHtml = (mod: BuilderBlock) => {
     const p = mod.props;
     // Helper: resolve title styling
@@ -173,7 +215,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
       case 'header': return `<h1 style="font-size:${tfs}px;font-weight:${tfw};margin:0 0 ${tmb}px;">${p.title}</h1><p style="font-size:${parseInt(String(tfs))*0.5}px;opacity:0.7;margin:0;">${p.subtitle}</p>`;
       case 'text': return `<p style="margin:0;">${p.content}</p>`;
       case 'image': return p.src ? `<img src="${p.src}" alt="${p.alt}" style="max-width:${p.width}%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:8px;">Clique para adicionar imagem</div>`;
-      case 'link': return p.style === 'button' ? `<a href="#" style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:${p.fontSize}px;">${p.text}</a>` : `<a href="#" style="color:${p.buttonColor};text-decoration:underline;font-size:${p.fontSize}px;">${p.text}</a>`;
+      case 'link': {
+        const href = safeLinkUrl(p.url);
+        const external = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
+        return p.style === 'button' ? `<a href="${href}"${external} style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:${p.fontSize}px;">${p.text}</a>` : `<a href="${href}"${external} style="color:${p.buttonColor};text-decoration:underline;font-size:${p.fontSize}px;">${p.text}</a>`;
+      }
       case 'spacer': return `<div style="height:${p.height}px;"></div>`;
       case 'divider': return `<hr style="border:none;border-top:${p.thickness}px solid ${p.dividerColor};margin:0;">`;
       case 'container':
@@ -197,11 +243,13 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     const bodyHTML = blocks.map(mod => {
       const p = mod.props;
       const wrapStyle = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;`;
-      const inner = sanitizeHtml(getBlockInnerHtml(mod)).replace(/href="#"/g, ''); 
+      const inner = sanitizeHtml(getBlockInnerHtml(mod));
       return `<section style="${wrapStyle}">${inner}</section>`;
     }).join('\n');
     
-    const uniqueFonts = Array.from(new Set(blocks.map(b => b.props.fontFamily as string).filter(Boolean)));
+    const uniqueFonts = Array.from(new Set<string>(
+      blocks.map(b => b.props.fontFamily).filter((font): font is string => typeof font === 'string' && font.length > 0)
+    ));
     const fontLinks = uniqueFonts.map(font => {
       const fontName = font.replace(/\s+/g, '+');
       return `<link href="https://fonts.googleapis.com/css2?family=${fontName}:wght@400;600;700;800&display=swap" rel="stylesheet">`;
@@ -238,7 +286,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
               <button 
                 style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '6px', border: 'none', background: viewMode === 'code' ? 'var(--accent)' : 'transparent', color: viewMode === 'code' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}
                 onClick={() => {
-                  if (viewMode === 'visual') setContentHtml(generateHTML());
+                  if (viewMode === 'visual' && !hasCustomHtml) setContentHtml(generateHTML());
                   setViewMode('code');
                 }}
               >
@@ -282,6 +330,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
             </aside>
 
             <main className="vpb-canvas-area" onClick={() => setSelectedBlockId(null)} style={{ background: 'var(--bg)', minHeight: '100%', position: 'relative' }}>
+              {hasCustomHtml && contentHtml.trim() && (
+                <div className="vpb-html-preserved-note">
+                  O HTML personalizado está preservado no modo Código e não será convertido em blocos visuais.
+                </div>
+              )}
               {blocks.length === 0 ? (
                 <div className="empty-state" style={{ margin: 'auto' }}>
                   <Layers size={48} color="var(--muted)" style={{ marginBottom: 16 }} />
@@ -318,15 +371,34 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
             <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
               {contentType === 'html' ? (
                 <div className="vpb-lib-group" style={{ background: 'var(--surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                  <div className="vpb-lib-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}><Code size={16} /> Editor HTML Direto</div>
-                  <textarea 
-                    className="vpb-textarea" 
-                    style={{ height: '400px', fontFamily: 'monospace', fontSize: '13px', background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px', padding: '16px' }}
-                    value={contentHtml}
-                    onChange={(e) => setContentHtml(e.target.value)}
-                    placeholder="<div class='custom'>Seu código HTML aqui...</div>"
-                  />
-                  <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '12px' }}>Dica: Você pode usar classes como 'text-center', 'font-bold', etc. O CSS global do app será aplicado.</p>
+                  <div className="vpb-html-editor-heading">
+                    <div className="vpb-lib-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}><Code size={16} /> HTML personalizado</div>
+                    <input ref={htmlFileInputRef} type="file" accept=".html,.htm,text/html" hidden onChange={handleHtmlImport} />
+                    <button type="button" className="btn-ghost" onClick={() => htmlFileInputRef.current?.click()}>
+                      <Upload size={15} /> Importar .html
+                    </button>
+                  </div>
+                  {htmlImportStatus && <div className="vpb-html-import-status">{htmlImportStatus}</div>}
+                  <div className="vpb-html-code-layout">
+                    <div>
+                      <textarea
+                        className="vpb-textarea vpb-html-code-input"
+                        value={contentHtml}
+                        onChange={(e) => { setContentHtml(e.target.value); setHasCustomHtml(true); setHtmlImportStatus(''); }}
+                        placeholder="Cole seu HTML aqui ou use Importar .html"
+                        spellCheck={false}
+                      />
+                      <p className="vpb-html-help">O código é mantido como HTML e não é convertido em blocos. O Appify aplica apenas uma camada responsiva no preview e no PWA.</p>
+                    </div>
+                    <div className="vpb-html-preview-panel">
+                      <div className="vpb-html-preview-title"><Eye size={14} /> Preview mobile</div>
+                      <iframe
+                        title="Preview do HTML personalizado"
+                        srcDoc={prepareResponsiveHtml(contentHtml)}
+                        sandbox="allow-scripts allow-same-origin"
+                      />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '60px 20px' }}>

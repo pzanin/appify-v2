@@ -105,6 +105,37 @@
 .vpb-input:focus { outline: none; border-color: var(--accent); }
 .vpb-textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; min-height: 80px; resize: vertical; transition: border 0.2s; }
 .vpb-textarea:focus { outline: none; border-color: var(--accent); }
+
+.vpb-html-preserved-note {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 24px));
+  padding: 8px 12px;
+  border: 1px solid rgba(107, 138, 240, 0.35);
+  border-radius: 8px;
+  background: rgba(107, 138, 240, 0.12);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+.vpb-html-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.vpb-html-import-status { padding: 9px 12px; margin-bottom: 12px; border-radius: 8px; background: rgba(45, 196, 182, 0.12); color: var(--text); font-size: 12px; }
+.vpb-html-code-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: stretch; }
+.vpb-html-code-input { height: 520px; margin-bottom: 8px; font-family: Consolas, 'Courier New', monospace; font-size: 13px; line-height: 1.5; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 16px; resize: vertical; tab-size: 2; }
+.vpb-html-help { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.vpb-html-preview-panel { min-height: 520px; padding: 10px; border: 1px solid var(--border); border-radius: 18px; background: #111118; display: flex; flex-direction: column; }
+.vpb-html-preview-title { height: 28px; color: #d1d5db; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.vpb-html-preview-panel iframe { flex: 1; width: 100%; min-height: 470px; border: 0; border-radius: 10px; background: #fff; }
+
+@media (max-width: 1180px) {
+  .vpb-html-code-layout { grid-template-columns: 1fr; }
+  .vpb-html-preview-panel { min-height: 600px; }
+  .vpb-html-preview-panel iframe { min-height: 550px; }
+}
 .vpb-color-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .vpb-color-picker { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; background: transparent; padding: 0; }
 .vpb-color-picker::-webkit-color-swatch-wrapper { padding: 0; }

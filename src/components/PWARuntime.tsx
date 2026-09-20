@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { useTranslation } from 'react-i18next';
+import { prepareResponsiveHtml } from '../utils/htmlContent';
 
 interface PWARuntimeProps { 
   isPhoneDark: boolean; 
@@ -219,15 +220,6 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     const timer = setTimeout(() => setIsTransitioning(false), 300);
     return () => clearTimeout(timer);
   }, [pwaLanguage]);
-
-  const getResponsiveHtml = (html: string) => {
-    if (!html) return '';
-    const hideScrollbarStyle = `<style>::-webkit-scrollbar { display: none !important; width: 0px !important; } html, body { -ms-overflow-style: none !important; scrollbar-width: none !important; margin: 0; padding: 0; overflow-x: hidden; max-width: 100vw; font-family: sans-serif; } img, video, iframe { max-width: 100% !important; height: auto; } * { box-sizing: border-box; }</style>`;
-    if (html.includes('<html') || html.includes('<meta name="viewport"')) {
-      return html.includes('</head>') ? html.replace('</head>', `${hideScrollbarStyle}</head>`) : `${hideScrollbarStyle}${html}`;
-    }
-    return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">${hideScrollbarStyle}</head><body>${html}</body></html>`;
-  };
 
 
   return (
@@ -576,7 +568,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                               if (type === 'html') {
                                 return (
                                   <iframe 
-                                    srcDoc={getResponsiveHtml(selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || '<p style="text-align:center; font-family:sans-serif; opacity:0.5; padding:20px;">Nenhum conteúdo definido.</p>')} 
+                                    srcDoc={prepareResponsiveHtml(selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || '')}
                                     title="Conteúdo da Aula" 
                                     className="absolute inset-0 w-full h-full border-none block" 
                                     sandbox="allow-scripts allow-same-origin" 

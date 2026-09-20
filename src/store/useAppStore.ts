@@ -45,6 +45,7 @@ interface AppStore extends AppState {
     contentType?: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
     contentUrl?: string;
     contentHtml?: string;
+    customHtml?: string;
     htmlMode?: 'visual' | 'code';
     gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean }
   }) => void;
@@ -342,6 +343,7 @@ export const useAppStore = create<AppStore>()(
                 ...sub,
                 content_html: payload.content ?? sub.content_html,
                 contentHtml: payload.contentHtml ?? sub.contentHtml,
+                customHtml: payload.customHtml ?? sub.customHtml,
                 contentUrl: payload.contentUrl ?? sub.contentUrl,
                 contentType: payload.contentType ?? sub.contentType,
                 builder_data: payload.builderData ?? sub.builder_data,

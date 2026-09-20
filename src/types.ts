@@ -247,6 +247,7 @@ export interface SubModule {
   contentType: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
   contentUrl?: string;
   contentHtml?: string;
+  customHtml?: string;
   content_html?: string; // Maintain for compatibility
   builder_data?: BuilderBlock[];
   htmlMode?: 'visual' | 'code';
