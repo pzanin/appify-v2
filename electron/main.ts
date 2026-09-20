@@ -9,6 +9,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 let repository: ProjectRepository;
 
 app.disableHardwareAcceleration();
+app.setAppUserModelId('com.pzanin.appify');
 
 function requireProjectId(value: unknown) {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) {

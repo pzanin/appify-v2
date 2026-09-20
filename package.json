@@ -9,7 +9,8 @@
     "build": "vite build",
     "build:pwa": "cross-env VITE_BUILD_TARGET=pwa vite build --outDir dist-pwa",
     "postbuild:pwa": "shx cp -r dist-pwa/* public/pwa-template/",
-    "build:app": "vite build && electron-builder --win",
+    "build:app": "vite build && electron-builder --win nsis",
+    "build:win": "npm run build:app",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
@@ -55,9 +56,20 @@
     ],
     "asar": true,
     "win": {
+      "icon": "build/icon.ico",
       "target": [
         "nsis"
-      ]
+      ],
+      "artifactName": "Appify-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Appify",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     }
   }
 }

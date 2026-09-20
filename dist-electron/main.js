@@ -1,7 +1,7 @@
-import { app as u, BrowserWindow as j, ipcMain as d, shell as N, dialog as D } from "electron";
+import { app as w, BrowserWindow as j, ipcMain as d, shell as I, dialog as D } from "electron";
 import { promises as c } from "node:fs";
 import s from "node:path";
-import { fileURLToPath as I } from "node:url";
+import { fileURLToPath as N } from "node:url";
 const f = "project.json", y = "project.json.bak", g = ["assets", "pages", "build"];
 function E(r) {
   const e = r.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[<>:"/\\|?*\x00-\x1F]/g, "-").replace(/[. ]+$/g, "").trim().slice(0, 60);
@@ -73,9 +73,9 @@ class A {
   async duplicate(e) {
     const t = await this.findDirectory(e), o = await this.readFromDirectory(t), i = `${o.project.name} (cópia)`, n = h(o.workspace);
     n.appName = i, n.pwaConfig = { ...n.pwaConfig, appName: i };
-    const a = await this.create(i, n), w = await this.findDirectory(a.id);
+    const a = await this.create(i, n), u = await this.findDirectory(a.id);
     for (const m of g)
-      await c.cp(s.join(t, m), s.join(w, m), {
+      await c.cp(s.join(t, m), s.join(u, m), {
         recursive: !0,
         force: !0
       });
@@ -131,8 +131,8 @@ class A {
       i.push(...n.filter((a) => a.startsWith(`${f}.`) && a.endsWith(".tmp")).sort().reverse().map((a) => s.join(e, a))), i.push(s.join(e, `${f}.tmp`));
       for (const a of i)
         try {
-          const w = await this.readDocument(a);
-          return await c.copyFile(a, t), console.warn(`[Appify] Projeto recuperado automaticamente a partir de ${s.basename(a)}.`), w;
+          const u = await this.readDocument(a);
+          return await c.copyFile(a, t), console.warn(`[Appify] Projeto recuperado automaticamente a partir de ${s.basename(a)}.`), u;
         } catch {
         }
       throw o;
@@ -142,16 +142,16 @@ class A {
     const o = s.join(e, f), i = s.join(e, y), n = s.join(e, `${f}.${process.pid}.${Date.now()}.tmp`), a = `${JSON.stringify(t, null, 2)}
 `;
     await c.writeFile(n, a, "utf8"), await this.readDocument(n);
-    let w = !1;
+    let u = !1;
     try {
-      await c.copyFile(o, i), w = !0;
+      await c.copyFile(o, i), u = !0;
     } catch (m) {
       if (!b(m)) throw m;
     }
     try {
       await c.copyFile(n, o), await this.readDocument(o), await c.rm(n, { force: !0 });
     } catch (m) {
-      throw w && await c.copyFile(i, o).catch(() => {
+      throw u && await c.copyFile(i, o).catch(() => {
       }), m;
     }
   }
@@ -160,9 +160,10 @@ class A {
     return P(o), o;
   }
 }
-const v = s.dirname(I(import.meta.url));
+const v = s.dirname(N(import.meta.url));
 let p;
-u.disableHardwareAcceleration();
+w.disableHardwareAcceleration();
+w.setAppUserModelId("com.pzanin.appify");
 function l(r) {
   if (typeof r != "number" || !Number.isSafeInteger(r) || r <= 0)
     throw new Error("Identificador de projeto inválido.");
@@ -181,7 +182,7 @@ function C() {
     return p.create(t, R(e == null ? void 0 : e.workspace));
   }), d.handle("projects:open", (r, e) => p.open(l(e == null ? void 0 : e.id))), d.handle("projects:save", (r, e) => p.save(l(e == null ? void 0 : e.id), R(e == null ? void 0 : e.workspace))), d.handle("projects:duplicate", (r, e) => p.duplicate(l(e == null ? void 0 : e.id))), d.handle("projects:remove", async (r, e) => {
     const t = await p.remove(l(e == null ? void 0 : e.id));
-    await N.trashItem(t);
+    await I.trashItem(t);
   }), d.handle("projects:export-backup", async (r, e) => {
     const t = await p.readBackup(l(e == null ? void 0 : e.id)), o = await D.showSaveDialog({
       title: "Exportar backup do Appify",
@@ -222,14 +223,14 @@ function F() {
     e || (t.preventDefault(), e = !0, r.webContents.send("app:before-close"), setTimeout(() => {
       r.isDestroyed() || r.destroy();
     }, 5e3));
-  }), r.webContents.setWindowOpenHandler(({ url: t }) => ((t.startsWith("https://") || t.startsWith("mailto:")) && N.openExternal(t), { action: "deny" })), process.env.VITE_DEV_SERVER_URL ? r.loadURL(process.env.VITE_DEV_SERVER_URL) : r.loadFile(s.join(v, "../dist/index.html"));
+  }), r.webContents.setWindowOpenHandler(({ url: t }) => ((t.startsWith("https://") || t.startsWith("mailto:")) && I.openExternal(t), { action: "deny" })), process.env.VITE_DEV_SERVER_URL ? r.loadURL(process.env.VITE_DEV_SERVER_URL) : r.loadFile(s.join(v, "../dist/index.html"));
 }
-u.whenReady().then(async () => {
-  const r = process.env.APPIFY_DATA_DIR ? s.resolve(process.env.APPIFY_DATA_DIR) : s.join(u.getPath("documents"), "Appify", "Projects");
-  p = new A(r), await p.initialize(), C(), F(), u.on("activate", () => {
+w.whenReady().then(async () => {
+  const r = process.env.APPIFY_DATA_DIR ? s.resolve(process.env.APPIFY_DATA_DIR) : s.join(w.getPath("documents"), "Appify", "Projects");
+  p = new A(r), await p.initialize(), C(), F(), w.on("activate", () => {
     j.getAllWindows().length === 0 && F();
   });
 });
-u.on("window-all-closed", () => {
-  process.platform !== "darwin" && u.quit();
+w.on("window-all-closed", () => {
+  process.platform !== "darwin" && w.quit();
 });
