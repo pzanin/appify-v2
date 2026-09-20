@@ -12,7 +12,7 @@
     "gamification": { "streak": "Racha", "days": "días", "completed": "Completado", "keepGoing": "¡Sigue así!", "points": "Puntos", "achievements": "Logros", "badges": "Medallas", "myCollection": "Mi Colección" }
   },
   "onboarding": {
-    "install": { "title": "Instalar App", "subtitle": "Añade nuestra app a tu pantalla de inicio.", "confirm": "Instalar Ahora", "understood": "Entendido", "skip": "Ahora No", "iosStep1": "1. Toca el icono de Compartir", "iosStep2": "2. Selecciona \"Añadir a la pantalla de inicio\"", "iosStep3": "3. Activa \"Abrir como app web\" y toca Añadir", "androidHelp": "Abre el menú del navegador y elige \"Instalar aplicación\" o \"Añadir a pantalla de inicio\"." },
+    "install": { "title": "Pon la app en la pantalla del móvil", "subtitle": "Así será más fácil abrirla de nuevo sin buscar la dirección.", "confirm": "Instalar en mi móvil", "understood": "Entendido", "skip": "Continuar sin instalar", "iosLabel": "En iPhone o iPad", "iosStep1": "Toca el botón Compartir de Safari", "iosStep2": "Elige \"Añadir a la pantalla de inicio\"", "iosStep3": "Activa \"Abrir como app web\" y toca Añadir", "iosFinish": "Después, abre la aplicación desde el nuevo icono en la pantalla del móvil.", "iosConfirm": "Entendido, voy a instalarla", "androidStep1": "Toca el botón azul de abajo", "androidStep2": "Confirma la instalación cuando el móvil lo solicite", "manualTitle": "¿No apareció la confirmación?", "androidHelp": "Abre el menú del navegador y elige \"Instalar aplicación\" o \"Añadir a pantalla de inicio\".", "safeNote": "Es gratis y podrás eliminarla cuando quieras." },
     "push": { "title": "Notificaciones", "subtitle": "Activa las notificaciones para no perderte nada.", "confirm": "Activar", "skip": "Ahora No" }
   }
 }
