@@ -1,4 +1,4 @@
-import type { AppState, Project, ProjectFile, ProjectOperationResult } from '../types';
+import type { AppState, Project, ProjectBuildResult, ProjectFile, ProjectOperationResult } from '../types';
 
 const BROWSER_STORAGE_KEY = 'appify-browser-projects-v1';
 
@@ -130,5 +130,10 @@ export const projectService = {
     const desktop = desktopProjects();
     if (!desktop) throw new Error('A importação de backup está disponível no aplicativo desktop.');
     return desktop.importBackup();
+  },
+
+  saveBuild: async (id: number, filename: string, bytes: Uint8Array): Promise<ProjectBuildResult | null> => {
+    const desktop = desktopProjects();
+    return desktop ? desktop.saveBuild(id, filename, bytes) : null;
   },
 };
