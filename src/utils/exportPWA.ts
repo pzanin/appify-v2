@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
+import { prepareResponsiveHtml } from './htmlContent';
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, character => ({
@@ -71,9 +72,24 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     };
 
     const zip = new JSZip();
+    const pageMatches: string[] = [];
 
     // 1. Arquivo de dados do PWA
     zip.file('app-data.json', JSON.stringify(appData, null, 2));
+
+    // Mantém cópias HTML independentes das aulas dentro do pacote exportado.
+    // A pasta também é criada quando o projeto ainda não possui uma aula HTML.
+    zip.folder('pages');
+    for (const module of state.modules) {
+      for (const lesson of module.subs || []) {
+        if (lesson.contentType !== 'html') continue;
+        const html = lesson.customHtml || lesson.contentHtml || lesson.content_html || '';
+        if (!html.trim()) continue;
+        const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
+        zip.file(pagePath, prepareResponsiveHtml(html));
+        pageMatches.push(pagePath);
+      }
+    }
 
     // 2. Manifest do PWA (configuração standalone)
     const manifest = {
@@ -180,7 +196,8 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       './icon-192x192.png',
       './icon-512x512.png',
       './apple-touch-icon.png',
-      ...assetMatches.map(path => `./${path}`)
+      ...assetMatches.map(path => `./${path}`),
+      ...pageMatches.map(path => `./${path}`)
     ];
 
     const swContent = `
