@@ -3,6 +3,47 @@ import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
 
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+  })[character] || character);
+}
+
+async function createPwaIcon(source: string | null | undefined, size: number, background: string, appName: string) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Não foi possível preparar os ícones do PWA.');
+  context.fillStyle = background || '#7c6fff';
+  context.fillRect(0, 0, size, size);
+
+  if (source) {
+    const image = new Image();
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error('O ícone selecionado não pôde ser processado.'));
+      image.src = source;
+    });
+    const available = size * 0.72;
+    const scale = Math.min(available / image.naturalWidth, available / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+  } else {
+    context.fillStyle = '#ffffff';
+    context.font = `700 ${Math.round(size * 0.42)}px Arial, sans-serif`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText((appName.trim()[0] || 'A').toUpperCase(), size / 2, size / 2);
+  }
+
+  return new Promise<Blob>((resolve, reject) => canvas.toBlob(
+    blob => blob ? resolve(blob) : reject(new Error('Falha ao gerar ícone do PWA.')),
+    'image/png',
+  ));
+}
+
 export const handleExportZIP = async (showToast?: (msg: string, type: 'success' | 'error' | 'loading') => void) => {
   if (showToast) showToast('Iniciando empacotamento do PWA...', 'loading');
   
@@ -38,25 +79,34 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const manifest = {
       name: appName,
       short_name: appName,
+      id: ".",
       lang: pwaLanguage,
       start_url: ".", // Host-agnostic: funciona em subdiretórios (Vercel, Netlify, Github Pages)
+      scope: "./",
       display: "standalone",
+      description: description || state.pwaConfig?.tagline || appName,
       background_color: state.pwaConfig?.defaultTheme === 'dark' ? '#091218' : '#ffffff',
       theme_color: state.pwaConfig?.themeColor || '#7c6fff',
       icons: [
         {
-          src: state.pwaConfig?.iconBase64 || "icon-192x192.png",
+          src: "./icon-192x192.png",
           sizes: "192x192",
-          type: "image/png"
+          type: "image/png",
+          purpose: "any maskable"
         },
         {
-          src: state.pwaConfig?.iconBase64 || "icon-512x512.png",
+          src: "./icon-512x512.png",
           sizes: "512x512",
-          type: "image/png"
+          type: "image/png",
+          purpose: "any maskable"
         }
       ]
     };
     zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+    const iconSource = state.pwaConfig?.iconBase64 || state.pwaConfig?.logoBase64;
+    zip.file('icon-192x192.png', await createPwaIcon(iconSource, 192, state.pwaConfig?.themeColor, appName));
+    zip.file('icon-512x512.png', await createPwaIcon(iconSource, 512, state.pwaConfig?.themeColor, appName));
+    zip.file('apple-touch-icon.png', await createPwaIcon(iconSource, 180, state.pwaConfig?.themeColor, appName));
 
     let assetMatches: string[] = [];
 
@@ -66,6 +116,15 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       if (htmlRes.ok) {
         let htmlText = await htmlRes.text();
         htmlText = htmlText.replace(/<html lang="[^"]*">/, `<html lang="${pwaLanguage}">`);
+        htmlText = htmlText.replace(/<title>.*?<\/title>/i, `<title>${escapeHtml(appName)}</title>`);
+        const installMetadata = `
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <meta name="theme-color" content="${state.pwaConfig?.themeColor || '#7c6fff'}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="${escapeHtml(appName)}">`;
+        htmlText = htmlText.replace('</head>', `${installMetadata}\n  </head>`);
 
         // Injeta o registro do Service Worker se não existir
         if (!htmlText.includes('serviceWorker in navigator') && !htmlText.includes('serviceWorker\' in navigator')) {
@@ -118,6 +177,9 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       './index.html',
       './manifest.json',
       './app-data.json',
+      './icon-192x192.png',
+      './icon-512x512.png',
+      './apple-touch-icon.png',
       ...assetMatches.map(path => `./${path}`)
     ];
 
