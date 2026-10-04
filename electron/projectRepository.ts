@@ -1,3 +1,4 @@
+import { validateWorkspace } from './security';
 import { promises as fs } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
@@ -55,6 +56,7 @@ function safeFolderName(name: string) {
 }
 
 function cloneWorkspace(workspace: AppState): AppState {
+  validateWorkspace(workspace);
   return JSON.parse(JSON.stringify(workspace)) as AppState;
 }
 
@@ -64,7 +66,8 @@ function assertProjectFile(value: unknown): asserts value is ProjectFile {
   if (candidate.schemaVersion !== 1 || !candidate.project || !candidate.workspace) {
     throw new Error('Formato de projeto não reconhecido.');
   }
-  if (typeof candidate.project.id !== 'number' || typeof candidate.project.name !== 'string') {
+  validateWorkspace(candidate.workspace);
+  if (!Number.isSafeInteger(candidate.project.id) || candidate.project.id <= 0 || typeof candidate.project.name !== 'string') {
     throw new Error('Metadados do projeto inválidos.');
   }
 }
@@ -96,7 +99,7 @@ export class ProjectRepository {
         const document = await this.readFromDirectory(path.join(this.projectsRoot, entry.name));
         return document.project;
       } catch (error) {
-        console.warn(`[Appify] Ignorando pasta de projeto inválida: ${entry.name}`, error);
+        console.warn('[Appify] Ignorando pasta de projeto inválida.');
         return null;
       }
     }));
@@ -300,7 +303,7 @@ export class ProjectRepository {
       await this.readDocument(target);
       await fs.rm(temporary, { force: true });
       await this.writeLessonPages(directory, storedDocument.workspace).catch(error => {
-        console.warn('[Appify] Não foi possível atualizar as cópias em pages/.', error);
+        console.warn('[Appify] Não foi possível atualizar as cópias em pages/.');
       });
     } catch (error) {
       if (hasBackup) {
@@ -356,7 +359,7 @@ export class ProjectRepository {
         const extension = path.extname(filename).slice(1).toLowerCase();
         replacements.set(reference, `data:${imageMimeType(extension)};base64,${bytes.toString('base64')}`);
       } catch (error) {
-        console.warn(`[Appify] Asset local ausente: ${filename}`, error);
+        console.warn('[Appify] Asset local ausente.');
       }
     }));
 

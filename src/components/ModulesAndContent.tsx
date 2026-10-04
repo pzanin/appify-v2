@@ -7,7 +7,8 @@ import {
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
-import { prepareResponsiveHtml } from '../utils/htmlContent';
+import { HtmlFrame } from './HtmlFrame';
+import { sanitizeImportedHtml } from '../utils/htmlSecurity';
 
 interface ModulesAndContentProps { 
   submodule: SubModule; 
@@ -15,52 +16,6 @@ interface ModulesAndContentProps {
   onClose: () => void; 
 }
 
-function sanitizeHtml(html: string): string {
-  if (typeof window === 'undefined' || !html) return html || '';
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  
-  const forbiddenTags = ['script', 'object', 'embed', 'link', 'style'];
-  forbiddenTags.forEach(tag => {
-    const elements = doc.querySelectorAll(tag);
-    elements.forEach(el => el.remove());
-  });
-
-  const iframes = doc.querySelectorAll('iframe');
-  iframes.forEach(iframe => {
-    const src = iframe.getAttribute('src') || '';
-    const isTrusted = src.includes('youtube.com') || 
-                      src.includes('youtu.be') || 
-                      src.includes('vimeo.com') || 
-                      src.includes('google.com/maps') ||
-                      src.includes('player.vimeo.com') ||
-                      src.includes('pandavideo.com');
-    
-    if (!isTrusted) {
-      iframe.remove();
-    } else {
-      iframe.setAttribute('width', '100%');
-      iframe.style.maxWidth = '100%';
-    }
-  });
-
-  const allElements = doc.querySelectorAll('*');
-  allElements.forEach(el => {
-    const attributes = Array.from(el.attributes);
-    attributes.forEach(attr => {
-      const name = attr.name.toLowerCase();
-      if (name.startsWith('on')) {
-        el.removeAttribute(attr.name);
-      }
-      if ((name === 'href' || name === 'src' || name === 'action' || name === 'formaction') && 
-          attr.value.toLowerCase().trim().startsWith('javascript:')) {
-        el.removeAttribute(attr.name);
-      }
-    });
-  });
-
-  return doc.body.innerHTML;
-}
 
 export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndContentProps) {
   const updateSubmoduleContent = useAppStore(state => state.updateSubmoduleContent);
@@ -251,7 +206,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     const bodyHTML = blocks.map(mod => {
       const p = mod.props;
       const wrapStyle = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;`;
-      const inner = sanitizeHtml(getBlockInnerHtml(mod));
+      const inner = sanitizeImportedHtml(getBlockInnerHtml(mod));
       return `<section style="${wrapStyle}">${inner}</section>`;
     }).join('\n');
     
@@ -362,7 +317,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       }} 
                       onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
                     >
-                      <div className="custom-html-container" dangerouslySetInnerHTML={{ __html: sanitizeHtml(getBlockInnerHtml(mod)) }} />
+                      <div className="custom-html-container" dangerouslySetInnerHTML={{ __html: sanitizeImportedHtml(getBlockInnerHtml(mod)) }} />
                       <div className="vpb-block-actions">
                         <div className="vpb-action-btn" onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, -1); }}>↑</div>
                         <div className="vpb-action-btn" onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, 1); }}>↓</div>
@@ -400,10 +355,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     </div>
                     <div className="vpb-html-preview-panel">
                       <div className="vpb-html-preview-title"><Eye size={14} /> Preview mobile</div>
-                      <iframe
+                      <HtmlFrame
                         title="Preview do HTML personalizado"
-                        srcDoc={prepareResponsiveHtml(contentHtml)}
-                        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                        html={contentHtml}
                       />
                     </div>
                   </div>

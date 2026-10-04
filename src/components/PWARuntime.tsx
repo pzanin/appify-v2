@@ -1,10 +1,12 @@
+import { HtmlFrame } from './HtmlFrame';
+import { safeEmbedUrl } from '../utils/htmlSecurity';
+import { openExternalLink } from '../utils/externalLinks';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { useTranslation } from 'react-i18next';
-import { prepareResponsiveHtml } from '../utils/htmlContent';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface PWARuntimeProps { 
@@ -487,7 +489,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
 
                 {pwaConfig?.supportConfig?.type === 'whatsapp' ? (
                   <button 
-                    onClick={() => window.open(`https://wa.me/${pwaConfig.supportConfig.contact}`, '_blank')}
+                    onClick={() => openExternalLink(`https://wa.me/${pwaConfig.supportConfig.contact}`)}
                     style={{ width: '100%', padding: '18px', background: '#25D366', color: 'white', borderRadius: '18px', border: 'none', fontWeight: 700, fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 4px 12px rgba(37, 211, 102, 0.2)', flexShrink: 0 }}
                   >
                     <MessageCircle size={20} /> {t('app.support.openWa')}
@@ -618,11 +620,10 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                               
                               if (type === 'html') {
                                 return (
-                                  <iframe 
-                                    srcDoc={prepareResponsiveHtml(selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || '')}
+                                  <HtmlFrame
+                                    html={selectedMockupSubmodule.customHtml || selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || ''}
                                     title="Conteúdo da Aula" 
                                     className="absolute inset-0 w-full h-full border-none block" 
-                                    sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                                     style={{ background: '#ffffff' }} 
                                   />
                                 );
@@ -639,7 +640,9 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
 
                               return (
                                 <iframe 
-                                  src={embedUrl} 
+                                  src={safeEmbedUrl(embedUrl)}
+                                  sandbox="allow-scripts"
+                                  referrerPolicy="no-referrer"
                                   title="Conteúdo da Aula" 
                                   className="absolute inset-0 w-full h-full border-none block" 
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -720,7 +723,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -30 }}
                                 transition={{ duration: 0.35 }}
-                                onClick={() => currentBanner.link && window.open(currentBanner.link, '_blank')}
+                                onClick={() => currentBanner.link && openExternalLink(currentBanner.link)}
                                 style={{ position: 'absolute', inset: 0, backgroundImage: `url(${currentBanner.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', cursor: currentBanner.link ? 'pointer' : 'default' }}
                               />
                             </AnimatePresence>

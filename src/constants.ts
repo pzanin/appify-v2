@@ -1,3 +1,4 @@
+import type React from 'react';
 import { BookOpen, GraduationCap, BarChart3, Sun, Moon, Bell, Download, Grid, LayoutGrid, Lock, Home, Rss, Users, User, Plus, Calendar, Smartphone, FolderOpen, Layers, PackageOpen, CheckCircle2, XCircle, Loader2, Trash2, ArrowLeft, Eye, Sparkles, Check, Settings, GripVertical, Pencil, MoreHorizontal, Construction, Menu, X, FileJson, Type, AlignLeft, Image as ImageIcon, Link as LinkIcon, Minus, SeparatorHorizontal, Quote, Zap, Columns, Send, MessageSquare, List, Trophy, Flame, Fingerprint, Megaphone, Globe, Headset, LucideProps } from 'lucide-react';
 import { Project, Module, PipelineStep, PwaConfig, SupportedLocale, AppTranslations, LocaleConfig } from './types';
 

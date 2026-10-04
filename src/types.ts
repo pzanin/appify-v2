@@ -231,6 +231,7 @@ export interface ProjectBuildResult {
 }
 
 export interface AppifyDesktopApi {
+  links: { openExternal: (url: string) => Promise<void> };
   projects: {
     list: () => Promise<Project[]>;
     create: (name: string, workspace: AppState) => Promise<Project>;

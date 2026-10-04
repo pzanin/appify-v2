@@ -1,3 +1,4 @@
+import { openExternalLink } from '../utils/externalLinks';
 import React, { useState } from 'react';
 import { 
   ClipboardCheck, Download, Globe, History, CheckCircle2, XCircle, 
@@ -112,7 +113,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
         status: 'publicado'
       }, ...prev]);
     } catch (err) {
-      console.error(err);
+      console.error('[Appify] Operação não concluída.');
       showToast('Erro ao gerar ZIP.', 'error');
     }
   };
@@ -152,7 +153,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
         showToast('Conexão com Supabase estabelecida! ✓', 'success');
       }
     } catch (err) {
-      console.error(err);
+      console.error('[Appify] Operação não concluída.');
       setConnectionStatus('error');
       showToast('Erro de rede ou URL inválida.', 'error');
     }
@@ -311,7 +312,7 @@ create trigger on_auth_user_created
               showToast('Schema aplicado com sucesso no Supabase local! ✓', 'success');
             }
           } catch (e) {
-            console.warn('Falha na tentativa direta via Studio local, tentando RPC...', e);
+            console.warn('Falha na tentativa direta via Studio local, tentando RPC...');
           }
         }
 
@@ -333,7 +334,7 @@ create trigger on_auth_user_created
             showToast('Schema Zero-Trust aplicado via Service Role Key! ✓', 'success');
           } else {
             const errBody = await response.json().catch(() => ({}));
-            console.error('Erro ao executar via RPC:', errBody);
+            console.error('Erro ao executar via RPC:');
           }
         }
 
@@ -341,7 +342,7 @@ create trigger on_auth_user_created
           showToast('Schema gerado! Copie e cole no SQL Editor do Supabase.', 'success');
         }
       } catch (err) {
-        console.error('Erro de rede ao aplicar schema:', err);
+        console.error('Erro de rede ao aplicar schema:');
         showToast('Schema gerado! Copie para rodar manualmente.', 'success');
       }
     } else {
@@ -672,7 +673,7 @@ VITE_APP_THEME=${pwaConfig.themeColor || ''}`;
                       <button 
                         className="btn-ghost" 
                         disabled={!pwaConfig.supabaseUrl}
-                        onClick={() => window.open(`${pwaConfig.supabaseUrl}/project/default/sql`)}
+                        onClick={() => openExternalLink(`${pwaConfig.supabaseUrl}/project/default/sql`)}
                       >
                         <ExternalLink size={16} /> Abrir SQL Editor
                       </button>
@@ -725,7 +726,7 @@ VITE_APP_THEME=${pwaConfig.themeColor || ''}`;
                       {item.hint && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '10px', color: '#f59e0b' }}>{item.hint}</span>
-                          <button className="btn-ghost" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => item.url && window.open(item.url)}>
+                          <button className="btn-ghost" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => item.url && openExternalLink(item.url)}>
                             Abrir <ExternalLink size={8} />
                           </button>
                         </div>
@@ -782,7 +783,7 @@ VITE_APP_THEME=${pwaConfig.themeColor || ''}`;
                               <button 
                                 className="btn-ghost" 
                                 style={{ padding: '4px 8px', fontSize: '11px' }}
-                                onClick={() => step.url && window.open(step.url)}
+                                onClick={() => step.url && openExternalLink(step.url)}
                                 disabled={step.disabled}
                               >
                                 {step.btn} <ExternalLink size={10} />

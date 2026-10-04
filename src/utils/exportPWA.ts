@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
+import { assertPublicExport, assertSafeArchive, isAllowedExportPath, EXPORT_SECURITY_MESSAGE } from './exportSecurity';
 import { prepareResponsiveHtml } from './htmlContent';
 
 function escapeHtml(value: string) {
@@ -50,20 +51,13 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
   
   try {
     const state = useAppStore.getState();
+    assertPublicExport({ appName: state.appName, pwaConfig: state.pwaConfig, modules: state.modules });
     const appName = state.appName || 'Meu App';
     const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
     
     // Extrai apenas os dados necessários do construtor
     const { description, noIndex, showAdvanced, ...cleanPwaConfig } = state.pwaConfig || {};
     
-    // REMOÇÃO RÍGIDA DE CHAVES PRIVADAS/SENSÍVEIS (Segurança supabse key leakage)
-    const sensitiveKeys = ['supabaseServiceKey', 'serviceKey', 'service_key', 'privateKey', 'private_key'];
-    sensitiveKeys.forEach(key => {
-      if (key in cleanPwaConfig) {
-        delete (cleanPwaConfig as any)[key];
-      }
-    });
-
     const appData = {
       appName: state.appName,
       modules: state.modules,
@@ -86,6 +80,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         const html = lesson.customHtml || lesson.contentHtml || lesson.content_html || '';
         if (!html.trim()) continue;
         const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
+        if (!isAllowedExportPath(pagePath)) throw new Error('Identificador de aula inválido.');
         zip.file(pagePath, prepareResponsiveHtml(html));
         pageMatches.push(pagePath);
       }
@@ -128,15 +123,15 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
 
     // 3. Arquivos do Template Base do PWA (Extrator Dinâmico)
     try {
-      const htmlRes = await fetch('/pwa-template/index.html');
+      const htmlRes = await fetch('./pwa-template/index.html');
       if (htmlRes.ok) {
         let htmlText = await htmlRes.text();
-        htmlText = htmlText.replace(/<html lang="[^"]*">/, `<html lang="${pwaLanguage}">`);
+        htmlText = htmlText.replace(/<html lang="[^"]*">/, `<html lang="${escapeHtml(pwaLanguage)}">`);
         htmlText = htmlText.replace(/<title>.*?<\/title>/i, `<title>${escapeHtml(appName)}</title>`);
         const installMetadata = `
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-    <meta name="theme-color" content="${state.pwaConfig?.themeColor || '#7c6fff'}">
+    <meta name="theme-color" content="${escapeHtml(state.pwaConfig?.themeColor || '#7c6fff')}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="${escapeHtml(appName)}">`;
@@ -169,7 +164,8 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
 
         for (const assetPath of assetMatches) {
           try {
-            const res = await fetch(`/pwa-template/${assetPath}`);
+            if (!isAllowedExportPath(assetPath)) throw new Error('Arquivo de template não permitido.');
+            const res = await fetch(`./pwa-template/${assetPath}`);
             if (res.ok) {
               zip.file(assetPath, await res.blob());
             } else {
@@ -180,10 +176,10 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
           }
         }
       } else {
-        console.warn('index.html do molde não encontrado.');
+        throw new Error('Template do PWA indisponível.');
       }
     } catch (err) {
-      console.warn('Erro ao processar arquivos do molde:', err);
+      throw new Error('Não foi possível carregar o template completo do PWA.');
     }
 
     // 4. Geração do Service Worker sw.js robusto com Cache Offline (PWA Compliance)
@@ -201,7 +197,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     ];
 
     const swContent = `
-const CACHE_NAME = 'appify-pwa-v${cacheVersion}';
+const CACHE_NAME = ${JSON.stringify('appify-pwa-v' + cacheVersion)};
 const ASSETS = ${JSON.stringify(assetsToCache, null, 2)};
 
 self.addEventListener('install', (event) => {
@@ -271,6 +267,9 @@ self.addEventListener('fetch', (event) => {
     // Regras de roteamento para hosts (Netlify, Vercel, etc)
     zip.file('_redirects', '/* /index.html 200');
 
+    // Check the assembled archive, including template code, before any disk write/download.
+    await assertSafeArchive(zip);
+
     // 5. Empacota tudo e salva no computador
     const content = await zip.generateAsync({ type: 'blob' });
     const filename = `${appName.toLowerCase().replace(/\s+/g, '-')}-pwa.zip`;
@@ -281,7 +280,7 @@ self.addEventListener('fetch', (event) => {
         await projectService.saveBuild(state.currentProjectId, filename, bytes);
       } catch (error) {
         buildCopyFailed = true;
-        console.error('Não foi possível salvar a cópia em build/:', error);
+        console.error('Não foi possível salvar a cópia em build/:');
       }
     }
     saveAs(content, filename);
@@ -293,7 +292,7 @@ self.addEventListener('fetch', (event) => {
       );
     }
   } catch (error) {
-    console.error('Erro ao gerar o ZIP do PWA:', error);
-    if (showToast) showToast('Erro ao exportar PWA.', 'error');
+    console.error('Erro ao gerar o ZIP do PWA:');
+    if (showToast) showToast(error instanceof Error && error.message === EXPORT_SECURITY_MESSAGE ? EXPORT_SECURITY_MESSAGE : 'Erro ao exportar PWA. Verifique se o template está completo e tente novamente.', 'error');
   }
 };

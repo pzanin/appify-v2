@@ -192,7 +192,7 @@ export const useAppStore = create<AppStore>()(
               }));
               return true;
             } catch (error) {
-              console.error('[Appify] Falha ao salvar projeto local:', error);
+              console.error('[Appify] Falha ao salvar projeto local:');
               set({ saveStatus: 'error' });
               return false;
             } finally {

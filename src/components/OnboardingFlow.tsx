@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Download, Bell, Share, Plus, X, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useAppStore } from '../store/useAppStore';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTranslation } from 'react-i18next';
 
@@ -9,10 +8,8 @@ export function OnboardingFlow() {
   const { t } = useTranslation();
   const { isInstallAvailable, isIOS, isStandalone, triggerInstall } = usePWAInstall();
   
-  const hasSeenInstallPrompt = useAppStore(state => state.hasSeenInstallPrompt);
-  const hasSeenPushPrompt = useAppStore(state => state.hasSeenPushPrompt);
-  const setHasSeenInstallPrompt = useAppStore(state => state.setHasSeenInstallPrompt);
-  const setHasSeenPushPrompt = useAppStore(state => state.setHasSeenPushPrompt);
+  const [hasSeenInstallPrompt, setHasSeenInstallPrompt] = useState(false);
+  const [hasSeenPushPrompt, setHasSeenPushPrompt] = useState(false);
   
   const [step, setStep] = useState<'install' | 'push' | null>(null);
 

@@ -8,3 +8,14 @@ release/
 *.log
 .env*
 !.env.example
+
+# Generated Electron/PWA builds and private local material
+/dist-electron/
+/dist-pwa/
+/public/pwa-template/
+*.pem
+*.key
+*.p12
+*.pfx
+/Appify/
+/Projects/

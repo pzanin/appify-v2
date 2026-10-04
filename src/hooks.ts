@@ -29,7 +29,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
       try {
         await initializeProjects();
       } catch (error) {
-        console.error(error);
+        console.error('[Appify] Operação não concluída.');
         setIsLoading(false);
         showToast('Não foi possível abrir a pasta local de projetos.', 'error');
       }
@@ -47,7 +47,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
         await loadProject(project.id);
         showToast('Projeto criado com sucesso!', 'success');
       } catch (error) {
-        console.error(error);
+        console.error('[Appify] Operação não concluída.');
         showToast('Falha ao criar o projeto local.', 'error');
       }
     } else {
@@ -55,7 +55,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
         await loadProject(projectId);
         showToast('Projeto pronto!', 'success');
       } catch (error) {
-        console.error(error);
+        console.error('[Appify] Operação não concluída.');
         setView('projects');
         showToast('Não foi possível abrir o projeto.', 'error');
       }
@@ -90,7 +90,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
       setProjects(prev => prev.filter(p => p.id !== projectId));
       showToast(projectService.isDesktop() ? 'Projeto movido para a Lixeira.' : 'Projeto excluído.', 'success');
     } catch (error) {
-      console.error(error);
+      console.error('[Appify] Operação não concluída.');
       showToast('Não foi possível excluir o projeto.', 'error');
     }
   };
@@ -101,7 +101,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
       setProjects(prev => [duplicated, ...prev]);
       showToast('Projeto duplicado com sucesso!', 'success');
     } catch (error) {
-      console.error(error);
+      console.error('[Appify] Operação não concluída.');
       showToast('Não foi possível duplicar o projeto.', 'error');
     }
   };
@@ -111,7 +111,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
       const result = await projectService.exportBackup(projectId);
       if (!result.canceled) showToast('Backup exportado com sucesso!', 'success');
     } catch (error) {
-      console.error(error);
+      console.error('[Appify] Operação não concluída.');
       showToast('Não foi possível exportar o backup.', 'error');
     }
   };
@@ -124,7 +124,7 @@ export function useProjects(showToast: (msg: string, type?: ToastType) => void) 
         showToast('Projeto importado com sucesso!', 'success');
       }
     } catch (error) {
-      console.error(error);
+      console.error('[Appify] Operação não concluída.');
       showToast('Não foi possível importar o backup.', 'error');
     }
   };

@@ -7,8 +7,8 @@ import { useAppStore } from '../store/useAppStore';
 
 export function AnalyticsDashboard() {
   const modules = useAppStore(state => state.modules || []);
-  const analytics = useAppStore(state => state.analytics || {});
-  const pwaConfig = useAppStore(state => state.pwaConfig || {});
+  const analytics = useAppStore(state => state.analytics);
+  const pwaConfig = useAppStore(state => state.pwaConfig);
 
   const getColorForPercent = (percent: number) => {
     if (percent < 50) return 'var(--accent2)';

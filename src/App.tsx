@@ -7,14 +7,14 @@ interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, error: null };
   static getDerivedStateFromError(error: Error): ErrorBoundaryState { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("Uncaught error:", error, errorInfo); }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("[Appify] Falha ao carregar a tela."); }
   render() {
     const { hasError, error } = this.state;
     if (hasError) {
       return (
         <div style={{ padding: '40px', textAlign: 'center', color: '#ff6b6b' }}>
           <h1>Algo deu errado</h1>
-          <p>{error?.message}</p>
+          <p>Não foi possível carregar esta tela. Recarregue o aplicativo e tente novamente.</p>
           <button className="btn-primary" onClick={() => window.location.reload()}>Recarregar App</button>
         </div>
       );
@@ -60,7 +60,7 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
         setLoaded(true);
       })
       .catch(err => {
-        console.error(err);
+        console.error('[Appify] Operação não concluída.');
         setError(true);
       });
   }, []);
@@ -138,7 +138,7 @@ function AppContent() {
           await projectService.saveProject(state.currentProjectId, getProjectWorkspaceSnapshot(state));
         }
       } catch (error) {
-        console.error('[Appify] Falha ao salvar antes de fechar:', error);
+        console.error('[Appify] Falha ao salvar antes de fechar:');
       } finally {
         lifecycle.readyToClose();
       }

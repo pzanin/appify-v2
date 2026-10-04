@@ -1,3 +1,4 @@
+import { sanitizeImportedHtml, IMPORTED_HTML_CSP, LINK_BRIDGE } from './htmlSecurity';
 const RESPONSIVE_STYLE = `
 <style id="appify-responsive-html">
   html, body {
@@ -59,24 +60,11 @@ const VIEWPORT_META = '<meta name="viewport" content="width=device-width, initia
 
 export function prepareResponsiveHtml(html: string): string {
   const source = html?.trim() || '<p style="text-align:center;font-family:sans-serif;opacity:.5;padding:20px;">Nenhum conteúdo definido.</p>';
-  const hasHtmlDocument = /<html[\s>]/i.test(source);
-
-  if (!hasHtmlDocument) {
-    return `<!DOCTYPE html><html><head>${VIEWPORT_META}${RESPONSIVE_STYLE}</head><body>${source}</body></html>`;
-  }
-
-  let result = source;
-  if (!/<meta[^>]+name=["']viewport["']/i.test(result)) {
-    result = /<head[\s>]/i.test(result)
-      ? result.replace(/<head([^>]*)>/i, `<head$1>${VIEWPORT_META}`)
-      : result.replace(/<html([^>]*)>/i, `<html$1><head>${VIEWPORT_META}</head>`);
-  }
-
-  if (!result.includes('id="appify-responsive-html"')) {
-    result = /<\/head>/i.test(result)
-      ? result.replace(/<\/head>/i, `${RESPONSIVE_STYLE}</head>`)
-      : result.replace(/<body([^>]*)>/i, `<body$1>${RESPONSIVE_STYLE}`);
-  }
-
-  return result;
+  const doc = new DOMParser().parseFromString(sanitizeImportedHtml(source, true), 'text/html');
+  doc.querySelector('#appify-responsive-html')?.remove();
+  doc.head.innerHTML = `<meta http-equiv="Content-Security-Policy" content="${IMPORTED_HTML_CSP}">${VIEWPORT_META}${RESPONSIVE_STYLE}` + doc.head.innerHTML;
+  const script = doc.createElement('script');
+  script.textContent = LINK_BRIDGE;
+  doc.body.appendChild(script);
+  return `<!DOCTYPE html>${doc.documentElement.outerHTML}`;
 }

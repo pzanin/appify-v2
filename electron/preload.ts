@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AppifyDesktopApi } from '../src/types';
 
 const api: AppifyDesktopApi = {
+  links: { openExternal: url => ipcRenderer.invoke('links:open-external', url) },
   projects: {
     list: () => ipcRenderer.invoke('projects:list'),
     create: (name, workspace) => ipcRenderer.invoke('projects:create', { name, workspace }),
@@ -23,4 +24,4 @@ const api: AppifyDesktopApi = {
   },
 };
 
-contextBridge.exposeInMainWorld('appifyDesktop', api);
+if (process.isMainFrame) contextBridge.exposeInMainWorld('appifyDesktop', api);
