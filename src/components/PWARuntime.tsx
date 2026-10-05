@@ -1,12 +1,14 @@
 import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
 import { openExternalLink } from '../utils/externalLinks';
+import { engagementIsEnabled } from '../utils/projectFeatures';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/useAppStore';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { useTranslation } from 'react-i18next';
+import { InstallGuide } from './InstallGuide';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface PWARuntimeProps { 
@@ -42,55 +44,22 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const t = i18n.getFixedT(pwaLanguage.split('-')[0]);
   const mockupOnboardingCompleted = useAppStore(state => state.mockupOnboardingCompleted);
   const setMockupOnboardingCompleted = useAppStore(state => state.setMockupOnboardingCompleted);
+  const engagementEnabled = engagementIsEnabled(pwaConfig);
   const feedPosts = useAppStore(state => state.feedPosts) || [];
   const pushNotifications = useAppStore(state => state.pushNotifications) || [];
   const currentProjectId = useAppStore(state => state.currentProjectId);
-  const { isInstallAvailable, isIOS, isStandalone, triggerInstall } = usePWAInstall();
+  const { isStandalone } = usePWAInstall();
 
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
-  const [installAttempted, setInstallAttempted] = useState(false);
   const [hasNewAnnouncement, setHasNewAnnouncement] = useState<boolean>(false);
   const [hasNewPush, setHasNewPush] = useState<boolean>(false);
   const [activePushBanner, setActivePushBanner] = useState<any | null>(null);
+  useEffect(()=>{if(isStandalone)setOnboardingStep(current=>current===1 ? 0 : current);},[isStandalone]);
+  const dismissInstall = () => setOnboardingStep(0);
+  const openInstallAssistant = () => setOnboardingStep(1);
 
   useEffect(() => {
-    if (isStandalone) {
-      setOnboardingStep(current => current === 1 ? 0 : current);
-      return;
-    }
-    const storageKey = `appify-install-dismissed-${pwaConfig?.appName || appName}`;
-    if (localStorage.getItem(storageKey)) return;
-    const timer = window.setTimeout(() => setOnboardingStep(current => current === 0 ? 1 : current), 1400);
-    return () => window.clearTimeout(timer);
-  }, [appName, isStandalone, pwaConfig?.appName]);
-
-  const dismissInstall = () => {
-    localStorage.setItem(`appify-install-dismissed-${pwaConfig?.appName || appName}`, '1');
-    setOnboardingStep(0);
-    setInstallAttempted(false);
-  };
-
-  const openInstallAssistant = () => {
-    setInstallAttempted(false);
-    setOnboardingStep(1);
-  };
-
-  const handleInstall = async () => {
-    if (isIOS) {
-      dismissInstall();
-      return;
-    }
-    if (!isInstallAvailable) {
-      setInstallAttempted(true);
-      return;
-    }
-    const outcome = await triggerInstall();
-    setInstallAttempted(true);
-    if (outcome === 'accepted') dismissInstall();
-  };
-
-  useEffect(() => {
-    if (feedPosts && feedPosts.length > 0) {
+    if (engagementEnabled && feedPosts && feedPosts.length > 0) {
       const latestPost = feedPosts[0];
       const latestTime = latestPost.createdAt || latestPost.id;
       const lastViewed = Number(localStorage.getItem('last_viewed_announcement') || '0');
@@ -102,10 +71,10 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     } else {
       setHasNewAnnouncement(false);
     }
-  }, [feedPosts]);
+  }, [feedPosts, engagementEnabled]);
 
   useEffect(() => {
-    if (pushNotifications && pushNotifications.length > 0) {
+    if (engagementEnabled && pushNotifications && pushNotifications.length > 0) {
       const latestPush = pushNotifications[0];
       const latestTime = latestPush.createdAt || latestPush.id;
       const lastViewed = Number(localStorage.getItem('last_viewed_push') || '0');
@@ -124,11 +93,17 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     } else {
       setHasNewPush(false);
     }
-  }, [pushNotifications]);
+  }, [pushNotifications, engagementEnabled]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeTab, setActiveTab] = useState('inicio');
+  useEffect(() => {
+    if (!engagementEnabled) {
+      setActiveTab(tab => ['conteudo', 'comunidade'].includes(tab) ? 'inicio' : tab);
+      setOnboardingStep(step => step === 2 ? 0 : step);
+    }
+  }, [engagementEnabled]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
@@ -171,7 +146,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     { id: 'conteudo', icon: Rss, label: t('nav.content', 'Conteúdo') },
     { id: 'comunidade', icon: Users, label: t('nav.community', 'Comunidade') },
     { id: 'perfil', icon: User, label: t('nav.profile', 'Perfil') }
-  ];
+  ].filter(item => engagementEnabled || !['conteudo', 'comunidade'].includes(item.id));
 
   if (pwaConfig?.supportConfig?.type && pwaConfig.supportConfig.type !== 'none') {
     navItems.push({ id: 'suporte', icon: Headset, label: t('nav.support', 'Suporte') });
@@ -188,7 +163,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
     if (canCompleteLesson && !isCurrentLessonCompleted) {
       setIsCurrentLessonCompleted(true);
       setMockProgressPercentage(100);
-      if (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true) {
+      if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
         setIsCelebrating(true);
         setTimeout(() => setIsCelebrating(false), 3500);
       }
@@ -233,7 +208,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
     if (selectedMockupSubmodule) {
-      const timeGate = selectedMockupSubmodule?.gamificationConfig?.timeGateSeconds || 0;
+      const timeGate = gamification.enabled ? (selectedMockupSubmodule?.gamificationConfig?.timeGateSeconds || 0) : 0;
       setCanCompleteLesson(timeGate === 0);
       setLessonCompletionTimer(timeGate);
       setIsCurrentLessonCompleted(false);
@@ -254,7 +229,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
       setLessonCompletionTimer(5);
     }
     return () => { if (interval) clearInterval(interval); };
-  }, [selectedMockupSubmoduleId]);
+  }, [selectedMockupSubmoduleId, gamification.enabled]);
 
   useEffect(() => {
     setIsTransitioning(true);
@@ -264,7 +239,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
 
 
   return (
-    <div style={{ width: '100vw', height: '100vh', background: '#000000', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+    <div style={{ width: '100vw', height: '100dvh', background: '#000000', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
       <div 
         className={`w-full h-full flex flex-col overflow-hidden relative ${isPhoneDark ? 'bg-[#091218] text-white' : 'bg-[#f6f8fa] text-[#1f2328]'}`}
         style={{ 
@@ -290,7 +265,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
         `}</style>
 
         <AnimatePresence>
-          {activePushBanner && (
+          {engagementEnabled && activePushBanner && (
             <motion.div
               initial={{ y: -100, opacity: 0 }}
               animate={{ y: 12, opacity: 1 }}
@@ -366,7 +341,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
             <div onClick={() => setIsPhoneDark(!isPhoneDark)} className="cursor-pointer opacity-80 hover:opacity-100 transition-opacity">
               {isPhoneDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
             </div>
-            <div 
+            {engagementEnabled && (<div
               onClick={() => {
                 localStorage.setItem('last_viewed_push', String(Date.now()));
                 setHasNewPush(false);
@@ -389,7 +364,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                   }} 
                 />
               )}
-            </div>
+            </div>)}
           </div>
         </div>
 
@@ -397,7 +372,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
         <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
           <AnimatePresence mode="wait">
             {/* CELEBRATION OVERLAY */}
-            {isCelebrating && (
+            {gamification.enabled && gamification.enableCelebration && isCelebrating && (
               <motion.div key="celeb" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[100] pointer-events-none overflow-hidden">
                 {[...Array(40)].map((_, i) => (
                   <motion.div
@@ -457,7 +432,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                     <input type="email" className={`w-full p-4 rounded-2xl text-sm font-bold border border-dashed outline-none transition-all focus:ring-2 focus:ring-[var(--dynamic-theme)] ${isPhoneDark ? 'bg-white/5 border-white/10 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-500'}`} value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder={t('app.profile.emailPlaceholder', 'E-mail (Chave de Acesso)')} />
                  </div>
 
-                 {pwaConfig?.gamification?.enablePoints && (
+                 {gamification.enabled && pwaConfig?.gamification?.enablePoints && (
                    <div className="w-full space-y-6 mb-12">
                       <div className={`flex items-center justify-between p-5 rounded-3xl border ${isPhoneDark ? 'bg-white/5 border-white/5' : 'bg-white shadow-sm border-black/5'}`}>
                           <div className="flex items-center gap-3 font-black text-sm">
@@ -659,7 +634,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                           <div style={{ fontSize: '12px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '16px', flexShrink: 0 }}>{selectedMockupModule.subs?.length || 0} {selectedMockupModule.subs?.length === 1 ? t('app.modules.lessonSingle', 'aula') : t('app.modules.lessonPlural', 'aulas')}</div>
 
                           {/* Progress Bar */}
-                          {(() => {
+                          {gamification.enabled && gamification.progressStyle !== 'none' && (() => {
                             return (
                               <div style={{ marginBottom: '16px', flexShrink: 0 }}>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
@@ -891,99 +866,15 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
         {/* ONBOARDING MODAL */}
         <AnimatePresence>
           {onboardingStep > 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[150] flex flex-col justify-end" style={{ background: 'rgba(9, 18, 24, 0.92)' }}>
-              <div className="absolute inset-0" onClick={() => { setOnboardingStep(0); setMockupOnboardingCompleted(true); }} />
-              <motion.div
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="appify-onboarding-title"
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className={`relative rounded-t-[40px] px-6 pt-7 pb-8 text-center max-h-[94%] overflow-y-auto ${isPhoneDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'} border-t border-[var(--border)]`}
-              >
-                <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '120px', height: '120px', background: themeColor, filter: 'blur(60px)', opacity: 0.1, pointerEvents: 'none' }} />
-
-                <div className="w-[72px] h-[72px] rounded-3xl flex items-center justify-center mx-auto mb-5" style={{ background: `${themeColor}15`, color: themeColor }}>
-                  {onboardingStep === 1 ? <Smartphone size={38} /> : <Bell size={32} />}
-                </div>
-
-                <h3 id="appify-onboarding-title" className="text-2xl font-black mb-3 leading-tight">
-                  {onboardingStep === 1 ? t('onboarding.install.title', 'Coloque o app na tela do celular') : t('onboarding.push.title', 'Notificações')}
-                </h3>
-                <p className="text-base opacity-70 mb-6 leading-relaxed">
-                  {onboardingStep === 1 ? t('onboarding.install.subtitle', 'Assim fica mais fácil abrir novamente, sem precisar procurar o endereço.') : t('onboarding.push.subtitle', 'Ative as notificações para receber lembretes e novidades em tempo real.')}
-                </p>
-
-                {onboardingStep === 1 && isIOS && (
-                  <div className="text-left mb-5 space-y-3">
-                    <div className="text-center mb-3"><span className="inline-flex rounded-full px-4 py-2 text-sm font-black" style={{ background: `${themeColor}15`, color: themeColor }}>{t('onboarding.install.iosLabel', 'No iPhone ou iPad')}</span></div>
-                    {[
-                      { icon: Share, text: t('onboarding.install.iosStep1', 'Toque no botão Compartilhar do Safari') },
-                      { icon: Plus, text: t('onboarding.install.iosStep2', 'Escolha “Adicionar à Tela de Início”') },
-                      { icon: Check, text: t('onboarding.install.iosStep3', 'Ative “Abrir como Aplicativo Web” e toque em Adicionar') },
-                    ].map(({ icon: StepIcon, text }, index) => (
-                      <div key={index} className="flex items-center gap-4 rounded-2xl p-4" style={{ background: isPhoneDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.045)' }}>
-                        <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center font-black text-white" style={{ background: themeColor }}>{index + 1}</div>
-                        <StepIcon size={22} style={{ color: themeColor, flexShrink: 0 }} />
-                        <span className="text-base font-bold leading-snug">{text}</span>
-                      </div>
-                    ))}
-                    <p className="text-center text-sm font-semibold opacity-60 pt-1">{t('onboarding.install.iosFinish', 'Depois, abra o aplicativo pelo novo ícone na tela do celular.')}</p>
-                  </div>
-                )}
-
-                {onboardingStep === 1 && !isIOS && !installAttempted && (
-                  <div className="text-left rounded-2xl p-5 mb-5 space-y-4" style={{ background: isPhoneDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.045)' }}>
-                    <div className="flex items-center gap-3"><div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-black text-white" style={{ background: themeColor }}>1</div><span className="text-base font-bold">{t('onboarding.install.androidStep1', 'Toque no botão azul abaixo')}</span></div>
-                    <div className="flex items-center gap-3"><div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-black text-white" style={{ background: themeColor }}>2</div><span className="text-base font-bold">{t('onboarding.install.androidStep2', 'Confirme a instalação quando o celular perguntar')}</span></div>
-                  </div>
-                )}
-
-                {onboardingStep === 1 && !isIOS && !isInstallAvailable && installAttempted && (
-                  <div className="text-left rounded-2xl p-5 mb-5" style={{ background: isPhoneDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.045)' }}>
-                    <div className="font-black text-base mb-2">{t('onboarding.install.manualTitle', 'A confirmação não apareceu?')}</div>
-                    <p className="text-base leading-relaxed opacity-80 m-0">{t('onboarding.install.androidHelp', 'Abra o menu do navegador e escolha “Instalar aplicativo” ou “Adicionar à tela inicial”.')}</p>
-                  </div>
-                )}
-
-                {onboardingStep === 1 && (
-                  <div className="flex items-center justify-center gap-2 text-sm font-semibold opacity-60 mb-5">
-                    <CheckCircle size={18} style={{ color: themeColor }} />
-                    <span>{t('onboarding.install.safeNote', 'É gratuito e você poderá remover quando quiser.')}</span>
-                  </div>
-                )}
-
-                <button 
-                  onClick={() => {
-                    if (onboardingStep === 1 && !isIOS && installAttempted && !isInstallAvailable) dismissInstall();
-                    else if (onboardingStep === 1) void handleInstall();
-                    else { setOnboardingStep(0); setMockupOnboardingCompleted(true); }
-                  }}
-                  className="w-full min-h-[60px] px-5 py-4 rounded-2xl text-lg font-black text-white shadow-xl mb-3"
-                  style={{ background: themeColor, border: 'none', cursor: 'pointer', touchAction: 'manipulation' }}
-                >
-                  {onboardingStep === 1
-                    ? (isIOS
-                      ? t('onboarding.install.iosConfirm', 'Entendi, vou instalar')
-                      : installAttempted && !isInstallAvailable
-                        ? t('onboarding.install.understood', 'Entendi')
-                        : t('onboarding.install.confirm', 'Instalar no meu celular'))
-                    : t('onboarding.push.confirm', 'Ativar')}
-                </button>
-                <button 
-                  onClick={() => {
-                    if (onboardingStep === 1) dismissInstall();
-                    else { setOnboardingStep(0); setMockupOnboardingCompleted(true); }
-                  }} 
-                  className="w-full min-h-[48px] py-3 text-base font-bold opacity-60"
-                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', touchAction: 'manipulation' }}
-                >
-                  {onboardingStep === 1 ? t('onboarding.install.skip', 'Continuar sem instalar') : t('onboarding.push.skip', 'Agora Não')}
-                </button>
-              </motion.div>
-            </motion.div>
+            <div className="absolute inset-0 z-[150] customer-screen" role="dialog" aria-modal="true" aria-label={t('experience.install.title')}>
+              <div className="customer-card">
+                {onboardingStep === 1 ? <InstallGuide t={t} name={displayAppName} color={themeColor} onContinue={dismissInstall}/> : <>
+                  <h2>{t('onboarding.push.title')}</h2>
+                  {pushNotifications.length ? pushNotifications.map((item,index)=><div className="customer-note" key={index}><strong>{item.title}</strong><p>{item.body || ''}</p></div>) : <p>{t('app.content.emptyState')}</p>}
+                  <button className="customer-primary" style={{background:themeColor}} onClick={()=>setOnboardingStep(0)}>{t('experience.continue')}</button>
+                </>}
+              </div>
+            </div>
           )}
         </AnimatePresence>
 

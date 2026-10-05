@@ -1,18 +1,138 @@
 {
-  "nav": { "home": "Accueil", "content": "Contenu", "community": "Communauté", "profile": "Profil", "support": "Support" },
+  "nav": {
+    "home": "Accueil",
+    "content": "Contenu",
+    "community": "Communauté",
+    "profile": "Profil",
+    "support": "Support"
+  },
   "app": {
-    "login": { "title": "Accédez à votre compte", "emailPlaceholder": "Entrez votre email", "button": "SE CONNECTER" },
-    "profile": { "title": "Mon Profil", "fileFormat": "Uniquement .JPG ou .JPEG", "namePlaceholder": "Nom Complet", "nameDefault": "Nom de l'Étudiant", "emailPlaceholder": "Email (Clé d'Accès)", "saveButton": "Enregistrer" },
-    "community": { "title": "Communauté", "admin": "Admin", "justNow": "À l'instant", "welcomeMessage": "Bienvenue dans notre communauté ! Voici votre espace premium pour échanger, poser des questions et partager vos résultats. 🎉", "emptyState": "Aucun contenu disponible pour le moment" },
-    "content": { "title": "Contenu", "badge": "NOUVEAU", "newLesson": "Nouvelle leçon débloquée !", "newLessonDesc": "Nous venons de publier un contenu exclusif sur les stratégies. Allez dans l'onglet accueil pour découvrir le nouveau module !", "emptyState": "Aucun contenu disponible pour le moment" },
-    "modules": { "title": "Modules", "emptyState": "Aucun module créé", "back": "Retour", "lessonSingle": "leçon", "lessonPlural": "leçons", "noLessons": "Aucune leçon ajoutée", "completed": "terminé", "completed_status": "Terminée" },
-    "upsell": { "lockedTitle": "Contenu Verrouillé", "lockedMessagePart1": "Pour accéder au module", "lockedMessagePart2": "vous devez acheter cette mise à niveau.", "checkoutButton": "Aller au Paiement", "cancelButton": "Annuler" },
-    "header": { "theme": "Changer le Thème", "notifications": "Notifications", "install": "Installer" },
-    "support": { "title": "Comment pouvons-nous aider?", "description": "Notre équipe est prête à répondre à vos questions et à résoudre tout problème.", "copyEmail": "Copier l'e-mail", "openWa": "Ouvrir WhatsApp", "copied": "Copié!", "emailLabel": "E-MAIL DE CONTACT" },
-    "gamification": { "streak": "Série", "days": "jours", "completed": "Terminé", "keepGoing": "Continuez!", "points": "Points", "achievements": "Réalisations", "badges": "Badges", "myCollection": "Ma Collection" }
+    "login": {
+      "title": "Accédez à votre compte",
+      "emailPlaceholder": "Entrez votre email",
+      "button": "SE CONNECTER"
+    },
+    "profile": {
+      "title": "Mon Profil",
+      "fileFormat": "Uniquement .JPG ou .JPEG",
+      "namePlaceholder": "Nom Complet",
+      "nameDefault": "Nom de l'Étudiant",
+      "emailPlaceholder": "E-mail (information du profil)",
+      "saveButton": "Enregistrer"
+    },
+    "community": {
+      "title": "Communauté",
+      "admin": "Admin",
+      "justNow": "À l'instant",
+      "welcomeMessage": "Bienvenue dans notre communauté ! Voici votre espace premium pour échanger, poser des questions et partager vos résultats. 🎉",
+      "emptyState": "Aucun contenu disponible pour le moment"
+    },
+    "content": {
+      "title": "Contenu",
+      "badge": "NOUVEAU",
+      "newLesson": "Nouvelle leçon débloquée !",
+      "newLessonDesc": "Nous venons de publier un contenu exclusif sur les stratégies. Allez dans l'onglet accueil pour découvrir le nouveau module !",
+      "emptyState": "Aucun contenu disponible pour le moment"
+    },
+    "modules": {
+      "title": "Modules",
+      "emptyState": "Aucun module créé",
+      "back": "Retour",
+      "lessonSingle": "leçon",
+      "lessonPlural": "leçons",
+      "noLessons": "Aucune leçon ajoutée",
+      "completed": "terminé",
+      "completed_status": "Terminée"
+    },
+    "upsell": {
+      "lockedTitle": "Contenu Verrouillé",
+      "lockedMessagePart1": "Pour accéder au module",
+      "lockedMessagePart2": "vous devez acheter cette mise à niveau.",
+      "checkoutButton": "Aller au Paiement",
+      "cancelButton": "Annuler"
+    },
+    "header": {
+      "theme": "Changer le Thème",
+      "notifications": "Notifications",
+      "install": "Installer"
+    },
+    "support": {
+      "title": "Comment pouvons-nous aider?",
+      "description": "Notre équipe est prête à répondre à vos questions et à résoudre tout problème.",
+      "copyEmail": "Copier l'e-mail",
+      "openWa": "Ouvrir WhatsApp",
+      "copied": "Copié!",
+      "emailLabel": "E-MAIL DE CONTACT"
+    },
+    "gamification": {
+      "streak": "Série",
+      "days": "jours",
+      "completed": "Terminé",
+      "keepGoing": "Continuez!",
+      "points": "Points",
+      "achievements": "Réalisations",
+      "badges": "Badges",
+      "myCollection": "Ma Collection"
+    }
   },
   "onboarding": {
-    "install": { "title": "Installer l'App", "subtitle": "Ajoutez notre app à votre écran d'accueil.", "confirm": "Installer", "skip": "Plus Tard", "iosStep1": "1. Appuyez sur l'icône Partager", "iosStep2": "2. Sélectionnez \"Sur l'écran d'accueil\"" },
-    "push": { "title": "Notifications", "subtitle": "Activez les notifications pour ne rien manquer.", "confirm": "Activer", "skip": "Plus Tard" }
+    "install": {
+      "title": "Installer l'App",
+      "subtitle": "Ajoutez notre app à votre écran d'accueil.",
+      "confirm": "Installer",
+      "skip": "Plus Tard",
+      "iosStep1": "1. Appuyez sur l'icône Partager",
+      "iosStep2": "2. Sélectionnez \"Sur l'écran d'accueil\"",
+      "androidStep1": "Appuyez sur « Installer l’application » si le bouton est disponible"
+    },
+    "push": {
+      "title": "Notifications",
+      "subtitle": "Activez les notifications pour ne rien manquer.",
+      "confirm": "Activer",
+      "skip": "Plus Tard"
+    }
+  },
+  "experience": {
+    "loading": "Ouverture de votre contenu…",
+    "welcome": "Bienvenue",
+    "welcomeDescription": "Votre contenu, organisé et facile à consulter.",
+    "benefit": "Avancez à votre rythme et revenez quand vous le souhaitez.",
+    "start": "Commencer",
+    "demoLabel": "Démonstration",
+    "accessTitle": "Accédez à votre contenu",
+    "accessDescription": "Essayez l’écran d’accès de votre produit.",
+    "email": "Adresse e-mail (facultative pour cet essai)",
+    "emailPlaceholder": "vous@exemple.com",
+    "demoNote": "Cet accès est une démonstration. Il ne vérifie aucun achat. L’adresse e-mail n’est ni envoyée ni enregistrée.",
+    "demoContinue": "Ouvrir la démonstration",
+    "back": "Retour",
+    "continue": "Ouvrir mon contenu",
+    "previewReady": "L’accueil est prêt. Votre contenu vient ensuite.",
+    "install": {
+      "title": "Votre contenu sur l’écran d’accueil",
+      "description": "Ajoutez {{name}} à votre téléphone pour y accéder facilement.",
+      "done": "L’application est installée",
+      "doneDescription": "Ouvrez {{name}} depuis son icône sur l’écran d’accueil.",
+      "preview": "Ceci est un aperçu. Testez l’installation sur votre téléphone après publication.",
+      "nativeHelp": "Appuyez sur « Installer l’application ». Si le navigateur affiche une confirmation, choisissez Installer.",
+      "ios1": "Ouvrez cette adresse dans Safari et appuyez sur Partager.",
+      "ios2": "Choisissez « Sur l’écran d’accueil ».",
+      "ios3": "Appuyez sur Ajouter. Si « Ouvrir comme app web » apparaît, laissez cette option activée.",
+      "android1": "Dans Chrome, appuyez sur le menu à trois points ⋮ en haut à droite.",
+      "android2": "Cherchez « Installer l’application » ou « Ajouter à l’écran d’accueil ».",
+      "android3": "Confirmez et cherchez l’icône sur l’écran d’accueil ou dans la liste des applications.",
+      "desktop1": "Ouvrez cette adresse dans Chrome ou Edge.",
+      "desktop2": "Dans le menu, cherchez l’option permettant d’installer ce site comme application.",
+      "embedded1": "Ouvrez le menu de cette fenêtre et choisissez d’ouvrir dans le navigateur.",
+      "embedded2": "Utilisez Chrome sur Android ou Safari sur iPhone, puis ouvrez à nouveau l’aide à l’installation.",
+      "accepted": "Vous avez accepté l’installation. Attendez la fin, puis cherchez l’icône de l’application.",
+      "dismissed": "Vous pouvez continuer dans le navigateur et installer plus tard.",
+      "failed": "La confirmation ne s’est pas ouverte. Suivez les étapes du menu du navigateur.",
+      "wait": "En attente de confirmation…",
+      "button": "Installer l’application",
+      "manual": "Voir les instructions du menu",
+      "skip": "Continuer dans le navigateur",
+      "optional": "L’installation est facultative. Votre contenu fonctionne aussi dans le navigateur."
+    }
   }
 }

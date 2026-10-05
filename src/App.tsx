@@ -28,6 +28,7 @@ import { projectService } from './services/projectService';
 import { useToast, useProjects, useBuilderActions } from './hooks';
 import { Header } from './components/CommonComponents';
 import i18n from './i18n';
+import { CustomerEntry } from './components/CustomerEntry';
 import { AppifyLogo } from './components/AppLogo';
 import { PhoneMockup } from './components/PhoneMockup';
 import ProjectsDashboard from './components/ProjectsDashboard';
@@ -51,12 +52,12 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
       .then(data => {
         // Hidrata o Zustand com os dados do cliente de forma segura
         useAppStore.setState(data);
-        
+
         // Altera o idioma do i18n para corresponder ao configurado no PWA
         const lang = data.pwaConfig?.language || data.activeLocale || 'pt-BR';
         document.documentElement.lang = lang;
         i18n.changeLanguage(lang.split('-')[0]);
-        
+
         setLoaded(true);
       })
       .catch(err => {
@@ -66,39 +67,44 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
   }, []);
 
   // Mensagens dinâmicas agnósticas antes de inicializar o PWA (i18n Compliance)
-  const browserLang = navigator.language || 'pt';
+  const browserLang = document.documentElement.lang || navigator.language || 'pt';
   const isEn = browserLang.startsWith('en');
   const isEs = browserLang.startsWith('es');
   const isFr = browserLang.startsWith('fr');
 
   if (error) {
-    const errorText = isEn 
-      ? 'An error occurred while loading the application data.' 
-      : isEs 
-      ? 'Ocurrió un error al cargar los datos de la aplicación.' 
-      : isFr 
-      ? 'Une erreur est survenue lors du chargement des données de l\'application.' 
+    const errorText = isEn
+      ? 'An error occurred while loading the application data.'
+      : isEs
+      ? 'Ocurrió un error al cargar los datos de la aplicación.'
+      : isFr
+      ? 'Une erreur est survenue lors du chargement des données de l\'application.'
       : 'Ocorreu um erro ao carregar os dados do aplicativo.';
 
     return (
       <div style={{width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#ff4a4a', fontFamily: 'sans-serif', padding: '20px', textAlign: 'center'}}>
-        {errorText}
+        <p>{errorText}</p>
+        <button className="btn-primary" onClick={()=>window.location.reload()}>{isEn ? 'Try again' : isEs ? 'Intentar de nuevo' : isFr ? 'Réessayer' : 'Tentar novamente'}</button>
       </div>
     );
   }
 
   if (!loaded) {
-    const loadingText = isEn 
-      ? 'Loading App...' 
-      : isEs 
-      ? 'Cargando App...' 
-      : isFr 
-      ? 'Chargement de l\'App...' 
-      : 'Carregando App...';
+    const loadingText = isEn
+      ? 'Opening your content...'
+      : isEs
+      ? 'Abriendo tu contenido...'
+      : isFr
+      ? 'Ouverture de votre contenu...'
+      : 'Abrindo seu conteúdo...';
 
     return (
-      <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#fff', fontFamily: 'sans-serif', fontSize: '18px'}}>
-        {loadingText}
+      <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f7f9fc', color: '#172033', fontFamily: 'sans-serif', fontSize: '18px'}}>
+        <div style={{textAlign:'center'}}>
+          <img src="./icon-192x192.png" alt="" style={{width:80,height:80,borderRadius:22,margin:'0 auto 20px'}} />
+          <h1 style={{fontSize:24,marginBottom:12}}>{document.title}</h1>
+          <p role="status">{loadingText}</p>
+        </div>
       </div>
     );
   }
@@ -106,7 +112,7 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
   // SÓ MONTA O APP QUANDO OS DADOS ESTIVEREM 100% PRONTOS
   return (
     <Suspense fallback={<Loader2 className="animate-spin text-white" size={32} />}>
-      <PWARuntime isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />
+      <CustomerEntry config={useAppStore.getState().pwaConfig}><PWARuntime isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>
     </Suspense>
   );
 }
@@ -159,11 +165,11 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
         justifyContent: 'center',
         background: 'var(--surface)',
         gap: '20px'
@@ -183,31 +189,31 @@ function AppContent() {
 
   return (
     <>
-      <Header 
-        handleOpenProject={handleOpenProject} 
-        handlePublish={builderActions.handlePublish} 
+      <Header
+        handleOpenProject={handleOpenProject}
+        handlePublish={builderActions.handlePublish}
         showToast={showToast}
       />
-      
+
       <div className="appify-builder-root">
         {currentView === 'projects' ? (
-          <ProjectsDashboard 
-            projects={projects} 
-            handleOpenProject={handleOpenProject} 
-            handleToggleProjectStatus={handleToggleProjectStatus} 
+          <ProjectsDashboard
+            projects={projects}
+            handleOpenProject={handleOpenProject}
+            handleToggleProjectStatus={handleToggleProjectStatus}
             handleDeleteProject={handleDeleteProject}
             handleDuplicateProject={handleDuplicateProject}
             handleExportBackup={handleExportBackup}
             handleImportBackup={handleImportBackup}
           />
         ) : (
-          <BuilderLayout 
-            isPhoneDark={isPhoneDark} 
-            setIsPhoneDark={setIsPhoneDark} 
-            handleDeleteModule={builderActions.handleDeleteModule} 
-            handleDeleteSubmodule={builderActions.handleDeleteSubmodule} 
+          <BuilderLayout
+            isPhoneDark={isPhoneDark}
+            setIsPhoneDark={setIsPhoneDark}
+            handleDeleteModule={builderActions.handleDeleteModule}
+            handleDeleteSubmodule={builderActions.handleDeleteSubmodule}
             handleAddSubmodule={builderActions.handleAddSubmodule}
-            handleUpdateSubmoduleContent={builderActions.handleUpdateSubmoduleContent} 
+            handleUpdateSubmoduleContent={builderActions.handleUpdateSubmoduleContent}
             showToast={showToast}
           />
         )}
@@ -229,12 +235,12 @@ function AppContent() {
   );
 }
 
-export default function App() { 
+export default function App() {
   return (
     <div className="v-root">
       <ErrorBoundary>
         <AppContent />
       </ErrorBoundary>
     </div>
-  ); 
+  );
 }

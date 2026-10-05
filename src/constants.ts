@@ -59,6 +59,8 @@ export const INITIAL_PWA_CONFIG: PwaConfig = {
     { id: 1, imageUrl: '', link: '' }
   ],
   supportConfig: { type: 'none', contact: '' },
+  engagementEnabled: true,
+  deploymentProvider: 'netlify',
   gamification: { enabled: false, progressStyle: 'none', enableStreaks: false, streakIcon: '🔥', enableCelebration: false, enablePoints: false, enableBadges: false, awardsConfig: [] }
 };
 

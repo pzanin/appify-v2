@@ -1,18 +1,147 @@
 {
-  "nav": { "home": "Início", "content": "Conteúdo", "community": "Comunidade", "profile": "Perfil", "support": "Suporte" },
+  "nav": {
+    "home": "Início",
+    "content": "Conteúdo",
+    "community": "Comunidade",
+    "profile": "Perfil",
+    "support": "Suporte"
+  },
   "app": {
-    "login": { "title": "Acesse sua conta", "emailPlaceholder": "Digite seu e-mail", "button": "ENTRAR" },
-    "profile": { "title": "Meu Perfil", "fileFormat": "Apenas arquivos .JPG ou .JPEG", "namePlaceholder": "Nome Completo", "nameDefault": "Nome do Aluno", "emailPlaceholder": "E-mail (Chave de Acesso)", "saveButton": "Salvar Alterações" },
-    "community": { "title": "Comunidade", "admin": "Admin", "justNow": "Agora mesmo", "welcomeMessage": "Bem-vindo à nossa comunidade! Este é o seu espaço premium para interagir, tirar dúvidas e compartilhar seus resultados. 🎉", "emptyState": "Nenhum conteúdo disponível no momento" },
-    "content": { "title": "Conteúdo", "badge": "NOVIDADE", "newLesson": "Nova aula liberada!", "newLessonDesc": "Acabamos de liberar um conteúdo exclusivo sobre estratégias avançadas. Acesse a aba início e confira o novo módulo!", "emptyState": "Nenhum conteúdo disponível no momento" },
-    "modules": { "title": "Módulos", "emptyState": "Nenhum módulo criado", "back": "Voltar", "lessonSingle": "aula", "lessonPlural": "aulas", "noLessons": "Nenhuma aula adicionada", "completed": "concluído", "completed_status": "Concluída" },
-    "upsell": { "lockedTitle": "Conteúdo Bloqueado", "lockedMessagePart1": "Para acessar o módulo", "lockedMessagePart2": "é necessário adquirir este upgrade.", "checkoutButton": "Ir para o Checkout", "cancelButton": "Cancelar" },
-    "header": { "theme": "Mudar Tema", "notifications": "Notificações", "install": "Instalar" },
-    "support": { "title": "Como podemos ajudar?", "description": "Nossa equipe está pronta para tirar suas dúvidas e resolver qualquer problema.", "copyEmail": "Copiar E-mail", "openWa": "Falar no WhatsApp", "copied": "Copiado!", "emailLabel": "E-MAIL DE CONTATO" },
-    "gamification": { "streak": "Ofensiva", "days": "dias", "completed": "Concluído", "keepGoing": "Continue assim!", "points": "Pontos", "achievements": "Conquistas", "badges": "Medalhas", "myCollection": "Minha Coleção" }
+    "login": {
+      "title": "Acesse sua conta",
+      "emailPlaceholder": "Digite seu e-mail",
+      "button": "ENTRAR"
+    },
+    "profile": {
+      "title": "Meu Perfil",
+      "fileFormat": "Apenas arquivos .JPG ou .JPEG",
+      "namePlaceholder": "Nome Completo",
+      "nameDefault": "Nome do Aluno",
+      "emailPlaceholder": "E-mail (informação de perfil)",
+      "saveButton": "Salvar Alterações"
+    },
+    "community": {
+      "title": "Comunidade",
+      "admin": "Admin",
+      "justNow": "Agora mesmo",
+      "welcomeMessage": "Bem-vindo à nossa comunidade! Este é o seu espaço premium para interagir, tirar dúvidas e compartilhar seus resultados. 🎉",
+      "emptyState": "Nenhum conteúdo disponível no momento"
+    },
+    "content": {
+      "title": "Conteúdo",
+      "badge": "NOVIDADE",
+      "newLesson": "Nova aula liberada!",
+      "newLessonDesc": "Acabamos de liberar um conteúdo exclusivo sobre estratégias avançadas. Acesse a aba início e confira o novo módulo!",
+      "emptyState": "Nenhum conteúdo disponível no momento"
+    },
+    "modules": {
+      "title": "Módulos",
+      "emptyState": "Nenhum módulo criado",
+      "back": "Voltar",
+      "lessonSingle": "aula",
+      "lessonPlural": "aulas",
+      "noLessons": "Nenhuma aula adicionada",
+      "completed": "concluído",
+      "completed_status": "Concluída"
+    },
+    "upsell": {
+      "lockedTitle": "Conteúdo Bloqueado",
+      "lockedMessagePart1": "Para acessar o módulo",
+      "lockedMessagePart2": "é necessário adquirir este upgrade.",
+      "checkoutButton": "Ir para o Checkout",
+      "cancelButton": "Cancelar"
+    },
+    "header": {
+      "theme": "Mudar Tema",
+      "notifications": "Notificações",
+      "install": "Instalar"
+    },
+    "support": {
+      "title": "Como podemos ajudar?",
+      "description": "Nossa equipe está pronta para tirar suas dúvidas e resolver qualquer problema.",
+      "copyEmail": "Copiar E-mail",
+      "openWa": "Falar no WhatsApp",
+      "copied": "Copiado!",
+      "emailLabel": "E-MAIL DE CONTATO"
+    },
+    "gamification": {
+      "streak": "Ofensiva",
+      "days": "dias",
+      "completed": "Concluído",
+      "keepGoing": "Continue assim!",
+      "points": "Pontos",
+      "achievements": "Conquistas",
+      "badges": "Medalhas",
+      "myCollection": "Minha Coleção"
+    }
   },
   "onboarding": {
-    "install": { "title": "Coloque o app na tela do celular", "subtitle": "Assim fica mais fácil abrir novamente, sem precisar procurar o endereço.", "confirm": "Instalar no meu celular", "understood": "Entendi", "skip": "Continuar sem instalar", "iosLabel": "No iPhone ou iPad", "iosStep1": "Toque no botão Compartilhar do Safari", "iosStep2": "Escolha \"Adicionar à Tela de Início\"", "iosStep3": "Ative \"Abrir como Aplicativo Web\" e toque em Adicionar", "iosFinish": "Depois, abra o aplicativo pelo novo ícone na tela do celular.", "iosConfirm": "Entendi, vou instalar", "androidStep1": "Toque no botão azul abaixo", "androidStep2": "Confirme a instalação quando o celular perguntar", "manualTitle": "A confirmação não apareceu?", "androidHelp": "Abra o menu do navegador e escolha \"Instalar aplicativo\" ou \"Adicionar à tela inicial\".", "safeNote": "É gratuito e você poderá remover quando quiser." },
-    "push": { "title": "Notificações", "subtitle": "Ative as notificações para não perder nada.", "confirm": "Ativar", "skip": "Agora Não" }
+    "install": {
+      "title": "Coloque o app na tela do celular",
+      "subtitle": "Assim fica mais fácil abrir novamente, sem precisar procurar o endereço.",
+      "confirm": "Instalar no meu celular",
+      "understood": "Entendi",
+      "skip": "Continuar sem instalar",
+      "iosLabel": "No iPhone ou iPad",
+      "iosStep1": "Toque no botão Compartilhar do Safari",
+      "iosStep2": "Escolha \"Adicionar à Tela de Início\"",
+      "iosStep3": "Ative \"Abrir como Aplicativo Web\" e toque em Adicionar",
+      "iosFinish": "Depois, abra o aplicativo pelo novo ícone na tela do celular.",
+      "iosConfirm": "Entendi, vou instalar",
+      "androidStep1": "Toque em “Instalar aplicativo” quando o botão estiver disponível",
+      "androidStep2": "Confirme a instalação quando o celular perguntar",
+      "manualTitle": "A confirmação não apareceu?",
+      "androidHelp": "Abra o menu do navegador e escolha \"Instalar aplicativo\" ou \"Adicionar à tela inicial\".",
+      "safeNote": "É gratuito e você poderá remover quando quiser."
+    },
+    "push": {
+      "title": "Notificações",
+      "subtitle": "Ative as notificações para não perder nada.",
+      "confirm": "Ativar",
+      "skip": "Agora Não"
+    }
+  },
+  "experience": {
+    "loading": "Abrindo seu conteúdo…",
+    "welcome": "Bem-vindo",
+    "welcomeDescription": "Seu conteúdo, organizado e fácil de acessar.",
+    "benefit": "Explore no seu ritmo e volte sempre que precisar.",
+    "start": "Começar",
+    "demoLabel": "Demonstração",
+    "accessTitle": "Acesse seu conteúdo",
+    "accessDescription": "Experimente a tela de acesso do seu produto.",
+    "email": "E-mail (opcional neste teste)",
+    "emailPlaceholder": "seuemail@exemplo.com",
+    "demoNote": "Este acesso é uma demonstração. Não verifica compras. O e-mail não é enviado nem salvo.",
+    "demoContinue": "Entrar na demonstração",
+    "back": "Voltar",
+    "continue": "Abrir meu conteúdo",
+    "previewReady": "A abertura está pronta. Seu conteúdo vem a seguir.",
+    "install": {
+      "title": "Tenha seu conteúdo na tela inicial",
+      "description": "Adicione {{name}} ao celular para encontrar seu conteúdo com facilidade.",
+      "done": "O aplicativo está instalado",
+      "doneDescription": "Abra {{name}} pelo ícone na tela inicial.",
+      "preview": "Esta é uma prévia. A instalação real é feita no celular, depois de publicar.",
+      "nativeHelp": "Toque em “Instalar aplicativo”. Se o navegador exibir a confirmação, escolha Instalar.",
+      "ios1": "Abra este endereço no Safari e toque em Compartilhar.",
+      "ios2": "Escolha “Adicionar à Tela de Início”.",
+      "ios3": "Confirme em Adicionar. Se aparecer “Abrir como Aplicativo Web”, deixe ativado.",
+      "android1": "No Chrome, toque no menu de três pontos ⋮, no canto superior direito.",
+      "android2": "Procure “Instalar aplicativo” ou “Adicionar à tela inicial”.",
+      "android3": "Confirme a opção mostrada e procure o ícone na tela inicial ou na lista de aplicativos.",
+      "desktop1": "Abra este endereço no Chrome ou Edge.",
+      "desktop2": "No menu do navegador, procure a opção de instalar este site como aplicativo.",
+      "embedded1": "Abra o menu desta janela e escolha abrir no navegador.",
+      "embedded2": "Use Chrome no Android ou Safari no iPhone. Depois, abra novamente a ajuda de instalação.",
+      "accepted": "Você aceitou a instalação. Aguarde o navegador concluir e procure o ícone no celular.",
+      "dismissed": "Você pode continuar no navegador e instalar depois.",
+      "failed": "A confirmação não pôde ser aberta. Use o menu do navegador, seguindo os passos acima.",
+      "wait": "Aguardando confirmação…",
+      "button": "Instalar aplicativo",
+      "manual": "Ver instruções pelo menu",
+      "skip": "Continuar no navegador",
+      "optional": "A instalação é opcional. Seu conteúdo também abre pelo navegador."
+    }
   }
 }

@@ -1,12 +1,14 @@
 import React from 'react';
 import { X, Check, Plus } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { PIPELINE_STEPS } from '../constants';
+import { visibleProjectSteps } from '../utils/projectFeatures';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { AppifyLogo } from './AppLogo';
 
 interface SidebarProps { isOpen?: boolean; onClose?: () => void; }
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const config = useAppStore(state => state.pwaConfig);
+  const steps = visibleProjectSteps(config);
   const activeStep = useAppStore(state => state.activeStep);
   const modules = useAppStore(state => state.modules);
   const selectedModuleId = useAppStore(state => state.selectedModuleId);
@@ -28,7 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="sidebar-label" style={{ margin: 0 }}>Pipeline</div>
         <button className="mobile-close-btn" onClick={onClose}><X size={16} /></button>
       </div>
-      {PIPELINE_STEPS.map((step, index) => (
+      {steps.map((step, index) => (
         <React.Fragment key={step.id}>
           <div 
             className={`pipeline-step ${activeStep === step.id ? 'active' : ''}`} 
@@ -45,7 +47,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <div className="step-meta">{step.id === 3 ? `${modules.length} módulos criados` : step.desc}</div>
             </div>
           </div>
-          {index < PIPELINE_STEPS.length - 1 && <div className={`step-connector ${step.id < activeStep ? 'done' : ''}`}></div>}
+          {index < steps.length - 1 && <div className={`step-connector ${step.id < activeStep ? 'done' : ''}`}></div>}
         </React.Fragment>
       ))}
       <div className="sidebar-divider"></div>

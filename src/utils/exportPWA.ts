@@ -3,6 +3,8 @@ import { saveAs } from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
 import { assertPublicExport, assertSafeArchive, isAllowedExportPath, EXPORT_SECURITY_MESSAGE } from './exportSecurity';
+import { publicFeatureConfig } from './projectFeatures';
+import { generateServiceWorker } from './serviceWorker';
 import { prepareResponsiveHtml } from './htmlContent';
 
 function escapeHtml(value: string) {
@@ -56,7 +58,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
     
     // Extrai apenas os dados necessários do construtor
-    const { description, noIndex, showAdvanced, ...cleanPwaConfig } = state.pwaConfig || {};
+    const { description, noIndex, showAdvanced, ...cleanPwaConfig } = publicFeatureConfig(state.pwaConfig);
     
     const appData = {
       appName: state.appName,
@@ -144,8 +146,8 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker registrado com sucesso:', reg.scope))
-            .catch(err => console.error('Falha ao registrar o Service Worker:', err));
+            .then(reg => console.log('Registro do aplicativo concluído.'))
+            .catch(err => console.warn('Não foi possível preparar o modo offline.'));
         });
       }
     </script>
@@ -183,7 +185,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     }
 
     // 4. Geração do Service Worker sw.js robusto com Cache Offline (PWA Compliance)
-    const cacheVersion = state.pwaConfig?.version || '1.0.0';
+    const cacheVersion = `${state.pwaConfig?.version || '1.0.0'}-${crypto.randomUUID()}`;
     const assetsToCache = [
       './',
       './index.html',
@@ -196,76 +198,12 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       ...pageMatches.map(path => `./${path}`)
     ];
 
-    const swContent = `
-const CACHE_NAME = ${JSON.stringify('appify-pwa-v' + cacheVersion)};
-const ASSETS = ${JSON.stringify(assetsToCache, null, 2)};
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  // Apenas cachear requisições GET locais
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
-  event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Retorna o cacheado, mas tenta atualizar em background (stale-while-revalidate)
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse);
-            });
-          }
-        }).catch(() => {/* Ignorar falhas de rede ao revalidar */});
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      }).catch((err) => {
-        // Fallback offline para navegações se rede falhar
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-        throw err;
-      });
-    })
-  );
-});
-`;
+    const swContent = generateServiceWorker(`appify-pwa-${cacheVersion}`, assetsToCache, state.pwaConfig?.offlineMode !== false);
     zip.file('sw.js', swContent);
 
     // Regras de roteamento para hosts (Netlify, Vercel, etc)
     zip.file('_redirects', '/* /index.html 200');
+    zip.file('_headers', '/sw.js\n  Cache-Control: no-cache\n/index.html\n  Cache-Control: no-cache\n/app-data.json\n  Cache-Control: no-cache\n/manifest.json\n  Cache-Control: no-cache\n');
 
     // Check the assembled archive, including template code, before any disk write/download.
     await assertSafeArchive(zip);

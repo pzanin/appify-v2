@@ -1,18 +1,147 @@
 {
-  "nav": { "home": "Home", "content": "Content", "community": "Community", "profile": "Profile", "support": "Support" },
+  "nav": {
+    "home": "Home",
+    "content": "Content",
+    "community": "Community",
+    "profile": "Profile",
+    "support": "Support"
+  },
   "app": {
-    "login": { "title": "Access your account", "emailPlaceholder": "Enter your email", "button": "SIGN IN" },
-    "profile": { "title": "My Profile", "fileFormat": "Only .JPG or .JPEG files", "namePlaceholder": "Full Name", "nameDefault": "Student Name", "emailPlaceholder": "Email (Access Key)", "saveButton": "Save Changes" },
-    "community": { "title": "Community", "admin": "Admin", "justNow": "Just now", "welcomeMessage": "Welcome to our community! This is your premium space to interact, ask questions, and share your results. 🎉", "emptyState": "No content available at the moment" },
-    "content": { "title": "Content", "badge": "NEW", "newLesson": "New lesson unlocked!", "newLessonDesc": "We've just released exclusive content on advanced strategies. Go to the home tab to check out the new module!", "emptyState": "No content available at the moment" },
-    "modules": { "title": "Modules", "emptyState": "No modules created", "back": "Back", "lessonSingle": "lesson", "lessonPlural": "lessons", "noLessons": "No lessons added", "completed": "completed", "completed_status": "Completed" },
-    "upsell": { "lockedTitle": "Locked Content", "lockedMessagePart1": "To access the module", "lockedMessagePart2": "you need to purchase this upgrade.", "checkoutButton": "Go to Checkout", "cancelButton": "Cancel" },
-    "header": { "theme": "Change Theme", "notifications": "Notifications", "install": "Install" },
-    "support": { "title": "How can we help?", "description": "Our team is ready to answer your questions and solve any problems.", "copyEmail": "Copy Email", "openWa": "Open WhatsApp", "copied": "Copied!", "emailLabel": "CONTACT EMAIL" },
-    "gamification": { "streak": "Streak", "days": "days", "completed": "Completed", "keepGoing": "Keep it up!", "points": "Points", "achievements": "Achievements", "badges": "Badges", "myCollection": "My Collection" }
+    "login": {
+      "title": "Access your account",
+      "emailPlaceholder": "Enter your email",
+      "button": "SIGN IN"
+    },
+    "profile": {
+      "title": "My Profile",
+      "fileFormat": "Only .JPG or .JPEG files",
+      "namePlaceholder": "Full Name",
+      "nameDefault": "Student Name",
+      "emailPlaceholder": "Email (profile information)",
+      "saveButton": "Save Changes"
+    },
+    "community": {
+      "title": "Community",
+      "admin": "Admin",
+      "justNow": "Just now",
+      "welcomeMessage": "Welcome to our community! This is your premium space to interact, ask questions, and share your results. 🎉",
+      "emptyState": "No content available at the moment"
+    },
+    "content": {
+      "title": "Content",
+      "badge": "NEW",
+      "newLesson": "New lesson unlocked!",
+      "newLessonDesc": "We've just released exclusive content on advanced strategies. Go to the home tab to check out the new module!",
+      "emptyState": "No content available at the moment"
+    },
+    "modules": {
+      "title": "Modules",
+      "emptyState": "No modules created",
+      "back": "Back",
+      "lessonSingle": "lesson",
+      "lessonPlural": "lessons",
+      "noLessons": "No lessons added",
+      "completed": "completed",
+      "completed_status": "Completed"
+    },
+    "upsell": {
+      "lockedTitle": "Locked Content",
+      "lockedMessagePart1": "To access the module",
+      "lockedMessagePart2": "you need to purchase this upgrade.",
+      "checkoutButton": "Go to Checkout",
+      "cancelButton": "Cancel"
+    },
+    "header": {
+      "theme": "Change Theme",
+      "notifications": "Notifications",
+      "install": "Install"
+    },
+    "support": {
+      "title": "How can we help?",
+      "description": "Our team is ready to answer your questions and solve any problems.",
+      "copyEmail": "Copy Email",
+      "openWa": "Open WhatsApp",
+      "copied": "Copied!",
+      "emailLabel": "CONTACT EMAIL"
+    },
+    "gamification": {
+      "streak": "Streak",
+      "days": "days",
+      "completed": "Completed",
+      "keepGoing": "Keep it up!",
+      "points": "Points",
+      "achievements": "Achievements",
+      "badges": "Badges",
+      "myCollection": "My Collection"
+    }
   },
   "onboarding": {
-    "install": { "title": "Put the app on your phone screen", "subtitle": "This makes it easier to open again without looking for the address.", "confirm": "Install on my phone", "understood": "Got it", "skip": "Continue without installing", "iosLabel": "On iPhone or iPad", "iosStep1": "Tap Safari's Share button", "iosStep2": "Choose \"Add to Home Screen\"", "iosStep3": "Turn on \"Open as Web App\" and tap Add", "iosFinish": "Then open the app using the new icon on your phone screen.", "iosConfirm": "Got it, I'll install it", "androidStep1": "Tap the blue button below", "androidStep2": "Confirm the installation when your phone asks", "manualTitle": "Didn't the confirmation appear?", "androidHelp": "Open the browser menu and choose \"Install app\" or \"Add to Home screen\".", "safeNote": "It's free and you can remove it whenever you want." },
-    "push": { "title": "Notifications", "subtitle": "Enable notifications so you never miss out.", "confirm": "Enable", "skip": "Not Now" }
+    "install": {
+      "title": "Put the app on your phone screen",
+      "subtitle": "This makes it easier to open again without looking for the address.",
+      "confirm": "Install on my phone",
+      "understood": "Got it",
+      "skip": "Continue without installing",
+      "iosLabel": "On iPhone or iPad",
+      "iosStep1": "Tap Safari's Share button",
+      "iosStep2": "Choose \"Add to Home Screen\"",
+      "iosStep3": "Turn on \"Open as Web App\" and tap Add",
+      "iosFinish": "Then open the app using the new icon on your phone screen.",
+      "iosConfirm": "Got it, I'll install it",
+      "androidStep1": "Tap “Install app” when the button is available",
+      "androidStep2": "Confirm the installation when your phone asks",
+      "manualTitle": "Didn't the confirmation appear?",
+      "androidHelp": "Open the browser menu and choose \"Install app\" or \"Add to Home screen\".",
+      "safeNote": "It's free and you can remove it whenever you want."
+    },
+    "push": {
+      "title": "Notifications",
+      "subtitle": "Enable notifications so you never miss out.",
+      "confirm": "Enable",
+      "skip": "Not Now"
+    }
+  },
+  "experience": {
+    "loading": "Opening your content…",
+    "welcome": "Welcome",
+    "welcomeDescription": "Your content, organized and easy to access.",
+    "benefit": "Explore at your own pace and come back whenever you need.",
+    "start": "Get started",
+    "demoLabel": "Demo",
+    "accessTitle": "Access your content",
+    "accessDescription": "Try your product’s sign-in experience.",
+    "email": "Email (optional for this demo)",
+    "emailPlaceholder": "you@example.com",
+    "demoNote": "This is a demo. It does not verify purchases. Your email is not sent or saved.",
+    "demoContinue": "Enter the demo",
+    "back": "Back",
+    "continue": "Open my content",
+    "previewReady": "The welcome flow is ready. Your content comes next.",
+    "install": {
+      "title": "Keep your content on your home screen",
+      "description": "Add {{name}} to your phone for easy access.",
+      "done": "The app is installed",
+      "doneDescription": "Open {{name}} from its home screen icon.",
+      "preview": "This is a preview. Install the published app on your phone to test it.",
+      "nativeHelp": "Tap “Install app”. If your browser shows a confirmation, choose Install.",
+      "ios1": "Open this address in Safari and tap Share.",
+      "ios2": "Choose “Add to Home Screen”.",
+      "ios3": "Tap Add. If “Open as Web App” appears, keep it on.",
+      "android1": "In Chrome, tap the three-dot menu ⋮ in the top-right corner.",
+      "android2": "Look for “Install app” or “Add to Home screen”.",
+      "android3": "Confirm the option shown and look for the icon on your home screen or in your app list.",
+      "desktop1": "Open this address in Chrome or Edge.",
+      "desktop2": "In the browser menu, look for the option to install this site as an app.",
+      "embedded1": "Open this window’s menu and choose to open in your browser.",
+      "embedded2": "Use Chrome on Android or Safari on iPhone, then open installation help again.",
+      "accepted": "You accepted installation. Wait for your browser to finish, then look for the app icon.",
+      "dismissed": "You can continue in your browser and install later.",
+      "failed": "The confirmation could not open. Follow the browser menu steps above.",
+      "wait": "Waiting for confirmation…",
+      "button": "Install app",
+      "manual": "Show browser menu instructions",
+      "skip": "Continue in browser",
+      "optional": "Installation is optional. Your content also works in your browser."
+    }
   }
 }

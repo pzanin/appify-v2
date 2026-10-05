@@ -54,6 +54,10 @@ export interface PwaConfig {
   showAdvanced?: boolean;
   offlineMode: boolean;
   customSplash: boolean;
+  engagementEnabled?: boolean;
+  deploymentProvider?: 'netlify' | 'cloudflare';
+  welcomeEnabled?: boolean;
+  customerAccessMode?: 'open' | 'demo';
   startUrl: string;
   version: string;
   changelogNotes: string;

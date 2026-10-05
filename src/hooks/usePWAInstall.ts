@@ -1,73 +1,15 @@
-import { useState, useEffect } from 'react';
-
-interface BeforeInstallPromptEvent extends Event {
-  readonly platforms: string[];
-  readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
-    platform: string;
-  }>;
-  prompt(): Promise<void>;
-}
+import { useSyncExternalStore } from 'react';
+import { initializePwaInstall } from '../utils/pwaInstallation';
 
 export function usePWAInstall() {
-  const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    // 1. Detect if running as Standalone (already installed)
-    const checkStandalone = () => {
-      const isStandaloneMedia = window.matchMedia('(display-mode: standalone)').matches;
-      const isIOSStandalone = (window.navigator as any).standalone === true;
-      setIsStandalone(isStandaloneMedia || isIOSStandalone);
-    };
-
-    // 2. Detect iOS
-    const checkIOS = () => {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      const isIOSDevice = /iphone|ipad|ipod/.test(userAgent)
-        || (userAgent.includes('macintosh') && window.navigator.maxTouchPoints > 1);
-      setIsIOS(isIOSDevice);
-    };
-
-    // 3. Listen for Android/Chrome Install Prompt
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setInstallPromptEvent(e);
-    };
-
-    const handleAppInstalled = () => {
-      setInstallPromptEvent(null);
-      setIsStandalone(true);
-    };
-
-    checkStandalone();
-    checkIOS();
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  const triggerInstall = async () => {
-    if (installPromptEvent) {
-      installPromptEvent.prompt();
-      const { outcome } = await installPromptEvent.userChoice;
-      // O mesmo evento só pode abrir a confirmação uma vez.
-      // Depois disso, um novo evento do navegador será necessário.
-      setInstallPromptEvent(null);
-      return outcome;
-    }
-    return 'dismissed';
-  };
-
-  return { 
-    isInstallAvailable: !!installPromptEvent, 
-    isIOS, 
-    isStandalone, 
-    triggerInstall 
+  const controller = initializePwaInstall();
+  const state = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
+  return {
+    isInstallAvailable:state.available,
+    isIOS:state.platform === 'ios',
+    isStandalone:state.installed,
+    platform:state.platform,
+    isInstalling:state.busy,
+    triggerInstall:controller.trigger,
   };
 }

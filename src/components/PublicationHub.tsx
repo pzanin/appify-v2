@@ -1,3 +1,4 @@
+import { DeployInstructions } from './DeployInstructions';
 import { openExternalLink } from '../utils/externalLinks';
 import React, { useState } from 'react';
 import { 
@@ -757,42 +758,7 @@ VITE_APP_THEME=${pwaConfig.themeColor || ''}`;
             <div className="eng-card-body" style={{ padding: '0 24px 24px' }}>
                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '32px' }}>
                   <div>
-                    <h4 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '16px' }}>Instruções de Deploy</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      {[
-                        { step: '1️⃣', text: 'Faça upload dos arquivos no seu repositório GitHub', btn: 'Abrir GitHub', url: 'https://github.com' },
-                        { step: '2️⃣', text: 'No Cloudflare Pages, conecte o repositório', btn: 'Abrir Cloudflare', url: 'https://dash.cloudflare.com' },
-                        { step: '3️⃣', text: 'Configure o domínio personalizado nas configurações do projeto', special: true },
-                        { step: '4️⃣', text: 'Aguarde o deploy (≈ 1 min) e teste no celular', btn: 'Testar App', url: `https://${pwaConfig.domain}`, disabled: !pwaConfig.domain }
-                      ].map((step, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '12px' }}>
-                          <span style={{ fontSize: '18px' }}>{step.step}</span>
-                          <div>
-                            <p style={{ fontSize: '13px', lineHeight: '1.4', marginBottom: '8px' }}>{step.text}</p>
-                            {step.special ? (
-                              pwaConfig.domain ? (
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent-glow)', color: 'var(--accent)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
-                                  Seu domínio: {pwaConfig.domain}
-                                </div>
-                              ) : (
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
-                                  Configure o domínio no Step 'Identidade'
-                                </div>
-                              )
-                            ) : (
-                              <button 
-                                className="btn-ghost" 
-                                style={{ padding: '4px 8px', fontSize: '11px' }}
-                                onClick={() => step.url && openExternalLink(step.url)}
-                                disabled={step.disabled}
-                              >
-                                {step.btn} <ExternalLink size={10} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <DeployInstructions />
                   </div>
                   
                   <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

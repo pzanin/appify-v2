@@ -3,6 +3,7 @@ import { Menu, Plus, Construction } from 'lucide-react';
 import { ToastType, BuilderBlock } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS, SUPPORTED_LOCALES } from '../constants';
+import { visibleProjectSteps } from '../utils/projectFeatures';
 import { Sidebar } from './Sidebar';
 import { PhoneMockup } from './PhoneMockup';
 import { ModulesAndContent } from './ModulesAndContent';
@@ -32,7 +33,12 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  const progressPercent = Math.round((activeStep / PIPELINE_STEPS.length) * 100);
+  const config = useAppStore(state => state.pwaConfig);
+  const steps = visibleProjectSteps(config);
+  React.useEffect(() => {
+    if (!steps.some(step => step.id === activeStep)) setStep(1);
+  }, [activeStep, config.engagementEnabled, config.gamification?.enabled, setStep]);
+  const progressPercent = Math.round((Math.max(0, steps.findIndex(step => step.id === activeStep)) / steps.length) * 100);
 
   let activeSubToEdit = null;
   if (editingSubmodule) {

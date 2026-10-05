@@ -1,5 +1,6 @@
 import React from 'react';
 import { ToggleRight, Monitor, Play, Sparkles, RefreshCw, Smartphone } from 'lucide-react';
+import { CustomerEntry } from './CustomerEntry';
 import { useAppStore } from '../store/useAppStore';
 
 export function AppConfigurator() {
@@ -10,6 +11,7 @@ export function AppConfigurator() {
     updatePwaConfig(updates);
   };
 
+  const [previewEntry, setPreviewEntry] = React.useState(false);
   const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
   return (
@@ -24,6 +26,30 @@ export function AppConfigurator() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '32px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
+          <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>
+            <h3 style={{fontSize:16,fontWeight:700,marginBottom:12}}>Abertura e acesso do cliente</h3>
+            <label className="vpb-label"><input type="checkbox" checked={pwaConfig.welcomeEnabled !== false} onChange={e=>updateConfig({welcomeEnabled:e.target.checked})}/> Mostrar boas-vindas com logotipo</label>
+            <label className="vpb-label">Forma de acesso</label>
+            <select className="vpb-input" value={pwaConfig.customerAccessMode || 'demo'} onChange={e=>updateConfig({customerAccessMode:e.target.value as 'open'|'demo'})}>
+              <option value="demo">Demonstração — simula a tela de acesso</option>
+              <option value="open">Acesso aberto — entra direto no conteúdo</option>
+            </select>
+            <p style={{fontSize:13,color:'var(--muted)'}}>A demonstração não valida compras nem protege o conteúdo. O e-mail do teste não é enviado ou salvo.</p>
+            <button className="btn-ghost" onClick={()=>setPreviewEntry(true)}>Testar abertura e instalação</button>
+          </div></div>
+          {previewEntry && <div style={{position:'fixed',inset:0,zIndex:300,background:'rgba(0,0,0,.85)',display:'flex',flexDirection:'column',alignItems:'center',padding:20}}>
+            <button className="btn-ghost" onClick={()=>setPreviewEntry(false)} style={{marginBottom:12}}>Fechar prévia</button>
+            <div style={{width:'100%',maxWidth:430,flex:1,minHeight:0,borderRadius:24,overflow:'hidden'}}><CustomerEntry config={{...pwaConfig,welcomeEnabled:true}} preview><div className="customer-screen"><h2>Seu conteúdo aparece aqui.</h2><button className="customer-primary" onClick={()=>setPreviewEntry(false)}>Concluir teste</button></div></CustomerEntry></div>
+          </div>}
+
+          <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>
+            <h3 style={{fontSize:16,fontWeight:700,marginBottom:12}}>Recursos opcionais do projeto</h3>
+            <p style={{fontSize:13,color:'var(--muted)'}}>Desligue o que este projeto não usa. As configurações ficam guardadas para quando você reativar.</p>
+            <label className="vpb-label"><input type="checkbox" checked={pwaConfig.engagementEnabled !== false} onChange={e=>updateConfig({engagementEnabled:e.target.checked})}/> Engajamento — comunidade e avisos</label>
+            <label className="vpb-label"><input type="checkbox" checked={!!pwaConfig.gamification?.enabled} onChange={e=>updateConfig({gamification:{...pwaConfig.gamification,enabled:e.target.checked}})}/> Gamificação — progresso, pontos e celebrações</label>
+            <p style={{fontSize:13,color:'var(--muted)'}}>As abas desligadas somem do menu e seus recursos não aparecem no PWA. Estas escolhas valem apenas para este projeto.</p>
+          </div></div>
+
           {/* MODO OFFLINE */}
           <div className="eng-card">
             <div className="eng-card-body" style={{ padding: '24px' }}>
@@ -109,7 +135,7 @@ export function AppConfigurator() {
                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '15px', fontWeight: 800, marginBottom: '2px' }}>Splash Screen Personalizada</div>
                     <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '0' }}>
-                      Utilizar a Splash Screen gerada pela plataforma em vez da padrão do navegador.
+                      Mostrar brevemente a identidade do produto ao abrir o PWA. A tela inicial do navegador continua dependendo do dispositivo.
                     </p>
                  </div>
                  <label className="toggle-switch">
