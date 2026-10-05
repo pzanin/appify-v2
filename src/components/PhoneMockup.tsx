@@ -781,6 +781,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                               if (type === 'html') {
                                 return (
                                   <HtmlFrame
+                                    interactive={selectedMockupSubmodule.htmlInteractive === true}
                                     html={selectedMockupSubmodule.customHtml || selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || ''}
                                     title="Conteúdo da Aula" 
                                     className="absolute inset-0 w-full h-full border-none block" 

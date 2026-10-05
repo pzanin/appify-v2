@@ -4,7 +4,7 @@ Criador privado de PWAs em Electron. Os projetos do construtor são salvos em di
 
 ## Run Locally
 
-**Pré-requisitos:** Node.js 22+.
+**Pré-requisitos:** Node.js 22.22.2+ na série 22, 24.15.0+ na série 24, ou 26+. Recomenda-se a série 24 LTS atualizada.
 
 
 1. Instale as dependências:

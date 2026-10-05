@@ -5,6 +5,8 @@ import { projectService } from '../services/projectService';
 import { assertPublicExport, assertSafeArchive, isAllowedExportPath, EXPORT_SECURITY_MESSAGE } from './exportSecurity';
 import { publicFeatureConfig } from './projectFeatures';
 import { generateServiceWorker } from './serviceWorker';
+import { prepareInteractiveHtml, INTERACTIVE_CSP } from './interactiveHtml';
+import { IMPORTED_HTML_CSP } from './htmlSecurity';
 import { prepareResponsiveHtml } from './htmlContent';
 
 function escapeHtml(value: string) {
@@ -69,6 +71,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
 
     const zip = new JSZip();
     const pageMatches: string[] = [];
+    const pageHeaders: string[] = [];
 
     // 1. Arquivo de dados do PWA
     zip.file('app-data.json', JSON.stringify(appData, null, 2));
@@ -83,8 +86,9 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         if (!html.trim()) continue;
         const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
         if (!isAllowedExportPath(pagePath)) throw new Error('Identificador de aula inválido.');
-        zip.file(pagePath, prepareResponsiveHtml(html));
+        zip.file(pagePath, lesson.htmlInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html));
         pageMatches.push(pagePath);
+        pageHeaders.push(`/${pagePath}\n  Content-Security-Policy: ${lesson.htmlInteractive ? `sandbox allow-scripts; ${INTERACTIVE_CSP}` : IMPORTED_HTML_CSP}\n`);
       }
     }
 
@@ -203,7 +207,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
 
     // Regras de roteamento para hosts (Netlify, Vercel, etc)
     zip.file('_redirects', '/* /index.html 200');
-    zip.file('_headers', '/sw.js\n  Cache-Control: no-cache\n/index.html\n  Cache-Control: no-cache\n/app-data.json\n  Cache-Control: no-cache\n/manifest.json\n  Cache-Control: no-cache\n');
+    zip.file('_headers', `/sw.js\n  Cache-Control: no-cache\n/index.html\n  Cache-Control: no-cache\n/app-data.json\n  Cache-Control: no-cache\n/manifest.json\n  Cache-Control: no-cache\n${pageHeaders.join('')}`);
 
     // Check the assembled archive, including template code, before any disk write/download.
     await assertSafeArchive(zip);

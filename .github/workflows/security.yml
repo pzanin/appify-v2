@@ -13,6 +13,7 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
       - run: npm run check:secrets
+      - run: npm audit --audit-level=low
       - run: npm run lint
       - run: npm test
       - run: npm run build:pwa

@@ -7,6 +7,7 @@ import {
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
+import { interactiveWarnings, normalizeHtmlPaste } from '../utils/interactiveHtml';
 import { HtmlFrame } from './HtmlFrame';
 import { sanitizeImportedHtml } from '../utils/htmlSecurity';
 import { BUILDER_CSS, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
@@ -34,6 +35,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const [contentHtml, setContentHtml] = useState(
     submodule.customHtml || (submodule.htmlMode === 'code' ? submodule.contentHtml || submodule.content_html || '' : '')
   );
+  const [htmlInteractive,setHtmlInteractive] = useState(submodule.htmlInteractive === true);
   const [hasCustomHtml, setHasCustomHtml] = useState(Boolean(submodule.customHtml || submodule.htmlMode === 'code'));
   const [htmlImportStatus, setHtmlImportStatus] = useState('');
   const htmlFileInputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +49,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     setSubmoduleName(submodule.name || '');
     setBlocks(submodule.builder_data || []);
     setViewMode(submodule.htmlMode || 'visual');
+    setHtmlInteractive(submodule.htmlInteractive === true);
     setContentType(submodule.contentType || 'html');
     setContentUrl(submodule.contentUrl || '');
     setContentHtml(submodule.customHtml || (submodule.htmlMode === 'code' ? submodule.contentHtml || submodule.content_html || '' : ''));
@@ -80,6 +83,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
         content: contentType === 'html' ? finalHtml : '', // Legacy sync
         builderData: finalBlocks,
         htmlMode: contentType === 'html' ? viewMode : undefined,
+        htmlInteractive: contentType === 'html' && viewMode === 'code' && htmlInteractive,
         gamificationConfig: {
           timeGateSeconds,
           enableCelebration
@@ -120,7 +124,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     reader.onload = () => {
       const importedHtml = typeof reader.result === 'string' ? reader.result : '';
       const hasRelativeAssets = /(?:src|href)=["'](?!https?:|data:|#|mailto:|tel:|\/)[^"']+/i.test(importedHtml);
-      setContentHtml(importedHtml);
+      setContentHtml(normalizeHtmlPaste(importedHtml));
       setHasCustomHtml(true);
       setHtmlImportStatus(hasRelativeAssets
         ? `${file.name} importado. Atenção: arquivos locais referenciados por caminho relativo não foram incorporados.`
@@ -196,6 +200,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
               <div className="vpb-lib-group">
                 <div className="vpb-lib-label">Containers</div>
                 <button className="vpb-module-btn" onClick={() => addBlock('container', 'hero')}><LayoutGrid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Hero</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Destaque com fundo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('container', 'oneColumn')}><LayoutGrid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>1 Coluna</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Seção de título e texto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('container', 'twoColumn')}><Columns className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>2 Colunas</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Layout lado a lado</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('container', 'threeColumn')}><Grid className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>3 Colunas</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Grade com 3 cards</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('container', 'imageText')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem + Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Img descritiva</div></div></button>
@@ -235,11 +240,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       style={{
                         background: mod.props.bgColor, padding: `${mod.props.padding}px`, textAlign: mod.props.align as any,
                         fontFamily: `'${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: `${mod.props.fontSize}px`,
-                        lineHeight: 1.6
+                        lineHeight: 1.6, marginTop:`${mod.props.marginTop || 0}px`, marginBottom:`${mod.props.marginBottom || 0}px`
                       }}
                       onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
                     >
-                      <div className="appify-builder-content" onClick={e => { if ((e.target as HTMLElement).closest('a')) e.preventDefault(); }} dangerouslySetInnerHTML={{ __html: sanitizeImportedHtml(getBlockInnerHtml(mod)) }} />
+                      <div className="appify-builder-content" style={{maxWidth:mod.props.maxWidth && Number(mod.props.maxWidth)>0?`${mod.props.maxWidth}px`:undefined,marginLeft:mod.props.maxWidth?'auto':undefined,marginRight:mod.props.maxWidth?'auto':undefined}} onClick={e => { if ((e.target as HTMLElement).closest('a')) e.preventDefault(); }} dangerouslySetInnerHTML={{ __html: sanitizeImportedHtml(getBlockInnerHtml(mod)) }} />
                       <div className="vpb-block-actions">
                         <button type="button" className="vpb-action-btn" aria-label="Mover bloco para cima" title="Mover para cima" disabled={index === 0} onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, -1); }}><ArrowUp size={14} /></button>
                         <button type="button" className="vpb-action-btn" aria-label="Mover bloco para baixo" title="Mover para baixo" disabled={index === blocks.length - 1} onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, 1); }}><ArrowDown size={14} /></button>
@@ -264,6 +269,14 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <Upload size={15} /> Importar .html
                     </button>
                   </div>
+                  <label className="vpb-label" htmlFor="html-execution-mode">Tipo de HTML</label>
+                  <select id="html-execution-mode" className="vpb-input" value={htmlInteractive?'interactive':'static'} onChange={e=>setHtmlInteractive(e.target.value==='interactive')}>
+                    <option value="static">Estático — textos, imagens e links</option>
+                    <option value="interactive">Interativo isolado — timers, exercícios e quizzes locais</option>
+                  </select>
+                  <p className="vpb-html-help">{htmlInteractive?'Executa JavaScript inline na atividade, sem acesso aos projetos, rede, cookies ou armazenamento. Tailwind padrão e cores/fontes de theme.extend são convertidos em CSS local. Outras bibliotecas externas não são executadas.':'Scripts e controles interativos são removidos. Para exercícios com JavaScript, selecione Interativo isolado.'}</p>
+                  {htmlInteractive && interactiveWarnings(contentHtml).map(warning=><p key={warning} className="vpb-html-import-status">{warning}</p>)}
+                  <button type="button" className="btn-ghost" onClick={()=>setContentHtml(normalizeHtmlPaste(contentHtml))}>Limpar formatação de código copiado</button>
                   {htmlImportStatus && <div className="vpb-html-import-status">{htmlImportStatus}</div>}
                   <div className="vpb-html-code-layout">
                     <div>
@@ -279,6 +292,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <div className="vpb-html-preview-panel">
                       <div className="vpb-html-preview-title"><Eye size={14} /> Preview mobile</div>
                       <HtmlFrame
+                        interactive={htmlInteractive}
                         title="Preview do HTML personalizado"
                         html={contentHtml}
                       />
@@ -469,6 +483,12 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     </>
                   )}
 
+                  {selectedBlock.type === 'container' && selectedBlock.subtype === 'oneColumn' && <>
+                    <label className="vpb-label">Título da seção</label><input className="vpb-input" value={selectedBlock.props.title || ''} onChange={e=>updateProp('title',e.target.value)}/>
+                    <label className="vpb-label">Texto da seção</label><textarea className="vpb-textarea" value={selectedBlock.props.text || ''} onChange={e=>updateProp('text',e.target.value)}/>
+                    <label className="vpb-label">Cor do card</label><input type="color" className="vpb-color-input" value={selectedBlock.props.columnBgColor || '#f3f4f6'} onChange={e=>updateProp('columnBgColor',e.target.value)}/>
+                    <label className="vpb-label">Espaço interno do card (px)</label><input type="number" className="vpb-input" min="0" max="48" value={selectedBlock.props.columnPadding ?? 20} onChange={e=>updateProp('columnPadding',e.target.value)}/>
+                  </>}
                   {selectedBlock.type === 'container' && selectedBlock.subtype === 'twoColumn' && (
                     <>
                       <label className="vpb-label">Título Esquerda</label>
@@ -617,9 +637,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     {safeLinkUrl(selectedBlock.props.url) === '#' && <p className="vpb-html-help">Informe um endereço HTTPS válido ou um e-mail com mailto:. Links inválidos não serão abertos.</p>}
                   </div>
                 )}
-                {(selectedBlock.type === 'link' || ['twoColumn','threeColumn','cta','imageText'].includes(selectedBlock.subtype || '')) && (
+                {(selectedBlock.type === 'link' || ['oneColumn','twoColumn','threeColumn','cta','imageText'].includes(selectedBlock.subtype || '')) && (
                   <div className="vpb-prop-group">
-                    {(selectedBlock.type === 'link' || ['twoColumn','threeColumn','cta'].includes(selectedBlock.subtype || '')) && <>
+                    {(selectedBlock.type === 'link' || ['oneColumn','twoColumn','threeColumn','cta'].includes(selectedBlock.subtype || '')) && <>
                       <label className="vpb-label">Arredondamento dos cards / botão (px)</label>
                       <input type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props.borderRadius ?? 8} onChange={e => updateProp('borderRadius', e.target.value)} />
                     </>}
@@ -631,8 +651,16 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   </div>
                 )}
 
+                {selectedBlock.type === 'container' && <div className="vpb-prop-group">
+                  <span className="vpb-lib-label">Layout da seção</span>
+                  <label className="vpb-label">Largura máxima do conteúdo (px) — 0 = toda a largura</label>
+                  <input aria-label="Largura máxima do conteúdo" type="number" className="vpb-input" min="0" max="1600" value={selectedBlock.props.maxWidth ?? 0} onChange={e=>updateProp('maxWidth',e.target.value)}/>
+                  {(['marginTop','marginBottom'] as const).map((prop,index)=><React.Fragment key={prop}><label className="vpb-label">{index===0?'Margem acima':'Margem abaixo'} (px)</label><input aria-label={index===0?'Margem acima':'Margem abaixo'} type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props[prop] ?? 0} onChange={e=>updateProp(prop,e.target.value)}/></React.Fragment>)}
+                  {['twoColumn','threeColumn'].includes(selectedBlock.subtype || '') && <><label className="vpb-label">Alinhamento vertical dos cards</label><select className="vpb-input" value={selectedBlock.props.columnAlign || 'start'} onChange={e=>updateProp('columnAlign',e.target.value)}><option value="start">Topo</option><option value="center">Centro</option><option value="end">Base</option><option value="stretch">Mesma altura</option></select></>}
+                </div>}
+
                 {/* ── TÍTULO AVANÇADO ── */}
-                {(selectedBlock.type === 'header' || (selectedBlock.type === 'container' && ['hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
+                {(selectedBlock.type === 'header' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
                   <div className="vpb-prop-group">
                     <span className="vpb-lib-label">Estilo dos Títulos</span>
 

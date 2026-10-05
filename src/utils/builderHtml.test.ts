@@ -12,7 +12,7 @@ function block(type: string, subtype?: string, overrides: BuilderBlock['props'] 
 function doc(html: string) { return new JSDOM(html).window.document; }
 
 test('all heading blocks keep independently edited font, size, weight and zero margin through saved HTML', () => {
-  for (const item of [block('header'), ...['hero','cta','twoColumn','threeColumn','imageText'].map(type => block('container',type))]) {
+  for (const item of [block('header'), ...['oneColumn','hero','cta','twoColumn','threeColumn','imageText'].map(type => block('container',type))]) {
     item.props = { ...item.props, titleFontFamily:'Roboto', titleFontSize:'37', titleFontWeight:'600', titleMarginBottom:0, fontSize:'19' };
     const preview = doc(getBlockInnerHtml(item)).querySelector('h1,h2,h3')!;
     const saved = doc(prepareResponsiveHtml(generateBuilderHtml(JSON.parse(JSON.stringify([item]))))).querySelector('h1,h2,h3')!;
@@ -86,10 +86,23 @@ test('reordering moves only the requested block and never mutates content or los
 });
 
 test('all available elements and containers produce content without undefined fields or injected HTML', () => {
-  const items = [...['header','text','image','link','spacer','divider'].map(t=>block(t)),...['hero','twoColumn','threeColumn','imageText','testimonial','cta'].map(t=>block('container',t))];
+  const items = [...['header','text','image','link','spacer','divider'].map(t=>block(t)),...['oneColumn','hero','twoColumn','threeColumn','imageText','testimonial','cta'].map(t=>block('container',t))];
   for (const item of items) { assert.ok(getBlockInnerHtml(item).length); assert.doesNotMatch(generateBuilderHtml([item]),/undefined|NaN/); }
   const malicious = block('header',undefined,{title:'<img src=x onerror=alert(1)>',subtitle:'<script>bad</script>'});
   const d = doc(generateBuilderHtml([malicious]));
   assert.equal(d.querySelector('h1')?.textContent, malicious.props.title);
   assert.equal(d.querySelector('img,script'),null);
+});
+
+test('one-column sections preserve title, text, content width and outer margins; columns support deliberate equal-height alignment',()=>{
+  const section=block('container','oneColumn');section.props={...section.props,title:'Uma seção',text:'Primeira linha\nSegunda linha',maxWidth:'720',marginTop:'18',marginBottom:'26',titleFontSize:'29',borderRadius:'0'};
+  const html=generateBuilderHtml([section]);const doc=new JSDOM(html).window.document;
+  assert.equal(doc.querySelector('h2')!.textContent,'Uma seção');
+  assert.equal(doc.querySelector('h2')!.style.fontSize,'29px');
+  assert.equal((doc.querySelector('.appify-builder-content') as HTMLElement).style.maxWidth,'720px');
+  assert.equal((doc.querySelector('section') as HTMLElement).style.marginTop,'18px');
+  assert.equal((doc.querySelector('section') as HTMLElement).style.marginBottom,'26px');
+  assert.match(doc.querySelector('p')!.textContent!,/Primeira linha\nSegunda linha/);
+  const columns=block('container','twoColumn');columns.props.columnAlign='stretch';
+  assert.equal((new JSDOM(generateBuilderHtml([columns])).window.document.querySelector('.appify-builder-grid') as HTMLElement).style.alignItems,'stretch');
 });

@@ -1,6 +1,6 @@
 # Appify 0.9 Local — hardening incremental
 
-Data: 04/10/2026. Branch: `feature/appify-0.9-local-foundation`.
+Atualizado: 05/10/2026. Branch: `feature/appify-0.9-local-foundation`.
 
 ## Auditoria e correções
 
@@ -29,7 +29,16 @@ npm run check:secrets
 npm run check:secrets -- --build
 ```
 
-`npm run build` gera primeiro o template PWA e depois o renderer/main/preload desktop. `npm run dev` também prepara o template. O servidor de desenvolvimento escuta apenas em loopback. Node >=22.13; CI usa Node 24.
+`npm run build` gera primeiro o template PWA e depois o renderer/main/preload desktop. `npm run dev` também prepara o template. O servidor de desenvolvimento escuta apenas em loopback. Node 22.22.2+ (série 22), 24.15.0+ (série 24) ou 26+; CI usa Node 24.
+
+## Revisão de dependências — 05/10/2026
+
+- Auditoria inicial: 28 entradas vulneráveis (1 crítica, 25 altas, 1 moderada e 1 baixa), incluindo ferramentas de build e o Electron usado no desktop.
+- Atualizações compatíveis no lockfile; mínimos de Electron 42.11.10, electron-builder 26.15.3 e Vite 6.4.3. A dependência transitiva tar passou a 7.5.22.
+- Removido `shx`, sem uso desde a cópia portátil do template por Node. Não foi usado `npm audit fix --force` nem downgrade automático.
+- Instalação limpa com `npm ci`; auditoria completa retornou zero vulnerabilidades conhecidas nessa data. Isso não certifica ausência de falhas desconhecidas nem autenticação de compradores.
+- CI executa também `npm audit --audit-level=low`, bloqueando novas alterações com alertas conhecidos em qualquer severidade.
+- Testes de tipos, 38 testes automatizados, builds PWA/desktop, scanner de secrets e execução real da atividade no Electron são as verificações desta atualização. O teste resolve o executável pelo pacote Electron, incluindo seu download sob demanda após uma instalação limpa.
 
 Para ativar o hook na sua cópia local:
 
@@ -41,11 +50,12 @@ Os testes exercitam persistência/assets/backups, rejeição de senders e URLs, 
 
 ## Limites e teste no Windows
 
-- Scripts e formulários arbitrários de HTML importado são removidos na renderização/exportação. Conteúdo que dependia deles precisa de revisão visual. O HTML original do projeto continua disponível para edição.
+- HTML estático remove scripts e formulários arbitrários. A opção interativa por aula mantém scripts inline dentro de um iframe isolado, sem acesso ao editor, Node, armazenamento ou rede. Consulte `interactive-html-0.9.md`. O HTML original do projeto continua disponível para edição.
 - Vídeos/sites externos em iframe com origem opaca podem exigir permissões que agora são bloqueadas. Verifique os provedores usados no seu produto; não foi validada a reprodução real neste ambiente.
 - Detecção de secrets usa nomes/padrões conhecidos; não prova ausência de credenciais desconhecidas, codificadas ou divididas em fragmentos. Backup de projeto é um arquivo privado do editor, não um pacote para publicação.
 - CSP permite HTTPS para mídia/frames e conexões do backend opcional já existente; não há allowlist de domínio específica por produto nesta etapa.
-- A interface Electron/instalador Windows não foi validada aqui. O ambiente Linux executa como root e Electron recusou iniciar com sandbox. O sandbox do produto permanece ativado.
+- O teste de atividade usa Electron/Chromium real no Linux; como o ambiente executa como root, somente esse processo de teste usa `--no-sandbox`. O sandbox do produto permanece ativado. A interface completa e o instalador Windows ainda precisam de validação manual.
+- O PWA publicado ainda precisa de inspeção de HTTPS/cabeçalhos de segurança e testes no celular. A entrada por email é demonstrativa, não valida compras nem restringe acesso ao conteúdo.
 - O guard verifica arquivos atuais/no index. Não reescreve nem certifica todo o histórico Git; credenciais anteriormente publicadas precisam de revogação quando identificadas.
 
 Teste manual no Windows: abrir projetos antigos; criar/salvar/duplicar/importar backup; editar HTML visual e importado; abrir um link Hotmart; exportar o ZIP e testar a aula/vídeos no navegador e celular; fechar com alterações pendentes; gerar o instalador com `npm run build:win`.

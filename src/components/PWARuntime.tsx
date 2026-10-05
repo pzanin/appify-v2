@@ -596,6 +596,8 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                               if (type === 'html') {
                                 return (
                                   <HtmlFrame
+                                    interactive={selectedMockupSubmodule.htmlInteractive === true}
+                                    activityPath={`pages/lesson-${selectedMockupModule.id}-${selectedMockupSubmodule.id}.html`}
                                     html={selectedMockupSubmodule.customHtml || selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || ''}
                                     title="Conteúdo da Aula" 
                                     className="absolute inset-0 w-full h-full border-none block" 

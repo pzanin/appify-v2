@@ -47,6 +47,7 @@ interface AppStore extends AppState {
     contentHtml?: string;
     customHtml?: string;
     htmlMode?: 'visual' | 'code';
+    htmlInteractive?: boolean;
     gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean }
   }) => void;
   updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked'; dripDays?: number; checkoutUrl?: string }) => void;
@@ -349,6 +350,7 @@ export const useAppStore = create<AppStore>()(
                 builder_data: payload.builderData ?? sub.builder_data,
                 name: payload.name ?? sub.name,
                 htmlMode: payload.htmlMode ?? sub.htmlMode,
+                htmlInteractive: payload.htmlInteractive ?? sub.htmlInteractive,
                 gamificationConfig: payload.gamificationConfig ?? sub.gamificationConfig
               } : sub)
             }

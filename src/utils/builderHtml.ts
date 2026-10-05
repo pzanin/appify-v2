@@ -25,6 +25,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'container':
         switch(subtype) {
           case 'hero': return { ...base, bgColor: '#6b8af0', padding: '60', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', titleFontFamily: 'Syne', titleFontSize: '42', titleFontWeight: '700', titleMarginBottom: '16' };
+          case 'oneColumn': return { ...base, title:'Título da seção', text:'Escreva o conteúdo desta seção.', columnBgColor:'#f3f4f6', columnPadding:'20', titleFontFamily:'Syne', titleFontSize:'24', titleFontWeight:'700', titleMarginBottom:'12' };
           case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'threeColumn': return { ...base, gap: '14', bgColor: '#ffffff', padding: '20', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '18', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'imageText': return { ...base, gap: '24', bgColor: '#ffffff', padding: '24', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
@@ -40,7 +41,7 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
   const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined), ...block.props };
   const ranges: Record<string, [number, number]> = {
     fontSize: [10,72], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
-    padding: [0,120], gap: [0,64], borderRadius: [0,200], width: [10,100], imageWidth: [10,100],
+    maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], width: [10,100], imageWidth: [10,100],
     imgBorderRadius: [0,999], imageBorderRadius: [0,999], height: [0,200], thickness: [1,8],
     columnPadding: [0,48], cardPadding: [0,48], quoteSize: [10,72],
   };
@@ -62,6 +63,7 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
     if (values[key] && !/^(#[a-f0-9]{3,8}|transparent)$/i.test(String(values[key]))) values[key] = defaults[key] || '#333333';
   }
   if (!['left','center','right'].includes(p.align || '')) p.align = 'left';
+  if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
   return p;
 }
 
@@ -114,9 +116,10 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
       case 'divider': return `<hr style="border:none;border-top:${p.thickness}px solid ${p.dividerColor};margin:0;">`;
       case 'container':
         switch(mod.subtype) {
+          case 'oneColumn': return `<div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h2 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h2><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.text)}</p></div>`;
           case 'hero': return `<h1 style="${titleStyle}color:${p.titleColor};margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;color:${p.subtitleColor};margin:0;">${escapeHtml(p.subtitle)}</p>`;
-          case 'twoColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:start;"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.leftTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.leftText)}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.rightTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.rightText)}</p></div></div>`;
-          case 'threeColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${p.gap}px;align-items:start;"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col1Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col1Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col2Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col2Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col3Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col3Text)}</p></div></div>`;
+          case 'twoColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.leftTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.leftText)}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.rightTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.rightText)}</p></div></div>`;
+          case 'threeColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col1Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col1Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col2Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col2Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col3Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col3Text)}</p></div></div>`;
           case 'imageText': {
             const imgHtml = p.imageSrc ? `<img class="appify-sized-image" src="${escapeHtml(p.imageSrc)}" alt="${escapeHtml(p.imageAlt)}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:${p.borderRadius}px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Clique para adicionar imagem</div>`;
             const titleH = `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>`;
@@ -137,8 +140,8 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
 export function generateBuilderHtml(blocks: BuilderBlock[]): string {
   const sections = blocks.map(block => {
     const p = normalizedBlockProps(block);
-    const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;`;
-    return `<section class="appify-builder-block" style="${escapeHtml(style)}"><div class="appify-builder-content">${sanitizeImportedHtml(getBlockInnerHtml(block))}</div></section>`;
+    const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;margin-top:${p.marginTop || 0}px;margin-bottom:${p.marginBottom || 0}px;`;
+    return `<section class="appify-builder-block" style="${escapeHtml(style)}"><div class="appify-builder-content" style="${p.maxWidth && Number(p.maxWidth)>0 ? `max-width:${p.maxWidth}px;margin-left:auto;margin-right:auto;` : ''}">${sanitizeImportedHtml(getBlockInnerHtml(block))}</div></section>`;
   }).join('\n');
   return `${builderFontLinks(blocks)}<style>${BUILDER_CSS}</style><div class="appify-builder-document">${sections}</div>`;
 }

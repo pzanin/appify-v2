@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { AppifyDesktopApi } from '../src/types';
 
 const api: AppifyDesktopApi = {
+  content: { create: html=>ipcRenderer.invoke('content:create',html), release: url=>ipcRenderer.invoke('content:release',url) },
   links: { openExternal: url => ipcRenderer.invoke('links:open-external', url) },
   projects: {
     list: () => ipcRenderer.invoke('projects:list'),

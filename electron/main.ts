@@ -1,13 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell, protocol } from 'electron';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { developmentRendererUrl, isTrustedSender, isTrustedRendererUrl, validateWorkspace, safeOperation } from './security';
-import { electronCsp } from '../src/utils/securityPolicies';
+import { InteractiveContentStore } from './interactiveContent';
+import { electronCsp, INTERACTIVE_CSP } from '../src/utils/securityPolicies';
 import { normalizeExternalUrl } from '../src/utils/externalLinks';
 import { ProjectRepository } from './projectRepository';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
+const interactiveContent = new InteractiveContentStore();
+protocol.registerSchemesAsPrivileged([{scheme:'appify-content',privileges:{standard:true,secure:true}}]);
 let repository: ProjectRepository;
 const trustedWindows = new Map<number, { win: BrowserWindow; url: string }>();
 const closingWindows = new WeakSet<BrowserWindow>();
@@ -50,6 +53,8 @@ function requireBuildBytes(value: unknown) {
 }
 
 function registerProjectHandlers() {
+  handle('content:create', (event, html:unknown)=>interactiveContent.create(event.sender.id,html));
+  handle('content:release', (event, url:unknown)=>interactiveContent.release(event.sender.id,url));
   handle('links:open-external', async (_event, value: unknown) => {
     const url = normalizeExternalUrl(value);
     if (!url) throw new Error('Link inválido.');
@@ -144,7 +149,8 @@ function createWindow() {
   const rendererFile = path.join(currentDirectory, '../dist/index.html');
   const rendererUrl = devUrl || pathToFileURL(rendererFile).href;
   trustedWindows.set(win.webContents.id, { win, url: rendererUrl });
-  win.on('closed', () => trustedWindows.delete(win.webContents.id));
+  const ownerId=win.webContents.id;
+  win.on('closed', () => { trustedWindows.delete(ownerId); interactiveContent.clear(ownerId); });
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', event => event.preventDefault());
   win.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -164,6 +170,10 @@ app.whenReady().then(async () => {
     : path.join(app.getPath('documents'), 'Appify', 'Projects');
   repository = new ProjectRepository(projectsRoot);
   await repository.initialize();
+  protocol.handle('appify-content', request => {
+    const html=request.method==='GET' ? interactiveContent.get(request.url) : undefined;
+    return new Response(html || 'Prévia indisponível.', {status:html?200:404,headers:{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':`sandbox allow-scripts; ${INTERACTIVE_CSP}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  });
   registerProjectHandlers();
   createWindow();
 

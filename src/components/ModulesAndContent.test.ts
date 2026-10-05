@@ -50,3 +50,28 @@ test('actual editor controls edit headings, duplicate, reorder, save and reopen 
   assert.equal((document.querySelectorAll('.appify-builder-content h1')[1] as HTMLElement).style.fontSize,'41px');
   await act(async()=>reopened.unmount());
 });
+
+test('one-column controls survive saving; interactive opt-in is persisted per lesson and can be switched back to static',async()=>{
+  const sub:SubModule={id:2,name:'Interação',type:'html',contentType:'html',htmlMode:'visual',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:2},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root=createRoot(document.getElementById('root')!);
+  const render=async(lesson:SubModule)=>act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
+  await render(sub);
+  const btn=(name:string)=>[...document.querySelectorAll('button')].find(node=>node.textContent?.includes(name))!;
+  await act(async()=>click(btn('1 Coluna')));
+  await act(async()=>change(document.querySelector('[aria-label="Largura máxima do conteúdo"]') as HTMLInputElement,'640'));
+  await act(async()=>change(document.querySelector('[aria-label="Margem acima"]') as HTMLInputElement,'24'));
+  await act(async()=>click(btn('Salvar Aula')));
+  let saved=useAppStore.getState().modules[0].subs[0];
+  assert.equal(saved.builder_data![0].subtype,'oneColumn');assert.equal(saved.builder_data![0].props.maxWidth,'640');
+  assert.equal(saved.builder_data![0].props.marginTop,'24');
+  await render(saved);
+  await act(async()=>click(btn('Código HTML')));
+  await act(async()=>change(document.querySelector('#html-execution-mode') as HTMLSelectElement,'interactive'));
+  await act(async()=>click(btn('Salvar Aula')));
+  saved=useAppStore.getState().modules[0].subs[0];assert.equal(saved.htmlInteractive,true);assert.equal(saved.htmlMode,'code');
+  await render(saved);assert.equal((document.querySelector('#html-execution-mode') as HTMLSelectElement).value,'interactive');
+  await act(async()=>change(document.querySelector('#html-execution-mode') as HTMLSelectElement,'static'));
+  await act(async()=>click(btn('Salvar Aula')));assert.equal(useAppStore.getState().modules[0].subs[0].htmlInteractive,false);
+  await act(async()=>root.unmount());
+});

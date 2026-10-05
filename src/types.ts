@@ -110,6 +110,8 @@ export interface BuilderBlock {
     label?: string;
     height?: number | string;
     columns?: number;
+    maxWidth?: string | number;
+    columnAlign?: 'start' | 'center' | 'end' | 'stretch';
     title?: string;
     subtitle?: string;
     content?: string;
@@ -237,6 +239,7 @@ export interface ProjectBuildResult {
 }
 
 export interface AppifyDesktopApi {
+  content?: { create: (html:string)=>Promise<string>; release: (url:string)=>Promise<void> };
   links: { openExternal: (url: string) => Promise<void> };
   projects: {
     list: () => Promise<Project[]>;
@@ -266,6 +269,7 @@ export interface SubModule {
   content_html?: string; // Maintain for compatibility
   builder_data?: BuilderBlock[];
   htmlMode?: 'visual' | 'code';
+  htmlInteractive?: boolean;
   coverImageUrl?: string;
   externalLink?: string;
   gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean };
