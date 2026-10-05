@@ -142,6 +142,8 @@ export interface BuilderBlock {
     rightText?: string;
     columnBgColor?: string;
     columnPadding?: string | number;
+    gap?: string | number;
+    borderRadius?: string | number;
     // Advanced image controls
     imgHeight?: string | number;
     imgBorderRadius?: string | number;

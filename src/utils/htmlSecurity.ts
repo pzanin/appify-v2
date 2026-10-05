@@ -34,6 +34,9 @@ export function sanitizeImportedHtml(source: string, wholeDocument = false): str
     const url = safeEmbedUrl(link.getAttribute('href') || '');
     if (!url || new URL(url).hostname !== 'fonts.googleapis.com' || link.rel !== 'stylesheet') link.remove();
   });
-  doc.querySelectorAll('a').forEach(link => { link.setAttribute('rel', 'noopener noreferrer'); });
+  doc.querySelectorAll('a').forEach(link => {
+    link.setAttribute('rel', 'noopener noreferrer');
+    if (/^(https:|mailto:)/i.test(link.getAttribute('href') || '')) link.setAttribute('target', '_blank');
+  });
   return wholeDocument ? `<!DOCTYPE html>${doc.documentElement.outerHTML}` : doc.body.innerHTML;
 }

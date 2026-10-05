@@ -18,7 +18,7 @@ const RESPONSIVE_STYLE = `
   body * {
     max-width: 100%;
   }
-  img, video, audio, canvas, svg {
+  img:not(.appify-sized-image), video, audio, canvas, svg {
     max-width: 100% !important;
     height: auto !important;
   }
