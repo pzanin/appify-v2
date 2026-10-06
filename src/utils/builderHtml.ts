@@ -19,6 +19,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
     switch(type) {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
+      case 'list': return { ...base, content: 'Primeiro benefício\nSegundo benefício\nTerceiro benefício', listIcon: 'check' as const, listIconColor: '#6b8af0', gap: '12' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
@@ -69,6 +70,10 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
   if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
   if (!['auto','full'].includes(p.buttonWidth || 'auto')) p.buttonWidth = 'auto';
   if (!['small','medium','large'].includes(p.buttonSize || 'medium')) p.buttonSize = 'medium';
+  if (block.type === 'list') {
+    if (!['check','star','arrow','dot'].includes(p.listIcon || '')) p.listIcon = 'check';
+    if (!/^(#[a-f0-9]{3,8}|transparent)$/i.test(p.listIconColor || '')) p.listIconColor = '#6b8af0';
+  }
   return p;
 }
 
@@ -108,6 +113,11 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
       case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
+      case 'list': {
+        const icon = { check: '✓', star: '★', arrow: '→', dot: '•' }[p.listIcon || 'check'];
+        const items = (p.content || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+        return `<ul role="list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:${p.gap}px;">${items.map(item => `<li style="display:flex;align-items:baseline;gap:10px;"><span aria-hidden="true" style="color:${p.listIconColor};flex-shrink:0;width:1.25em;text-align:center;">${icon}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere;">${escapeHtml(item)}</span></li>`).join('')}</ul>`;
+      }
       case 'image': return p.src ? `<img class="appify-sized-image" src="${escapeHtml(p.src)}" alt="${escapeHtml(p.alt)}" style="width:${p.width || 100}% !important;max-width:100%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:${p.borderRadius}px;">Clique para adicionar imagem</div>`;
       case 'video': {
         const url = String(p.url || '').trim();

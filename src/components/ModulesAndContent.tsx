@@ -212,6 +212,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <div className="vpb-lib-label">Elementos</div>
                 <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('list')}><Check className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Lista com ícones</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Benefícios ou passos</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
@@ -382,6 +383,27 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <>
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'list' && (
+                    <>
+                      <label className="vpb-label" htmlFor="list-items">Itens da lista (um por linha)</label>
+                      <textarea id="list-items" className="vpb-textarea" rows={6} value={selectedBlock.props.content ?? ''} onChange={e => updateProp('content', e.target.value)} />
+                      <label className="vpb-label" htmlFor="list-icon">Ícone</label>
+                      <select id="list-icon" className="vpb-input" value={selectedBlock.props.listIcon || 'check'} onChange={e => updateProp('listIcon', e.target.value as BuilderBlock['props']['listIcon'])}>
+                        <option value="check">✓ Check</option>
+                        <option value="star">★ Estrela</option>
+                        <option value="arrow">→ Seta</option>
+                        <option value="dot">• Ponto</option>
+                      </select>
+                      <label className="vpb-label" htmlFor="list-icon-color">Cor do ícone</label>
+                      <div className="vpb-color-row">
+                        <input id="list-icon-color" type="color" className="vpb-color-picker" value={selectedBlock.props.listIconColor || '#6b8af0'} onChange={e => updateProp('listIconColor', e.target.value)} />
+                        <input className="vpb-input" aria-label="Código da cor do ícone" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.listIconColor || '#6b8af0'} onChange={e => updateProp('listIconColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label" htmlFor="list-gap">Espaçamento entre itens (px)</label>
+                      <input id="list-gap" type="number" className="vpb-input" min="0" max="64" step="1" value={selectedBlock.props.gap ?? 12} onChange={e => { if (e.target.value !== '') updateProp('gap', String(Math.min(64, Math.max(0, Number(e.target.value))))); }} />
                     </>
                   )}
 

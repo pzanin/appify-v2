@@ -115,6 +115,8 @@ export interface BuilderBlock {
     title?: string;
     subtitle?: string;
     content?: string;
+    listIcon?: 'check' | 'star' | 'arrow' | 'dot';
+    listIconColor?: string;
     alt?: string;
     width?: string | number;
     url?: string;

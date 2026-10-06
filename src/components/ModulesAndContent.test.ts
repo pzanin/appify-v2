@@ -16,6 +16,40 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new dom.window.Event(element.tagName === 'SELECT' ? 'change' : 'input',{bubbles:true}));
 }
 
+test('icon list can be added, edited, duplicated, saved and reopened in the visual editor', async () => {
+  const sub: SubModule = {id:3,name:'Lista',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:3},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root = createRoot(document.getElementById('root')!);
+  const render = async (lesson: SubModule) => act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
+  await render(sub);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Lista com ícones'))!));
+  assert.equal(document.querySelectorAll('.appify-builder-content li').length,3);
+  await act(async()=>{
+    const textarea = document.querySelector('#list-items')!;
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!.call(textarea,'Uno\nDos');
+    textarea.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  });
+  await act(async()=>change(document.querySelector('#list-icon') as HTMLSelectElement,'star'));
+  await act(async()=>change(document.querySelector('[aria-label="Código da cor do ícone"]') as HTMLInputElement,'#123456'));
+  await act(async()=>change(document.querySelector('#list-gap') as HTMLInputElement,'0'));
+  assert.equal(document.querySelector('.appify-builder-content li')!.textContent,'★Uno');
+  await act(async()=>click(document.querySelector('[aria-label="Duplicar bloco"]')!));
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
+  const saved = useAppStore.getState().modules[0].subs[0];
+  assert.equal(saved.builder_data!.length,2);
+  assert.notEqual(saved.builder_data![0].id,saved.builder_data![1].id);
+  assert.equal(saved.builder_data![0].props.content,'Uno\nDos');
+  assert.equal(saved.builder_data![0].props.listIcon,'star');
+  assert.equal(saved.builder_data![0].props.listIconColor,'#123456');
+  assert.equal(saved.builder_data![0].props.gap,'0');
+  await render(saved);
+  await act(async()=>click(document.querySelector('.vpb-block-wrapper')!));
+  assert.equal((document.querySelector('#list-icon') as HTMLSelectElement).value,'star');
+  assert.equal(document.querySelectorAll('.appify-builder-content li').length,4);
+  assert.equal(new JSDOM(saved.contentHtml!).window.document.querySelectorAll('li').length,4);
+  await act(async()=>root.unmount());
+});
+
 test('actual editor controls edit headings, duplicate, reorder, save and reopen without losing settings', async () => {
   const sub: SubModule = {id:1,name:'Aula',type:'html',htmlMode:'visual',contentType:'html',builder_data:[{id:'hero',type:'container',subtype:'hero',props:getDefaultProps('container','hero')},{id:'cards',type:'container',subtype:'threeColumn',props:getDefaultProps('container','threeColumn')}]};
   useAppStore.setState({editingSubmodule:{modId:1,subId:1},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});

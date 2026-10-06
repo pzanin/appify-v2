@@ -11,6 +11,26 @@ function block(type: string, subtype?: string, overrides: BuilderBlock['props'] 
 }
 function doc(html: string) { return new JSDOM(html).window.document; }
 
+test('icon lists preserve items, icons and spacing through saved HTML and responsive preparation', () => {
+  const content = 'Benefício em português\r\n\r\n<script>alert("x")</script> & texto\n' + 'Texto longo '.repeat(30);
+  for (const [listIcon, symbol] of Object.entries({ check:'✓', star:'★', arrow:'→', dot:'•' })) {
+    const item = block('list', undefined, { content, listIcon:listIcon as BuilderBlock['props']['listIcon'], listIconColor:'#123456', gap:0 });
+    const saved = doc(prepareResponsiveHtml(generateBuilderHtml(JSON.parse(JSON.stringify([item])))));
+    const list = saved.querySelector('ul')!;
+    assert.equal(list.getAttribute('role'), 'list');
+    assert.equal(list.style.gap, '0px');
+    assert.equal(list.children.length, 3);
+    assert.equal(list.children[1].lastElementChild!.textContent, '<script>alert("x")</script> & texto');
+    assert.equal(list.querySelector('script'), null);
+    const marker = list.querySelector('span')!;
+    assert.equal(marker.textContent, symbol);
+    assert.equal(marker.getAttribute('aria-hidden'), 'true');
+    assert.equal(marker.style.color, 'rgb(18, 52, 86)');
+    assert.equal((list.children[2].lastElementChild as HTMLElement).style.overflowWrap, 'anywhere');
+  }
+  assert.equal(doc(generateBuilderHtml([block('list',undefined,{content:''})])).querySelectorAll('li').length, 0);
+});
+
 test('all heading blocks keep independently edited font, size, weight and zero margin through saved HTML', () => {
   for (const item of [block('header'), ...['oneColumn','hero','cta','twoColumn','threeColumn','imageText'].map(type => block('container',type))]) {
     item.props = { ...item.props, titleFontFamily:'Roboto', titleFontSize:'37', titleFontWeight:'600', titleMarginBottom:0, fontSize:'19' };
