@@ -117,6 +117,7 @@ export interface BuilderBlock {
     content?: string;
     listIcon?: 'check' | 'star' | 'arrow' | 'dot';
     listIconColor?: string;
+    cardIcon?: 'none' | 'check' | 'star' | 'arrow' | 'dot';
     alt?: string;
     width?: string | number;
     url?: string;

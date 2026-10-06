@@ -11,6 +11,31 @@ function block(type: string, subtype?: string, overrides: BuilderBlock['props'] 
 }
 function doc(html: string) { return new JSDOM(html).window.document; }
 
+test('highlight cards preserve optional icons, escaped content, typography and zero spacing through export', () => {
+  for (const [cardIcon, symbol] of Object.entries({ none:'', check:'✓', star:'★', arrow:'→', dot:'•' })) {
+    const item = block('card',undefined,{cardIcon:cardIcon as BuilderBlock['props']['cardIcon'],title:'Dica <img src=x onerror=alert(1)>',content:'Español & English\n' + 'x'.repeat(200),cardBgColor:'#123456',cardPadding:0,borderRadius:0,titleFontFamily:'Roboto',titleFontSize:'29',titleMarginBottom:0});
+    const before = JSON.stringify(item);
+    const preview = doc(getBlockInnerHtml(item)).querySelector('.appify-builder-card') as HTMLElement;
+    const card = doc(prepareResponsiveHtml(generateBuilderHtml(JSON.parse(JSON.stringify([item]))))).querySelector('.appify-builder-card') as HTMLElement;
+    assert.equal(card.getAttribute('style'),preview.getAttribute('style'));
+    assert.equal(card.style.background,'rgb(18, 52, 86)');
+    assert.equal(card.style.padding,'0px');
+    assert.equal(card.style.borderRadius,'0px');
+    assert.equal(card.querySelector('h3')!.textContent,item.props.title);
+    assert.equal(card.querySelector('h3')!.style.fontSize,'29px');
+    assert.match(card.querySelector('h3')!.style.fontFamily,/Roboto/);
+    assert.equal(card.querySelector('h3')!.style.marginBottom,'0px');
+    assert.equal(card.querySelector('p')!.textContent,item.props.content);
+    assert.equal(card.querySelector('p')!.style.whiteSpace,'pre-wrap');
+    assert.equal(card.querySelector('p')!.style.overflowWrap,'anywhere');
+    assert.equal(card.querySelector('span')?.textContent || '',symbol);
+    if (symbol) assert.equal(card.querySelector('span')!.getAttribute('aria-hidden'),'true');
+    assert.equal(card.querySelector('img,script'),null);
+    assert.equal(JSON.stringify(item),before);
+  }
+  assert.equal(doc(getBlockInnerHtml(block('card',undefined,{title:''}))).querySelector('h3'),null);
+});
+
 test('icon lists preserve items, icons and spacing through saved HTML and responsive preparation', () => {
   const content = 'Benefício em português\r\n\r\n<script>alert("x")</script> & texto\n' + 'Texto longo '.repeat(30);
   for (const [listIcon, symbol] of Object.entries({ check:'✓', star:'★', arrow:'→', dot:'•' })) {

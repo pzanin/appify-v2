@@ -16,6 +16,47 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new dom.window.Event(element.tagName === 'SELECT' ? 'change' : 'input',{bubbles:true}));
 }
 
+test('highlight card controls persist through saving and reopening and allow hiding the icon', async () => {
+  const sub: SubModule = {id:4,name:'Destaque',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:4},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root = createRoot(document.getElementById('root')!);
+  const render = async (lesson: SubModule) => act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
+  await render(sub);
+  const save = async () => act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Card / Destaque'))!));
+  assert.equal(document.querySelector('.appify-builder-card span'),null);
+  await act(async()=>change(document.querySelector('#card-title') as HTMLInputElement,'Antes de comenzar'));
+  await act(async()=>{
+    const textarea = document.querySelector('#card-content')!;
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!.call(textarea,'Primera línea\nSegunda línea');
+    textarea.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  });
+  await act(async()=>change(document.querySelector('#card-icon') as HTMLSelectElement,'star'));
+  await act(async()=>change(document.querySelector('[aria-label="Código da cor do fundo do card"]') as HTMLInputElement,'#123456'));
+  await act(async()=>change(document.querySelector('#card-padding') as HTMLInputElement,'0'));
+  await act(async()=>change(document.querySelector('#card-radius') as HTMLInputElement,'0'));
+  await act(async()=>change(document.querySelector('[aria-label="Tamanho do título em pixels"]') as HTMLInputElement,'29'));
+  await save();
+  const saved = useAppStore.getState().modules[0].subs[0];
+  assert.equal(saved.builder_data![0].type,'card');
+  assert.equal(saved.builder_data![0].props.content,'Primera línea\nSegunda línea');
+  await render(saved);
+  await act(async()=>click(document.querySelector('.vpb-block-wrapper')!));
+  assert.equal((document.querySelector('#card-icon') as HTMLSelectElement).value,'star');
+  const preview = document.querySelector('.appify-builder-card') as HTMLElement;
+  const exported = new JSDOM(saved.contentHtml!).window.document.querySelector('.appify-builder-card')!;
+  assert.equal(preview.innerHTML,exported.innerHTML);
+  assert.equal(preview.getAttribute('style'),exported.getAttribute('style'));
+  assert.equal(preview.querySelector('h3')!.textContent,'Antes de comenzar');
+  assert.equal(preview.querySelector('h3')!.style.fontSize,'29px');
+  assert.equal(preview.style.padding,'0px');
+  assert.equal(preview.style.borderRadius,'0px');
+  await act(async()=>change(document.querySelector('#card-icon') as HTMLSelectElement,'none'));
+  await save();
+  assert.equal(new JSDOM(useAppStore.getState().modules[0].subs[0].contentHtml!).window.document.querySelector('.appify-builder-card span'),null);
+  await act(async()=>root.unmount());
+});
+
 test('icon list can be added, edited, duplicated, saved and reopened in the visual editor', async () => {
   const sub: SubModule = {id:3,name:'Lista',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
   useAppStore.setState({editingSubmodule:{modId:1,subId:3},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});

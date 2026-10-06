@@ -213,6 +213,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('list')}><Check className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Lista com ícones</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Benefícios ou passos</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('card')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Card / Destaque</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Dica ou informação importante</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
@@ -383,6 +384,32 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <>
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'card' && (
+                    <>
+                      <label className="vpb-label" htmlFor="card-title">Título do card</label>
+                      <input id="card-title" className="vpb-input" value={selectedBlock.props.title ?? ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label" htmlFor="card-content">Texto do card</label>
+                      <textarea id="card-content" className="vpb-textarea" rows={5} value={selectedBlock.props.content ?? ''} onChange={e => updateProp('content', e.target.value)} />
+                      <label className="vpb-label" htmlFor="card-icon">Ícone (opcional)</label>
+                      <select id="card-icon" className="vpb-input" value={selectedBlock.props.cardIcon || 'none'} onChange={e => updateProp('cardIcon', e.target.value as BuilderBlock['props']['cardIcon'])}>
+                        <option value="none">Sem ícone</option>
+                        <option value="check">✓ Check</option>
+                        <option value="star">★ Estrela</option>
+                        <option value="arrow">→ Seta</option>
+                        <option value="dot">• Ponto</option>
+                      </select>
+                      <label className="vpb-label" htmlFor="card-background">Cor do fundo do card</label>
+                      <div className="vpb-color-row">
+                        <input id="card-background" type="color" className="vpb-color-picker" value={selectedBlock.props.cardBgColor === 'transparent' ? '#ffffff' : selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
+                        <input className="vpb-input" aria-label="Código da cor do fundo do card" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label" htmlFor="card-padding">Espaço interno do card (px)</label>
+                      <input id="card-padding" type="number" className="vpb-input" min="0" max="48" step="1" value={selectedBlock.props.cardPadding ?? 20} onChange={e => { if (e.target.value !== '') updateProp('cardPadding', String(Math.min(48, Math.max(0, Number(e.target.value))))); }} />
+                      <label className="vpb-label" htmlFor="card-radius">Bordas arredondadas (px)</label>
+                      <input id="card-radius" type="number" className="vpb-input" min="0" max="200" step="1" value={selectedBlock.props.borderRadius ?? 12} onChange={e => { if (e.target.value !== '') updateProp('borderRadius', String(Math.min(200, Math.max(0, Number(e.target.value))))); }} />
                     </>
                   )}
 
@@ -728,7 +755,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 </div>}
 
                 {/* ── TÍTULO AVANÇADO ── */}
-                {(selectedBlock.type === 'header' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
+                {(selectedBlock.type === 'header' || selectedBlock.type === 'card' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
                   <div className="vpb-prop-group">
                     <span className="vpb-lib-label">Estilo dos Títulos</span>
 

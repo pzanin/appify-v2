@@ -20,6 +20,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
       case 'list': return { ...base, content: 'Primeiro benefício\nSegundo benefício\nTerceiro benefício', listIcon: 'check' as const, listIconColor: '#6b8af0', gap: '12' };
+      case 'card': return { ...base, bgColor: 'transparent', padding: '0', title: 'Dica importante', content: 'Destaque aqui uma orientação, benefício ou informação importante.', cardIcon: 'none' as const, cardBgColor: '#f3f4f6', cardPadding: '20', borderRadius: '12', titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
@@ -74,6 +75,7 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
     if (!['check','star','arrow','dot'].includes(p.listIcon || '')) p.listIcon = 'check';
     if (!/^(#[a-f0-9]{3,8}|transparent)$/i.test(p.listIconColor || '')) p.listIconColor = '#6b8af0';
   }
+  if (block.type === 'card' && !['none','check','star','arrow','dot'].includes(p.cardIcon || '')) p.cardIcon = 'none';
   return p;
 }
 
@@ -113,6 +115,12 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
       case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
+      case 'card': {
+        const icon = { none: '', check: '✓', star: '★', arrow: '→', dot: '•' }[p.cardIcon || 'none'];
+        const iconHtml = icon ? `<span aria-hidden="true" style="display:inline-block;font-size:24px;line-height:1;margin-bottom:12px;">${icon}</span>` : '';
+        const headingHtml = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;overflow-wrap:anywhere;">${escapeHtml(p.title)}</h3>` : '';
+        return `<div class="appify-builder-card" style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;max-width:100%;">${iconHtml}${headingHtml}<p style="white-space:pre-wrap;margin:0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></div>`;
+      }
       case 'list': {
         const icon = { check: '✓', star: '★', arrow: '→', dot: '•' }[p.listIcon || 'check'];
         const items = (p.content || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean);
