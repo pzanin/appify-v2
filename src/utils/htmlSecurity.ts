@@ -5,35 +5,10 @@ import { LINK_BRIDGE_HASH } from './securityPolicies';
 export { LINK_BRIDGE_HASH } from './securityPolicies';
 export const IMPORTED_HTML_CSP = `default-src 'none'; script-src '${LINK_BRIDGE_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: data:; frame-src https:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
 
-function normalizeYouTubeEmbed(url: URL): string | null {
-  const host = url.hostname.replace(/^www\./, '').toLowerCase();
-  if (!['youtube.com', 'youtube-nocookie.com', 'youtu.be'].includes(host)) return null;
-
-  let id = '';
-  if (host === 'youtu.be') {
-    id = url.pathname.split('/').filter(Boolean)[0] || '';
-  } else {
-    const parts = url.pathname.split('/').filter(Boolean);
-    if (parts[0] === 'embed' || parts[0] === 'shorts' || parts[0] === 'live') id = parts[1] || '';
-    if (!id) id = url.searchParams.get('v') || '';
-  }
-
-  if (!/^[A-Za-z0-9_-]{6,}$/.test(id)) return null;
-  const params = new URLSearchParams({
-    rel: '0',
-    playsinline: '1',
-    controls: '0',
-    fs: '1',
-  });
-  return `https://www.youtube-nocookie.com/embed/${id}?${params.toString()}`;
-}
-
 export function safeEmbedUrl(value: string): string | undefined {
   try {
     const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password) return undefined;
-    const youtube = normalizeYouTubeEmbed(url);
-    return youtube || url.href;
+    if (url.protocol === 'https:' && !url.username && !url.password) return url.href;
   } catch { /* Invalid/relative/protocol URLs are blocked. */ }
   return undefined;
 }
