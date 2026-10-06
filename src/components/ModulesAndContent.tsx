@@ -213,6 +213,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('spacer')}><Minus className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Espaçador</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Espaço invisível</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('divider')}><SeparatorHorizontal className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Divisor</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Linha horizontal</div></div></button>
@@ -415,6 +416,24 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       </select>
                       <label className="vpb-label">Texto Alternativo</label>
                       <input className="vpb-input" value={selectedBlock.props.alt || ''} onChange={e => updateProp('alt', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'video' && (
+                    <>
+                      <label className="vpb-label">URL do YouTube / Shorts</label>
+                      <input className="vpb-input" placeholder="https://youtube.com/watch?v=..." value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
+                      <label className="vpb-label">Título acessível</label>
+                      <input className="vpb-input" value={selectedBlock.props.videoTitle || 'Vídeo'} onChange={e => updateProp('videoTitle', e.target.value)} />
+                      <label className="vpb-label">Proporção</label>
+                      <select className="vpb-input" value={selectedBlock.props.videoAspectRatio || 'auto'} onChange={e => updateProp('videoAspectRatio', e.target.value as 'auto' | '16:9' | '9:16')}>
+                        <option value="auto">Automática</option>
+                        <option value="16:9">Horizontal 16:9</option>
+                        <option value="9:16">Vertical 9:16</option>
+                      </select>
+                      <label className="vpb-label">Arredondamento ({selectedBlock.props.borderRadius ?? 16}px)</label>
+                      <input type="range" min="0" max="48" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.borderRadius ?? 16} onChange={e => updateProp('borderRadius', e.target.value)} />
+                      <p className="vpb-html-help">A capa vem automaticamente do YouTube. O player só é carregado depois do clique no play.</p>
                     </>
                   )}
 
@@ -702,7 +721,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <div className="vpb-prop-group">
                   <span className="vpb-lib-label">Estilos do Bloco</span>
 
-                  {!['image', 'spacer', 'divider'].includes(selectedBlock.type) && (
+                  {!['image', 'video', 'spacer', 'divider'].includes(selectedBlock.type) && (
                     <>
                       <label className="vpb-label">Fonte do Texto / Subtítulo</label>
                       <select className="vpb-input" value={selectedBlock.props.fontFamily || 'DM Sans'} onChange={e => updateProp('fontFamily', e.target.value)}>
@@ -723,7 +742,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
                   <label className="vpb-label">Cor de Fundo</label>
                   <div className="vpb-color-row">
-                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.bgColor || '#ffffff'} onChange={e => updateProp('bgColor', e.target.value)} />
+                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.bgColor === 'transparent' ? '#ffffff' : selectedBlock.props.bgColor || '#ffffff'} onChange={e => updateProp('bgColor', e.target.value)} />
                     <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.bgColor || '#ffffff'} onChange={e => updateProp('bgColor', e.target.value)} />
                   </div>
 
