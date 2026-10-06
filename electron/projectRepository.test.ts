@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import type { AppState } from '../src/types';
 import { ProjectRepository } from './projectRepository';
+import { TEST_SPLASH_MP4, TEST_SPLASH_GIF, TEST_SPLASH_WEBP } from '../src/utils/fixtures/splashMedia';
 
 const ONE_PIXEL_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 
@@ -54,6 +55,24 @@ function workspace(): AppState {
     }],
   };
 }
+
+test('opening animations survive local saving, reopening and importing self-contained backups', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'appify-opening-'));
+  try {
+    const repository = new ProjectRepository(root);
+    for (const source of [TEST_SPLASH_MP4,TEST_SPLASH_GIF,TEST_SPLASH_WEBP]) {
+      const state = workspace();
+      Object.assign(state.pwaConfig,{customSplash:true,splashMediaMode:'file',splashMediaData:source,splashMediaFit:'cover',splashMediaBackground:'#123456'});
+      const project = await repository.create('Abertura',state);
+      const opened = await repository.open(project.id);
+      assert.equal(opened.workspace.pwaConfig.splashMediaData,source);
+      assert.equal(opened.workspace.pwaConfig.splashMediaFit,'cover');
+      const backup = await repository.readBackup(project.id);
+      const imported = await repository.importDocument(backup);
+      assert.equal((await repository.open(imported.id)).workspace.pwaConfig.splashMediaData,source);
+    }
+  } finally { await fs.rm(root,{recursive:true,force:true}); }
+});
 
 test('externalizes images, writes pages and rehydrates projects and backups', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'appify-projects-'));

@@ -56,6 +56,11 @@ export interface PwaConfig {
   customSplash: boolean;
   splashDurationMs?: number;
   splashAnimation?: 'fade' | 'zoom' | 'none';
+  splashMediaMode?: 'brand' | 'file';
+  splashMediaData?: string;
+  splashMediaFileName?: string;
+  splashMediaFit?: 'contain' | 'cover';
+  splashMediaBackground?: string;
   engagementEnabled?: boolean;
   deploymentProvider?: 'netlify' | 'cloudflare';
   welcomeEnabled?: boolean;

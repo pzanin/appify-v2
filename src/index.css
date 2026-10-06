@@ -625,6 +625,10 @@
 .customer-steps li > svg { flex-shrink:0; margin-top:5px; }
 .customer-footnote { font-size:14px !important; margin-top:18px !important; }
 .customer-splash-fade .customer-brand { animation:customer-brand-fade .8s ease-out both; }
+.customer-media-screen { position:relative; padding:0; overflow:hidden; }
+.customer-media-screen > video,.customer-media-screen > img { position:absolute; inset:0; }
+.customer-media-actions { position:absolute; z-index:1; bottom:0; left:0; right:0; padding:12px 22px max(20px,env(safe-area-inset-bottom)); background:linear-gradient(transparent,rgba(247,249,252,.95)); }
+.customer-media-actions button { max-width:386px; margin:12px auto; }
 .customer-splash-zoom .customer-brand { animation:customer-brand-zoom .9s ease-out both; }
 @keyframes customer-brand-fade { from { opacity:0; } to { opacity:1; } }
 @keyframes customer-brand-zoom { from { opacity:0; transform:scale(.88); } to { opacity:1; transform:scale(1); } }

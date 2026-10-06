@@ -2,16 +2,34 @@ import React from 'react';
 import { ToggleRight, Monitor, Play, Sparkles, RefreshCw, Smartphone } from 'lucide-react';
 import { CustomerEntry } from './CustomerEntry';
 import { useAppStore } from '../store/useAppStore';
+import { readSplashFile } from '../utils/splashMedia';
 
 export function AppConfigurator() {
   const pwaConfig = useAppStore(state => state.pwaConfig);
   const updatePwaConfig = useAppStore(state => state.updatePwaConfig);
+  const currentProjectId = useAppStore(state => state.currentProjectId);
 
   const updateConfig = (updates: Partial<typeof pwaConfig>) => {
     updatePwaConfig(updates);
   };
 
   const [previewEntry, setPreviewEntry] = React.useState(false);
+  const [splashImport, setSplashImport] = React.useState<{kind:'loading'|'success'|'error';message:string}|null>(null);
+  const splashRequest = React.useRef(0);
+  React.useEffect(()=>{splashRequest.current++;setSplashImport(null);return()=>{splashRequest.current++;};},[currentProjectId]);
+  const importSplash = async (file:File) => {
+    const request = ++splashRequest.current;
+    const projectId = useAppStore.getState().currentProjectId;
+    setSplashImport({kind:'loading',message:'Lendo abertura…'});
+    try {
+      const source = await readSplashFile(file);
+      if (request !== splashRequest.current || projectId !== useAppStore.getState().currentProjectId) return;
+      updateConfig({splashMediaMode:'file',splashMediaData:source,splashMediaFileName:file.name,customSplash:true});
+      setSplashImport({kind:'success',message:'Abertura incorporada ao projeto. Use o botão de teste para conferir.'});
+    } catch (error) {
+      if (request === splashRequest.current && projectId === useAppStore.getState().currentProjectId) setSplashImport({kind:'error',message:error instanceof Error ? error.message : 'Não foi possível importar a abertura.'});
+    }
+  };
   const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
   return (
@@ -29,11 +47,28 @@ export function AppConfigurator() {
           <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>
             <h3 style={{fontSize:16,fontWeight:700,marginBottom:12}}>Abertura e acesso do cliente</h3>
             <label className="vpb-label"><input type="checkbox" checked={pwaConfig.welcomeEnabled !== false} onChange={e=>updateConfig({welcomeEnabled:e.target.checked})}/> Mostrar boas-vindas com logotipo</label>
-            <label className="vpb-label" htmlFor="splash-duration">Tempo do logotipo na abertura</label>
+            <label className="vpb-label" htmlFor="splash-media-mode">Tipo de abertura</label>
+            <select id="splash-media-mode" className="vpb-input" value={pwaConfig.splashMediaMode || 'brand'} disabled={splashImport?.kind === 'loading'} onChange={e=>updateConfig({splashMediaMode:e.target.value as 'brand'|'file'})}>
+              <option value="brand">Logotipo com animação do Appify</option><option value="file">Arquivo personalizado — MP4 ou imagem</option>
+            </select>
+            {pwaConfig.splashMediaMode === 'file' && <>
+              <label className="vpb-label" htmlFor="splash-file">Enviar MP4, GIF, WebP, PNG ou JPG (até 5 MB)</label>
+              <input id="splash-file" className="vpb-input" type="file" disabled={splashImport?.kind === 'loading'} onChange={e=>{const file=e.target.files?.[0];e.target.value='';if(file)void importSplash(file);}}/>
+              {pwaConfig.splashMediaFileName && <p className="vpb-html-help">{pwaConfig.splashMediaFileName} <button type="button" className="btn-ghost" disabled={splashImport?.kind === 'loading'} onClick={()=>{updateConfig({splashMediaData:'',splashMediaFileName:'',splashMediaMode:'brand'});setSplashImport(null);}}>Remover abertura</button></p>}
+              <label className="vpb-label" htmlFor="splash-fit">Enquadramento</label>
+              <select id="splash-fit" className="vpb-input" value={pwaConfig.splashMediaFit || 'contain'} onChange={e=>updateConfig({splashMediaFit:e.target.value as 'contain'|'cover'})}>
+                <option value="contain">Mostrar inteiro, sem cortar</option><option value="cover">Preencher a tela, com possível corte</option>
+              </select>
+              <label className="vpb-label" htmlFor="splash-background">Cor de fundo da abertura</label>
+              <input id="splash-background" type="color" value={/^#[a-f0-9]{6}$/i.test(pwaConfig.splashMediaBackground || '') ? pwaConfig.splashMediaBackground : '#f7f9fc'} onChange={e=>updateConfig({splashMediaBackground:e.target.value})}/>
+              <p className="vpb-html-help">Prefira MP4 com vídeo H.264, de 2 a 5 segundos. Ele toca sem som e passa às boas-vindas ao terminar, com limite de 10 segundos. GIF e WebP mantêm a animação do arquivo. Se a reprodução falhar, o logotipo será exibido. O arquivo acompanha o PWA exportado e aumenta seu tamanho.</p>
+            </>}
+            {splashImport && <p className="vpb-html-help" role={splashImport.kind === 'error' ? 'alert' : 'status'} style={{color:splashImport.kind === 'error' ? '#f87171' : undefined}}>{splashImport.message}</p>}
+            <label className="vpb-label" htmlFor="splash-duration">Tempo do logotipo ou imagem na abertura</label>
             <select id="splash-duration" className="vpb-input" value={pwaConfig.splashDurationMs ?? 2500} onChange={e=>updateConfig({splashDurationMs:Number(e.target.value)})}>
               <option value={1500}>1,5 segundo — breve</option><option value={2500}>2,5 segundos — recomendado</option><option value={3500}>3,5 segundos — mais presença</option><option value={5000}>5 segundos — prolongado</option>
             </select>
-            <label className="vpb-label" htmlFor="splash-animation">Animação de abertura</label>
+            <label className="vpb-label" htmlFor="splash-animation">Animação do logotipo padrão</label>
             <select id="splash-animation" className="vpb-input" value={pwaConfig.splashAnimation || 'fade'} onChange={e=>updateConfig({splashAnimation:e.target.value as 'fade'|'zoom'|'none'})}>
               <option value="fade">Aparecer suavemente</option><option value="zoom">Zoom suave</option><option value="none">Sem animação</option>
             </select>
