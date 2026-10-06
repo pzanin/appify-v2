@@ -460,8 +460,20 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input className="vpb-input" placeholder="https://..." value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
                       <label className="vpb-label">Estilo</label>
                       <select className="vpb-input" value={selectedBlock.props.style || 'button'} onChange={e => updateProp('style', e.target.value)}>
-                        <option value="button">Botão</option>
+                        <option value="button">Preenchido</option>
+                        <option value="outline">Contorno</option>
                         <option value="link">Link com sublinhado</option>
+                      </select>
+                      <label className="vpb-label">Tamanho do botão</label>
+                      <select className="vpb-input" value={selectedBlock.props.buttonSize || 'medium'} onChange={e => updateProp('buttonSize', e.target.value as BuilderBlock['props']['buttonSize'])}>
+                        <option value="small">Pequeno</option>
+                        <option value="medium">Médio</option>
+                        <option value="large">Grande</option>
+                      </select>
+                      <label className="vpb-label">Largura</label>
+                      <select className="vpb-input" value={selectedBlock.props.buttonWidth || 'auto'} onChange={e => updateProp('buttonWidth', e.target.value as BuilderBlock['props']['buttonWidth'])}>
+                        <option value="auto">Automática</option>
+                        <option value="full">100% da largura</option>
                       </select>
                       <label className="vpb-label">Cor do Botão</label>
                       <div className="vpb-color-row">
