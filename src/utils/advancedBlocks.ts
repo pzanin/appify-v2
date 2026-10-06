@@ -3,13 +3,13 @@ import { CardItem, CarouselItem } from '../types';
 const esc = (value = '') => value.replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[ch] as string));
 
 export function renderCardsHtml(items: CardItem[], columns = 2, gap = 16, radius = 14) {
-  const cards = (items || []).map(item => `<article class="appify-card"><${item.image ? `img src="${esc(item.image)}" alt="">` : ''}<div class="appify-card-body">${item.badge ? `<span class="appify-card-badge">${esc(item.badge)}</span>` : ''}<h3>${esc(item.title)}</h3><p>${esc(item.text)}</p>${item.buttonText && item.buttonUrl ? `<a href="${esc(item.buttonUrl)}" target="_blank" rel="noopener noreferrer">${esc(item.buttonText)}</a>` : ''}</div></article>`).join('');
+  const cards = (items || []).map(item => `<article class="appify-card">${item.image ? `<img src="${esc(item.image)}" alt="">` : ''}<div class="appify-card-body">${item.badge ? `<span class="appify-card-badge">${esc(item.badge)}</span>` : ''}<h3>${esc(item.title)}</h3><p>${esc(item.text)}</p>${item.buttonText && item.buttonUrl ? `<a href="${esc(item.buttonUrl)}" target="_blank" rel="noopener noreferrer">${esc(item.buttonText)}</a>` : ''}</div></article>`).join('');
   return `<div class="appify-cards" style="--appify-card-columns:${columns};--appify-card-gap:${gap}px;--appify-card-radius:${radius}px">${cards}</div>`;
 }
 
 export function renderCarouselHtml(items: CarouselItem[], autoplay = false, intervalMs = 5000, showDots = true, showArrows = true) {
   const slides = (items || []).map((item, i) => `<article class="appify-carousel-slide${i === 0 ? ' is-active' : ''}">${item.image ? `<img src="${esc(item.image)}" alt="">` : ''}${item.title || item.text || item.buttonText ? `<div class="appify-carousel-copy">${item.title ? `<h3>${esc(item.title)}</h3>` : ''}${item.text ? `<p>${esc(item.text)}</p>` : ''}${item.buttonText && item.buttonUrl ? `<a href="${esc(item.buttonUrl)}" target="_blank" rel="noopener noreferrer">${esc(item.buttonText)}</a>` : ''}</div>` : ''}</article>`).join('');
-  const dots = showDots ? `<div class="appify-carousel-dots">${items.map((_, i) => `<button type="button" data-index="${i}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>` : '';
+  const dots = showDots ? `<div class="appify-carousel-dots">${(items || []).map((_, i) => `<button type="button" data-index="${i}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>` : '';
   return `<div class="appify-carousel" data-autoplay="${autoplay}" data-interval="${Math.max(2000, intervalMs)}"><div class="appify-carousel-track">${slides}</div>${showArrows ? '<button class="appify-carousel-prev" type="button" aria-label="Anterior">‹</button><button class="appify-carousel-next" type="button" aria-label="Próximo">›</button>' : ''}${dots}</div>`;
 }
 
