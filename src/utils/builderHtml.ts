@@ -21,7 +21,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
-      case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', align: 'center' };
+      case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
       case 'spacer': return { ...base, height: '40', bgColor: 'transparent', padding: '0', align: 'left' };
       case 'divider': return { ...base, dividerColor: '#e5e7eb', thickness: '1', padding: '10', align: 'center' };
       case 'container':
@@ -66,6 +66,9 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
   if (!['left','center','right'].includes(p.align || '')) p.align = 'left';
   if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
   if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
+  if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
+  if (!['auto','full'].includes(p.buttonWidth || 'auto')) p.buttonWidth = 'auto';
+  if (!['small','medium','large'].includes(p.buttonSize || 'medium')) p.buttonSize = 'medium';
   return p;
 }
 
@@ -125,7 +128,17 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
       case 'link': {
         const href = safeLinkUrl(p.url);
         const external = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
-        return p.style === 'button' ? `<a href="${escapeHtml(href)}"${external} style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:12px 24px;border-radius:${p.borderRadius}px;max-width:100%;overflow-wrap:anywhere;white-space:normal;text-decoration:none;font-weight:600;font-size:${p.fontSize}px;">${escapeHtml(p.text)}</a>` : `<a href="${escapeHtml(href)}"${external} style="color:${p.buttonColor};text-decoration:underline;font-size:${p.fontSize}px;">${escapeHtml(p.text)}</a>`;
+        if (p.style === 'link') return `<a href="${escapeHtml(href)}"${external} style="color:${p.buttonColor};text-decoration:underline;font-size:${p.fontSize}px;font-weight:600;">${escapeHtml(p.text)}</a>`;
+        const sizeStyles = p.buttonSize === 'small'
+          ? 'padding:9px 16px;'
+          : p.buttonSize === 'large'
+            ? 'padding:16px 34px;'
+            : 'padding:12px 24px;';
+        const widthStyles = p.buttonWidth === 'full' ? 'display:block;width:100%;' : 'display:inline-block;';
+        const variantStyles = p.style === 'outline'
+          ? `background:transparent;color:${p.buttonColor};border:2px solid ${p.buttonColor};`
+          : `background:${p.buttonColor};color:${p.buttonTextColor};border:2px solid ${p.buttonColor};`;
+        return `<a href="${escapeHtml(href)}"${external} style="${widthStyles}${variantStyles}${sizeStyles}border-radius:${p.borderRadius}px;max-width:100%;overflow-wrap:anywhere;white-space:normal;text-decoration:none;font-weight:600;font-size:${p.fontSize}px;text-align:center;box-sizing:border-box;">${escapeHtml(p.text)}</a>`;
       }
       case 'spacer': return `<div style="height:${p.height}px;"></div>`;
       case 'divider': return `<hr style="border:none;border-top:${p.thickness}px solid ${p.dividerColor};margin:0;">`;
