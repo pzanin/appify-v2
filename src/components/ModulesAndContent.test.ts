@@ -3,7 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import React, { act } from 'react';
 import type { SubModule } from '../types';
-import { TEST_MP3 } from '../utils/fixtures/audioMp3';
+import { TEST_MP3, TEST_M4A } from '../utils/fixtures/audioMp3';
 const dom = new JSDOM('<div id="root"></div>', { url:'https://appify.test' });
 Object.assign(globalThis, { window:dom.window, document:dom.window.document, DOMParser:dom.window.DOMParser, HTMLElement:dom.window.HTMLElement, localStorage:dom.window.localStorage, IS_REACT_ACT_ENVIRONMENT:true });
 const { createRoot } = await import('react-dom/client');
@@ -17,6 +17,32 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new dom.window.Event(element.tagName === 'SELECT' ? 'change' : 'input',{bubbles:true}));
 }
 
+test('M4A uploads generate a player and failed replacements display an error without discarding the current audio', async () => {
+  const sub: SubModule = {id:7,name:'M4A',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:7},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root = createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:sub,onSave:()=>{},onClose:()=>{}})));
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('MP3, M4A ou link externo'))!));
+  const upload = async (file: File) => {
+    const loaded = new Promise<void>(resolve=>Object.assign(globalThis,{FileReader:class extends (dom.window.FileReader as typeof FileReader) { constructor(){super();this.addEventListener('loadend',()=>resolve());} }}));
+    await act(async()=>{
+      const input = document.querySelector('#audio-file')!;
+      Object.defineProperty(input,'files',{configurable:true,value:[file]});
+      input.dispatchEvent(new dom.window.Event('change',{bubbles:true})); await loaded;
+    });
+  };
+  await upload(new dom.window.File([Buffer.from(TEST_M4A.split(',')[1],'base64')],'aula.m4a'));
+  assert.equal(document.querySelector('audio')!.getAttribute('src'),TEST_M4A);
+  assert.match(document.querySelector('[role="status"]')!.textContent!,/incorporado/);
+  await upload(new dom.window.File(['<html>invalid</html>'],'invalid.m4a'));
+  assert.match(document.querySelector('[role="alert"]')!.textContent!,/não corresponde/);
+  assert.equal(document.querySelector('audio')!.getAttribute('src'),TEST_M4A);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
+  assert.equal(new JSDOM(useAppStore.getState().modules[0].subs[0].contentHtml!).window.document.querySelector('audio')!.getAttribute('src'),TEST_M4A);
+  await act(async()=>root.unmount());
+  Object.assign(globalThis,{FileReader:dom.window.FileReader});
+});
+
 test('audio upload and URL modes save and reopen without losing the embedded MP3; removal clears the uploaded source', async () => {
   const sub: SubModule = {id:6,name:'Áudio',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
   useAppStore.setState({editingSubmodule:{modId:1,subId:6},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
@@ -24,7 +50,7 @@ test('audio upload and URL modes save and reopen without losing the embedded MP3
   const render = async (lesson: SubModule) => act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
   const save = async () => act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
   await render(sub);
-  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('MP3 ou link externo'))!));
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('MP3, M4A ou link externo'))!));
   const loaded = new Promise<void>(resolve=>{
     Object.assign(globalThis,{FileReader:class extends (dom.window.FileReader as typeof FileReader) { constructor(){super();this.addEventListener('loadend',()=>resolve());} }});
   });

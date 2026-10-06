@@ -12,7 +12,7 @@ import { HtmlFrame } from './HtmlFrame';
 import { sanitizeImportedHtml } from '../utils/htmlSecurity';
 import { BUILDER_CSS, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
 import { openExternalLink } from '../utils/externalLinks';
-import { builderAudioSource, readMp3File } from '../utils/builderAudio';
+import { builderAudioSource, readAudioFile } from '../utils/builderAudio';
 
 interface ModulesAndContentProps {
   submodule: SubModule;
@@ -27,7 +27,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
   const [blocks, setBlocks] = useState<BuilderBlock[]>(submodule.builder_data || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [audioImportStatus, setAudioImportStatus] = useState<{ blockId: string; message: string } | null>(null);
+  const [audioImportStatus, setAudioImportStatus] = useState<{ blockId: string; message: string; kind: 'loading' | 'success' | 'error' } | null>(null);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>(submodule.htmlMode || 'visual');
   const [submoduleName, setSubmoduleName] = useState(submodule.name || '');
 
@@ -217,7 +217,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <button className="vpb-module-btn" onClick={() => addBlock('list')}><Check className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Lista com ícones</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Benefícios ou passos</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('card')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Card / Destaque</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Dica ou informação importante</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('accordion')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Acordeão</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Seção que abre e fecha</div></div></button>
-                <button className="vpb-module-btn" onClick={() => addBlock('audio')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Áudio</div><div style={{fontSize:'10px',color:'var(--muted)'}}>MP3 ou link externo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('audio')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Áudio</div><div style={{fontSize:'10px',color:'var(--muted)'}}>MP3, M4A ou link externo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
@@ -397,7 +397,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input id="audio-title" className="vpb-input" value={selectedBlock.props.title ?? ''} onChange={e => updateProp('title', e.target.value)} />
                       <label className="vpb-label" htmlFor="audio-mode">Origem do áudio</label>
                       <select id="audio-mode" className="vpb-input" value={selectedBlock.props.audioMode || 'file'} onChange={e => { updateProp('audioMode', e.target.value as BuilderBlock['props']['audioMode']); setAudioImportStatus(null); }}>
-                        <option value="file">Enviar arquivo MP3</option>
+                        <option value="file">Enviar arquivo MP3 ou M4A</option>
                         <option value="url">Link HTTPS externo</option>
                       </select>
                       {selectedBlock.props.audioMode === 'url' ? <>
@@ -405,18 +405,18 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <input id="audio-url" className="vpb-input" placeholder="https://seusite.com/audio.mp3" value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
                         {!builderAudioSource(selectedBlock.props) && <p className="vpb-html-help">Informe um link HTTPS direto para o arquivo de áudio. Links de páginas do YouTube, Spotify ou Google Drive não são links diretos de áudio.</p>}
                       </> : <>
-                        <label className="vpb-label" htmlFor="audio-file">Arquivo MP3 (até 5 MB)</label>
+                        <label className="vpb-label" htmlFor="audio-file">Arquivo MP3 ou M4A (até 5 MB)</label>
                         <input id="audio-file" className="vpb-input" type="file" onChange={async e => {
                           const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
                           const blockId = selectedBlock.id;
-                          setAudioImportStatus({ blockId, message: 'Lendo MP3…' });
-                          try { const source = await readMp3File(file); updateProp('audioData', source); updateProp('audioFileName', file.name); setAudioImportStatus({ blockId, message: 'MP3 incorporado ao projeto.' }); }
-                          catch (error) { setAudioImportStatus({ blockId, message: error instanceof Error ? error.message : 'Não foi possível importar o MP3.' }); }
+                          setAudioImportStatus({ blockId, message: 'Lendo áudio…', kind: 'loading' });
+                          try { const source = await readAudioFile(file); updateProp('audioData', source); updateProp('audioFileName', file.name); setAudioImportStatus({ blockId, message: 'Áudio incorporado ao projeto. O player está disponível no preview.', kind: 'success' }); }
+                          catch (error) { setAudioImportStatus({ blockId, message: error instanceof Error ? error.message : 'Não foi possível importar o áudio.', kind: 'error' }); }
                         }} />
                         {selectedBlock.props.audioFileName && <p className="vpb-html-help">{selectedBlock.props.audioFileName} <button type="button" className="btn-ghost" onClick={() => { updateProp('audioData', ''); updateProp('audioFileName', ''); setAudioImportStatus(null); }}>Remover áudio</button></p>}
                         <p className="vpb-html-help">O arquivo acompanha o PWA exportado e aumenta o tamanho do projeto. Para áudios maiores ou muitos arquivos, prefira links externos.</p>
                       </>}
-                      {audioImportStatus?.blockId === selectedBlock.id && <p className="vpb-html-help" role="status">{audioImportStatus.message}</p>}
+                      {audioImportStatus?.blockId === selectedBlock.id && <p className="vpb-html-help" role={audioImportStatus.kind === 'error' ? 'alert' : 'status'} style={{ color: audioImportStatus.kind === 'error' ? '#f87171' : undefined, fontWeight: 600 }}>{audioImportStatus.message}</p>}
                     </>
                   )}
 

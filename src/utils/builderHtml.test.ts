@@ -3,7 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import type { BuilderBlock } from '../types';
 import JSZip from 'jszip';
-import { TEST_MP3 } from './fixtures/audioMp3';
+import { TEST_MP3, TEST_M4A } from './fixtures/audioMp3';
 import { assertSafeArchive } from './exportSecurity';
 const dom = new JSDOM('');
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, DOMParser: dom.window.DOMParser });
@@ -15,7 +15,7 @@ function block(type: string, subtype?: string, overrides: BuilderBlock['props'] 
 function doc(html: string) { return new JSDOM(html).window.document; }
 
 test('audio players retain controls and uploaded bytes or HTTPS sources in sanitized exported pages and JSON', async () => {
-  for (const props of [{audioMode:'file' as const,audioData:TEST_MP3},{audioMode:'url' as const,url:'https://example.com/audio.mp3?x=1&y=2'}]) {
+  for (const props of [{audioMode:'file' as const,audioData:TEST_MP3},{audioMode:'file' as const,audioData:TEST_M4A},{audioMode:'url' as const,url:'https://example.com/audio.mp3?x=1&y=2'},{audioMode:'url' as const,url:'https://example.com/audio.m4a'}]) {
     const item = block('audio',undefined,{...props,title:'Español <img src=x>'});
     const json = JSON.stringify([item]);
     const html = prepareResponsiveHtml(generateBuilderHtml(JSON.parse(json)));
@@ -28,12 +28,12 @@ test('audio players retain controls and uploaded bytes or HTTPS sources in sanit
     assert.ok(audio.hasAttribute('controls'));
     assert.equal(audio.hasAttribute('autoplay'),false);
     assert.equal(audio.getAttribute('preload'),'none');
-    assert.equal(audio.getAttribute('src'),props.audioMode === 'file' ? TEST_MP3 : props.url);
+    assert.equal(audio.getAttribute('src'),props.audioMode === 'file' ? props.audioData : props.url);
     assert.equal(audio.getAttribute('aria-label'),item.props.title);
     assert.equal(saved.querySelector('h3')!.textContent,item.props.title);
     assert.equal(saved.querySelector('img'),null);
     assert.equal(await reopened.file('app-data.json')!.async('string'),json);
-    if (props.audioMode === 'file') assert.deepEqual(Buffer.from(audio.getAttribute('src')!.split(',')[1],'base64'),Buffer.from(TEST_MP3.split(',')[1],'base64'));
+    if (props.audioMode === 'file') assert.deepEqual(Buffer.from(audio.getAttribute('src')!.split(',')[1],'base64'),Buffer.from(props.audioData!.split(',')[1],'base64'));
   }
   assert.equal(doc(getBlockInnerHtml(block('audio'))).querySelector('audio'),null);
 });

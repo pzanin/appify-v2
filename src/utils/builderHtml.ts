@@ -122,7 +122,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
         const source = builderAudioSource(p);
         const title = p.title?.trim();
         const heading = title ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(title)}</h3>` : '';
-        return `${heading}${source ? `<audio controls preload="none" aria-label="${escapeHtml(title || 'Áudio')}" src="${escapeHtml(source)}" style="width:100%;max-width:100%;">${escapeHtml(title || 'Áudio')}</audio>` : '<p style="margin:0;">Envie um MP3 ou informe um link HTTPS direto para o áudio.</p>'}`;
+        return `${heading}${source ? `<audio controls preload="none" aria-label="${escapeHtml(title || 'Áudio')}" src="${escapeHtml(source)}" style="width:100%;max-width:100%;">${escapeHtml(title || 'Áudio')}</audio>` : '<p style="margin:0;">Envie um MP3 ou M4A, ou informe um link HTTPS direto para o áudio.</p>'}`;
       }
       case 'accordion': return `<details class="appify-builder-accordion"${p.accordionOpen === true ? ' open' : ''} style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;max-width:100%;"><summary style="${titleStyle}cursor:pointer;overflow-wrap:anywhere;">${escapeHtml(p.title?.trim() || 'Detalhes')}</summary><p style="white-space:pre-wrap;margin:${tmb}px 0 0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></details>`;
       case 'card': {
