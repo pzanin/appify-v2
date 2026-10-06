@@ -10,7 +10,7 @@ import { useAppStore } from '../store/useAppStore';
 import { interactiveWarnings, normalizeHtmlPaste } from '../utils/interactiveHtml';
 import { HtmlFrame } from './HtmlFrame';
 import { sanitizeImportedHtml } from '../utils/htmlSecurity';
-import { BUILDER_CSS, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
+import { BUILDER_CSS, builderDownloadUrl, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
 import { openExternalLink } from '../utils/externalLinks';
 import { builderAudioSource, readAudioFile } from '../utils/builderAudio';
 
@@ -218,6 +218,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <button className="vpb-module-btn" onClick={() => addBlock('card')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Card / Destaque</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Dica ou informação importante</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('accordion')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Acordeão</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Seção que abre e fecha</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('audio')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Áudio</div><div style={{fontSize:'10px',color:'var(--muted)'}}>MP3, M4A ou link externo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('download')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Arquivo para download</div><div style={{fontSize:'10px',color:'var(--muted)'}}>PDF, planner ou material externo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
@@ -388,6 +389,22 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <>
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'download' && (
+                    <>
+                      <label className="vpb-label" htmlFor="download-title">Título (opcional)</label>
+                      <input id="download-title" className="vpb-input" value={selectedBlock.props.title ?? ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label" htmlFor="download-content">Descrição (opcional)</label>
+                      <textarea id="download-content" className="vpb-textarea" rows={3} value={selectedBlock.props.content ?? ''} onChange={e => updateProp('content', e.target.value)} />
+                      <label className="vpb-label" htmlFor="download-url">Link HTTPS do arquivo</label>
+                      <input id="download-url" className="vpb-input" placeholder="https://seusite.com/material.pdf" value={selectedBlock.props.url ?? ''} onChange={e => updateProp('url', e.target.value)} />
+                      {!builderDownloadUrl(selectedBlock.props.url) && <p className="vpb-html-help" role="status">Informe um link HTTPS válido para disponibilizar o botão.</p>}
+                      <button type="button" className="btn-ghost" disabled={!builderDownloadUrl(selectedBlock.props.url)} onClick={() => openExternalLink(builderDownloadUrl(selectedBlock.props.url))}>Testar arquivo no navegador</button>
+                      <label className="vpb-label" htmlFor="download-button">Texto do botão</label>
+                      <input id="download-button" className="vpb-input" placeholder="Baixar material" value={selectedBlock.props.buttonText ?? ''} onChange={e => updateProp('buttonText', e.target.value)} />
+                      <p className="vpb-html-help">O arquivo será aberto no navegador. O serviço de hospedagem determina se ele será baixado ou exibido para leitura. Use um link acessível ao seu público.</p>
                     </>
                   )}
 
@@ -812,7 +829,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 </div>}
 
                 {/* ── TÍTULO AVANÇADO ── */}
-                {(selectedBlock.type === 'header' || selectedBlock.type === 'card' || selectedBlock.type === 'accordion' || selectedBlock.type === 'audio' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
+                {(selectedBlock.type === 'header' || selectedBlock.type === 'card' || selectedBlock.type === 'accordion' || selectedBlock.type === 'audio' || selectedBlock.type === 'download' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
                   <div className="vpb-prop-group">
                     <span className="vpb-lib-label">Estilo dos Títulos</span>
 

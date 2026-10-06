@@ -9,6 +9,22 @@ const {HtmlFrame}=await import('./HtmlFrame');
 const {generateBuilderHtml,getDefaultProps}=await import('../utils/builderHtml');
 const {TEST_MP3,TEST_M4A}=await import('../utils/fixtures/audioMp3');
 
+test('phone simulation retains the material button and routes its file through the external link handler',async(t)=>{
+  const root=createRoot(document.getElementById('root')!);
+  const url='https://example.com/planner.pdf';
+  const html=generateBuilderHtml([{id:'file',type:'download',props:{...getDefaultProps('download'),url,buttonText:'Abrir planner'}}]);
+  const opened=t.mock.method(window,'open',()=>null);
+  await act(async()=>root.render(React.createElement(HtmlFrame,{html,title:'Simulação',style:{width:320,height:480}})));
+  const frame=document.querySelector('iframe')!;
+  const content=new JSDOM(frame.getAttribute('srcdoc')!).window.document;
+  assert.equal(content.querySelector('a')!.textContent,'Abrir planner');
+  assert.equal(content.querySelector('a')!.getAttribute('href'),url);
+  assert.equal(content.querySelector('a')!.style.maxWidth,'100%');
+  await act(async()=>window.dispatchEvent(new dom.window.MessageEvent('message',{source:frame.contentWindow,data:{type:'appify:external-link',url}})));
+  assert.deepEqual(opened.mock.calls[0].arguments,[url,'_blank','noopener,noreferrer']);
+  await act(async()=>root.unmount());
+});
+
 test('phone iframe preserves uploaded and linked audio controls with a minimum height despite responsive media height auto',async()=>{
   const root=createRoot(document.getElementById('root')!);
   for (const source of [TEST_MP3,TEST_M4A,'https://example.com/audio.mp3','https://example.com/audio.m4a']) {

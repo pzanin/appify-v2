@@ -15,6 +15,11 @@ export function escapeHtml(value: unknown): string {
   return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!));
 }
 
+export function builderDownloadUrl(value?: string): string {
+  const url = safeLinkUrl(value);
+  return url.startsWith('https:') ? url : '';
+}
+
 export const getDefaultProps = (type: string, subtype?: string) => {
     const base = { bgColor: '#ffffff', padding: '20', align: 'left', fontFamily: 'DM Sans', fontSize: '16', color: '#333333', gap: '16', borderRadius: '8' };
     switch(type) {
@@ -24,6 +29,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'card': return { ...base, bgColor: 'transparent', padding: '0', title: 'Dica importante', content: 'Destaque aqui uma orientação, benefício ou informação importante.', cardIcon: 'none' as const, cardBgColor: '#f3f4f6', cardPadding: '20', borderRadius: '12', titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'accordion': return { ...base, bgColor: 'transparent', padding: '0', title: 'Clique para ver mais', content: 'Escreva aqui a explicação ou resposta desta seção.', accordionOpen: false, cardBgColor: '#f3f4f6', cardPadding: '16', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'audio': return { ...base, title: 'Áudio', audioMode: 'file' as const, audioData: '', audioFileName: '', url: '', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
+      case 'download': return { ...base, title: 'Material de apoio', content: '', url: '', buttonText: 'Baixar material', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
@@ -118,6 +124,13 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
       case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
+      case 'download': {
+        const url = builderDownloadUrl(p.url);
+        const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
+        const description = p.content?.trim() ? `<p style="white-space:pre-wrap;margin:0 0 12px;">${escapeHtml(p.content)}</p>` : '';
+        const button = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || 'Baixar material')}</a>` : '<p style="margin:0;opacity:.7;">Informe um link HTTPS para o arquivo.</p>';
+        return `${heading}${description}${button}`;
+      }
       case 'audio': {
         const source = builderAudioSource(p);
         const title = p.title?.trim();

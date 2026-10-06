@@ -17,6 +17,43 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new dom.window.Event(element.tagName === 'SELECT' ? 'change' : 'input',{bubbles:true}));
 }
 
+test('download block saves and reopens its external file, optional text and button label', async (t) => {
+  const sub: SubModule = {id:8,name:'Materiais',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:8},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root = createRoot(document.getElementById('root')!);
+  const render = async (lesson: SubModule) => act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
+  await render(sub);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Arquivo para download'))!));
+  assert.equal(document.querySelector('.vpb-block-wrapper a'),null);
+  await act(async()=>change(document.querySelector('#download-title') as HTMLInputElement,'Guía de estudio'));
+  await act(async()=>{
+    const input = document.querySelector('#download-content')!;
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!.call(input,'Ejercicios\nSemana 1');
+    input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  });
+  await act(async()=>change(document.querySelector('#download-url') as HTMLInputElement,'https://example.com/guia.pdf?x=1&y=2'));
+  await act(async()=>change(document.querySelector('#download-button') as HTMLInputElement,'Abrir guía'));
+  const opened = t.mock.method(window,'open',()=>null);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Testar arquivo no navegador'))!));
+  assert.deepEqual(opened.mock.calls[0].arguments,['https://example.com/guia.pdf?x=1&y=2','_blank','noopener,noreferrer']);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
+  const saved = useAppStore.getState().modules[0].subs[0];
+  await render(saved);
+  await act(async()=>click(document.querySelector('.vpb-block-wrapper')!));
+  assert.equal((document.querySelector('#download-title') as HTMLInputElement).value,'Guía de estudio');
+  assert.equal((document.querySelector('#download-content') as HTMLTextAreaElement).value,'Ejercicios\nSemana 1');
+  for (const content of [document,new JSDOM(saved.contentHtml!).window.document]) {
+    const link = content.querySelector('.appify-builder-content a')!;
+    assert.equal(link.textContent,'Abrir guía');
+    assert.equal(link.getAttribute('href'),'https://example.com/guia.pdf?x=1&y=2');
+  }
+  await act(async()=>change(document.querySelector('#download-title') as HTMLInputElement,''));
+  await act(async()=>change(document.querySelector('#download-url') as HTMLInputElement,'javascript:alert(1)'));
+  assert.equal(document.querySelector('.vpb-block-wrapper h3'),null);
+  assert.equal(document.querySelector('.vpb-block-wrapper a'),null);
+  await act(async()=>root.unmount());
+});
+
 test('M4A uploads generate a player and failed replacements display an error without discarding the current audio', async () => {
   const sub: SubModule = {id:7,name:'M4A',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
   useAppStore.setState({editingSubmodule:{modId:1,subId:7},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});

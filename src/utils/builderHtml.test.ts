@@ -14,6 +14,32 @@ function block(type: string, subtype?: string, overrides: BuilderBlock['props'] 
 }
 function doc(html: string) { return new JSDOM(html).window.document; }
 
+test('download materials preserve escaped text and HTTPS links through responsive HTML and a ZIP round trip', async () => {
+  const item = block('download',undefined,{title:'Guía <img src=x>',content:'Ejercicios & notas\nSemana 1',buttonText:'Abrir <guía>',url:'https://example.com/guia.pdf?x=1&y=2'});
+  const zip = new JSZip();
+  zip.file('app-data.json',JSON.stringify([item]));
+  zip.file('pages/lesson-1-1.html',prepareResponsiveHtml(generateBuilderHtml([item])));
+  await assertSafeArchive(zip);
+  const reopened = await JSZip.loadAsync(await zip.generateAsync({type:'uint8array'}));
+  const page = doc(await reopened.file('pages/lesson-1-1.html')!.async('string'));
+  const a = page.querySelector('a')!;
+  assert.equal(a.getAttribute('href'),item.props.url);
+  assert.equal(a.textContent,item.props.buttonText);
+  assert.equal(a.getAttribute('target'),'_blank');
+  assert.equal(a.getAttribute('rel'),'noopener noreferrer');
+  assert.equal(page.querySelector('h3')!.textContent,item.props.title);
+  assert.equal(page.querySelector('p')!.textContent,item.props.content);
+  assert.equal(page.querySelector('img'),null);
+  assert.equal(await reopened.file('app-data.json')!.async('string'),JSON.stringify([item]));
+  for (const url of ['', 'javascript:alert(1)', 'data:text/html,test', 'file:///secret', 'http://example.com/file.pdf', 'mailto:a@example.com', 'https://user:secret@example.com/file.pdf']) {
+    assert.equal(doc(getBlockInnerHtml(block('download',undefined,{url}))).querySelector('a'),null);
+  }
+  const optional = doc(getBlockInnerHtml(block('download',undefined,{title:'',content:'',buttonText:'',url:'example.com/guide.pdf'})));
+  assert.equal(optional.querySelector('h3,p'),null);
+  assert.equal(optional.querySelector('a')!.textContent,'Baixar material');
+  assert.equal(optional.querySelector('a')!.getAttribute('href'),'https://example.com/guide.pdf');
+});
+
 test('audio players retain controls and uploaded bytes or HTTPS sources in sanitized exported pages and JSON', async () => {
   for (const props of [{audioMode:'file' as const,audioData:TEST_MP3},{audioMode:'file' as const,audioData:TEST_M4A},{audioMode:'url' as const,url:'https://example.com/audio.mp3?x=1&y=2'},{audioMode:'url' as const,url:'https://example.com/audio.m4a'}]) {
     const item = block('audio',undefined,{...props,title:'Español <img src=x>'});
