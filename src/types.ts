@@ -86,6 +86,17 @@ export interface Version {
   status: 'publicado' | 'rascunho';
 }
 
+export type VideoProvider = 'youtube' | 'vimeo' | 'direct';
+export type VideoAspectRatio = '16:9' | '9:16' | '1:1';
+export type EntryAnimation = 'none' | 'fade' | 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom';
+export type CardLayout = 'grid' | 'horizontal' | 'compact';
+export type AdvancedLayout = 'feature-split' | 'media-stack' | 'highlight-band' | 'masonry-lite';
+
+export interface AccordionItem { id: string; title: string; content: string; }
+export interface TabItem { id: string; label: string; content: string; }
+export interface CardItem { id: string; title: string; text: string; image?: string; badge?: string; buttonText?: string; buttonUrl?: string; }
+export interface CarouselItem { id: string; title?: string; text?: string; image?: string; buttonText?: string; buttonUrl?: string; }
+
 export interface BuilderBlock {
   id: string;
   type: string;
@@ -150,20 +161,51 @@ export interface BuilderBlock {
     columnPadding?: string | number;
     gap?: string | number;
     borderRadius?: string | number;
-    // Advanced image controls
     imgHeight?: string | number;
     imgBorderRadius?: string | number;
     imgObjectFit?: 'cover' | 'contain' | 'fill';
-    // Advanced title controls
     titleFontFamily?: string;
     titleFontSize?: string | number;
     titleFontWeight?: string | number;
     titleMarginBottom?: string | number;
-    // Image controls for imageText container
     imageWidth?: string | number;
     imageHeight?: string | number;
     imageBorderRadius?: string | number;
     imageObjectFit?: 'cover' | 'contain' | 'fill';
+    videoProvider?: VideoProvider;
+    videoUrl?: string;
+    videoAspectRatio?: VideoAspectRatio;
+    videoThumbnail?: string;
+    videoAutoplay?: boolean;
+    videoLoop?: boolean;
+    videoMuted?: boolean;
+    videoControls?: boolean;
+    videoBorderRadius?: string | number;
+    videoWidth?: string | number;
+    containerMaxWidth?: string | number;
+    accordionItems?: AccordionItem[];
+    accordionAllowMultiple?: boolean;
+    tabs?: TabItem[];
+    tabsActiveIndex?: number;
+    entryAnimation?: EntryAnimation;
+    animationDurationMs?: number;
+    animationDelayMs?: number;
+    animationOnce?: boolean;
+    cardItems?: CardItem[];
+    cardLayout?: CardLayout;
+    cardColumns?: 1 | 2 | 3;
+    cardGap?: number;
+    cardBorderRadius?: number;
+    carouselItems?: CarouselItem[];
+    carouselAutoplay?: boolean;
+    carouselIntervalMs?: number;
+    carouselShowDots?: boolean;
+    carouselShowArrows?: boolean;
+    carouselAspectRatio?: '16:9' | '4:3' | '1:1' | '9:16';
+    advancedLayout?: AdvancedLayout;
+    layoutGap?: number;
+    layoutReverseMobile?: boolean;
+    eyebrow?: string;
   };
 }
 
@@ -266,7 +308,7 @@ export interface SubModule {
   contentUrl?: string;
   contentHtml?: string;
   customHtml?: string;
-  content_html?: string; // Maintain for compatibility
+  content_html?: string;
   builder_data?: BuilderBlock[];
   htmlMode?: 'visual' | 'code';
   htmlInteractive?: boolean;
