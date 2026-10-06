@@ -121,6 +121,8 @@ export interface BuilderBlock {
     style?: string;
     buttonColor?: string;
     buttonTextColor?: string;
+    buttonWidth?: 'auto' | 'full';
+    buttonSize?: 'small' | 'medium' | 'large';
     dividerColor?: string;
     thickness?: string | number;
     imageSrc?: string;
