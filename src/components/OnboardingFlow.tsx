@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Download, Bell, Share, Plus, X, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useAppStore } from '../store/useAppStore';
+import { Download, Bell, Share, Plus } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { useTranslation } from 'react-i18next';
+
+const INSTALL_PROMPT_KEY = 'appify_has_seen_install_prompt';
+const PUSH_PROMPT_KEY = 'appify_has_seen_push_prompt';
 
 export function OnboardingFlow() {
   const { t } = useTranslation();
   const { isInstallAvailable, isIOS, isStandalone, triggerInstall } = usePWAInstall();
-  
-  const hasSeenInstallPrompt = useAppStore(state => state.hasSeenInstallPrompt);
-  const hasSeenPushPrompt = useAppStore(state => state.hasSeenPushPrompt);
-  const setHasSeenInstallPrompt = useAppStore(state => state.setHasSeenInstallPrompt);
-  const setHasSeenPushPrompt = useAppStore(state => state.setHasSeenPushPrompt);
-  
+
+  const [hasSeenInstallPrompt, setHasSeenInstallPromptState] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem(INSTALL_PROMPT_KEY) === '1'
+  );
+  const [hasSeenPushPrompt, setHasSeenPushPromptState] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem(PUSH_PROMPT_KEY) === '1'
+  );
   const [step, setStep] = useState<'install' | 'push' | null>(null);
+
+  const setHasSeenInstallPrompt = (value: boolean) => {
+    setHasSeenInstallPromptState(value);
+    if (typeof window !== 'undefined') localStorage.setItem(INSTALL_PROMPT_KEY, value ? '1' : '0');
+  };
+
+  const setHasSeenPushPrompt = (value: boolean) => {
+    setHasSeenPushPromptState(value);
+    if (typeof window !== 'undefined') localStorage.setItem(PUSH_PROMPT_KEY, value ? '1' : '0');
+  };
 
   useEffect(() => {
     if (isStandalone) {
@@ -25,7 +38,7 @@ export function OnboardingFlow() {
     } else if (!hasSeenPushPrompt) {
       setStep('push');
     }
-  }, [hasSeenInstallPrompt, hasSeenPushPrompt, isStandalone, setHasSeenInstallPrompt]);
+  }, [hasSeenInstallPrompt, hasSeenPushPrompt, isStandalone]);
 
   const handleDismissInstall = () => {
     setHasSeenInstallPrompt(true);
@@ -40,17 +53,13 @@ export function OnboardingFlow() {
 
   const handleInstall = async () => {
     const outcome = await triggerInstall();
-    if (outcome === 'accepted') {
-      handleDismissInstall();
-    }
+    if (outcome === 'accepted') handleDismissInstall();
   };
 
   const handleEnablePush = async () => {
     if ('Notification' in window) {
       const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        console.log('Push notifications enabled');
-      }
+      if (permission === 'granted') console.log('Push notifications enabled');
     }
     handleDismissPush();
   };
@@ -64,7 +73,7 @@ export function OnboardingFlow() {
         background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
       }}>
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -75,7 +84,6 @@ export function OnboardingFlow() {
             position: 'relative', overflow: 'hidden', border: '1px solid var(--border)'
           }}
         >
-          {/* Background Glow */}
           <div style={{
             position: 'absolute', top: '-100px', left: '50%', transform: 'translateX(-50%)',
             width: '200px', height: '200px', background: 'var(--accent)',
@@ -91,7 +99,7 @@ export function OnboardingFlow() {
               }}>
                 <Download size={40} />
               </div>
-              
+
               <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '12px' }}>
                 {t('onboarding.install.title', 'Instalar App')}
               </h2>
@@ -118,11 +126,11 @@ export function OnboardingFlow() {
                   </div>
                 </div>
               ) : (
-                <button 
+                <button
                   onClick={handleInstall}
                   disabled={!isInstallAvailable}
                   className="btn-primary"
-                  style={{ 
+                  style={{
                     width: '100%', padding: '18px', borderRadius: '18px',
                     marginBottom: '12px', fontSize: '16px', fontWeight: 700,
                     opacity: isInstallAvailable ? 1 : 0.5
@@ -132,11 +140,11 @@ export function OnboardingFlow() {
                 </button>
               )}
 
-              <button 
+              <button
                 onClick={handleDismissInstall}
-                style={{ 
+                style={{
                   background: 'transparent', color: 'var(--muted)', border: 'none',
-                  fontSize: '14px', fontWeight: 600, cursor: 'pointer' 
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                 }}
               >
                 {t('onboarding.install.skip', 'Agora Não')}
@@ -151,7 +159,7 @@ export function OnboardingFlow() {
               }}>
                 <Bell size={40} />
               </div>
-              
+
               <h2 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '12px' }}>
                 {t('onboarding.push.title', 'Notificações')}
               </h2>
@@ -159,22 +167,22 @@ export function OnboardingFlow() {
                 {t('onboarding.push.subtitle', 'Ative as notificações para receber lembretes de aulas, novidades e conteúdos exclusivos em tempo real.')}
               </p>
 
-              <button 
+              <button
                 onClick={handleEnablePush}
                 className="btn-primary"
-                style={{ 
+                style={{
                   width: '100%', padding: '18px', borderRadius: '18px',
-                  marginBottom: '12px', fontSize: '16px', fontWeight: 700 
+                  marginBottom: '12px', fontSize: '16px', fontWeight: 700
                 }}
               >
                 {t('onboarding.push.confirm', 'Ativar Notificações')}
               </button>
 
-              <button 
+              <button
                 onClick={handleDismissPush}
-                style={{ 
+                style={{
                   background: 'transparent', color: 'var(--muted)', border: 'none',
-                  fontSize: '14px', fontWeight: 600, cursor: 'pointer' 
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                 }}
               >
                 {t('onboarding.push.skip', 'Agora Não')}
