@@ -82,6 +82,10 @@ export interface Version {
   status: 'publicado' | 'rascunho';
 }
 
+export type VideoProvider = 'youtube' | 'vimeo' | 'direct';
+export type VideoAspectRatio = '16:9' | '9:16' | '1:1';
+export type HtmlExecutionMode = 'safe' | 'sandbox';
+
 export interface BuilderBlock {
   id: string;
   type: string;
@@ -155,6 +159,19 @@ export interface BuilderBlock {
     imageHeight?: string | number;
     imageBorderRadius?: string | number;
     imageObjectFit?: 'cover' | 'contain' | 'fill';
+    // Video block controls
+    videoProvider?: VideoProvider;
+    videoUrl?: string;
+    videoAspectRatio?: VideoAspectRatio;
+    videoThumbnail?: string;
+    videoAutoplay?: boolean;
+    videoLoop?: boolean;
+    videoMuted?: boolean;
+    videoControls?: boolean;
+    videoBorderRadius?: string | number;
+    videoWidth?: string | number;
+    // Single-column container controls
+    containerMaxWidth?: string | number;
   };
 }
 
@@ -222,6 +239,7 @@ export interface SubModule {
   content_html?: string; // Maintain for compatibility
   builder_data?: BuilderBlock[];
   htmlMode?: 'visual' | 'code';
+  htmlExecutionMode?: HtmlExecutionMode;
   coverImageUrl?: string;
   externalLink?: string;
   gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean };
