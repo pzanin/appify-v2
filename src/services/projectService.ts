@@ -8,11 +8,37 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function isValidProject(value: unknown): value is Project {
+  if (!value || typeof value !== 'object') return false;
+  const project = value as Partial<Project>;
+  return typeof project.id === 'number'
+    && typeof project.name === 'string'
+    && project.name.trim().length > 0
+    && (project.status === 'Publicado' || project.status === 'Rascunho');
+}
+
+function isValidBrowserProject(value: unknown): value is BrowserProject {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Partial<BrowserProject>;
+  return item.schemaVersion === 1
+    && isValidProject(item.project)
+    && Boolean(item.workspace)
+    && typeof item.workspace === 'object';
+}
+
 function getBrowserProjects(): BrowserProject[] {
   try {
     const raw = localStorage.getItem(BROWSER_STORAGE_KEY);
-    return raw ? JSON.parse(raw) as BrowserProject[] : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const valid = parsed.filter(isValidBrowserProject);
+    if (valid.length !== parsed.length) {
+      console.warn('[Appify] Registros de projeto inválidos foram ignorados no modo navegador.');
+    }
+    return valid;
   } catch {
+    console.warn('[Appify] Não foi possível ler os projetos salvos no navegador.');
     return [];
   }
 }
