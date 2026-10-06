@@ -38,5 +38,5 @@ export function HtmlFrame({ html, interactive=false, activityPath, ...props }: P
     return () => window.removeEventListener('message', onMessage);
   }, [interactive,html]);
   if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : 'Preparando atividade…'}</div>;
-  return <iframe {...props} ref={frame} src={interactive?activity?.url:undefined} srcDoc={interactive?undefined:prepareResponsiveHtml(html)} sandbox="allow-scripts" referrerPolicy="no-referrer" />;
+  return <iframe {...props} ref={frame} src={interactive?activity?.url:undefined} srcDoc={interactive?undefined:prepareResponsiveHtml(html)} sandbox="allow-scripts" referrerPolicy="strict-origin-when-cross-origin" />;
 }
