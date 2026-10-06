@@ -7,31 +7,34 @@ import { InstallGuide } from './InstallGuide';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export function entryStorageKey(name:string) { return `appify-entry-v1:${window.location.pathname}:${name}`; }
+export function splashDuration(config:PwaConfig) { const value=Number(config.splashDurationMs ?? 2500); return Number.isFinite(value) ? Math.max(1000,Math.min(5000,value)) : 2500; }
 export function CustomerEntry({ config, children, preview = false }: { config:PwaConfig; children:React.ReactNode; preview?:boolean }) {
   const {i18n} = useTranslation();
   const t=i18n.getFixedT((config.language || 'pt-BR').split('-')[0]);
   const name=config.appName || document.title;
   const {isStandalone} = usePWAInstall();
   const completed = () => { try { return !preview && localStorage.getItem(entryStorageKey(name)) === 'done'; } catch { return false; } };
-  const [step,setStep] = useState<'welcome'|'access'|'install'|'ready'>(()=>completed() ? 'ready' : config.welcomeEnabled === false ? ((config.customerAccessMode || 'demo') === 'demo' ? 'access' : isStandalone ? 'ready' : 'install') : 'welcome');
-  const [splash,setSplash] = useState(!preview && config.customSplash !== false);
+  const mode=preview && config.customerAccessMode === 'demo' ? 'demo' : 'open';
+  const [step,setStep] = useState<'welcome'|'access'|'install'|'ready'>(()=>completed() ? 'ready' : config.welcomeEnabled === false ? (mode === 'demo' ? 'access' : 'ready') : 'welcome');
+  const [splash,setSplash] = useState(!completed() && config.customSplash !== false);
   const [email,setEmail] = useState('');
   const color=config.themeColor || '#7c6fff';
-  const mode=config.customerAccessMode || 'demo';
-  useEffect(()=>{ if(!splash)return; const timer=window.setTimeout(()=>setSplash(false),650);return ()=>window.clearTimeout(timer); },[splash]);
+  useEffect(()=>{ if(!splash)return; const timer=window.setTimeout(()=>setSplash(false),splashDuration(config));return ()=>window.clearTimeout(timer); },[splash,config.splashDurationMs]);
+  useEffect(()=>{ if(step==='ready' && !splash && !preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Content remains accessible without storage. */}} },[step,splash,preview,name]);
   const finish=()=>{ if(!preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Continue when storage is unavailable. */}}setEmail('');setStep('ready'); };
-  const next=()=>{ if(isStandalone && !preview)finish(); else setStep('install'); };
+  const next=finish;
   if(step==='ready' && !splash)return <>{children}</>;
   const brand=<div className="customer-brand">{config.logoBase64 || config.iconBase64 ? <img src={config.logoBase64 || config.iconBase64!} alt={name}/> : <div className="customer-monogram" style={{background:color,color:customerButtonTextColor(color)}}>{name.trim().charAt(0).toUpperCase()}</div>}</div>;
   return <div className="customer-screen" style={{'--customer-accent':color} as React.CSSProperties}>
-    <div className="customer-card">
+    <div className={`customer-card${splash ? ` customer-splash customer-splash-${config.splashAnimation === 'zoom' ? 'zoom' : config.splashAnimation === 'none' ? 'none' : 'fade'}` : ''}`}>
       {brand}
-      {splash ? <><h1>{name}</h1><p role="status">{t('experience.loading')}</p></> : step==='welcome' ? <>
+      {splash ? <><h1>{name}</h1><p>{config.tagline || t('experience.welcomeDescription')}</p><button className="customer-secondary" onClick={()=>setSplash(false)}>{t('experience.splashContinue')}</button></> : step==='welcome' ? <>
         <div className="customer-eyebrow">{t('experience.welcome')}</div>
         <h1>{name}</h1>
         <p>{config.tagline || t('experience.welcomeDescription')}</p>
         <div className="customer-note customer-benefit"><BookOpen size={24}/><span>{t('experience.benefit')}</span></div>
         <button className="customer-primary" style={{background:color,color:customerButtonTextColor(color)}} onClick={()=> mode==='demo' ? setStep('access') : next()}>{t('experience.start')}<ArrowRight size={20}/></button>
+        {(!isStandalone || preview) && <button className="customer-secondary" onClick={()=>setStep('install')}>{t('experience.installInvite')}</button>}
       </> : step==='access' ? <>
         <div className="customer-eyebrow">{t('experience.demoLabel')}</div>
         <h1>{t('experience.accessTitle')}</h1>

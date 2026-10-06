@@ -54,6 +54,8 @@ export interface PwaConfig {
   showAdvanced?: boolean;
   offlineMode: boolean;
   customSplash: boolean;
+  splashDurationMs?: number;
+  splashAnimation?: 'fade' | 'zoom' | 'none';
   engagementEnabled?: boolean;
   deploymentProvider?: 'netlify' | 'cloudflare';
   welcomeEnabled?: boolean;

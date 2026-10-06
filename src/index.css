@@ -624,6 +624,10 @@
 .customer-steps li > span { flex-shrink:0; width:30px; height:30px; display:grid; place-items:center; border-radius:50%; background:#e3eaf4; font-weight:700; }
 .customer-steps li > svg { flex-shrink:0; margin-top:5px; }
 .customer-footnote { font-size:14px !important; margin-top:18px !important; }
+.customer-splash-fade .customer-brand { animation:customer-brand-fade .8s ease-out both; }
+.customer-splash-zoom .customer-brand { animation:customer-brand-zoom .9s ease-out both; }
+@keyframes customer-brand-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes customer-brand-zoom { from { opacity:0; transform:scale(.88); } to { opacity:1; transform:scale(1); } }
 @media (prefers-reduced-motion:reduce) { .customer-screen * { animation:none !important; transition:none !important; } }
 
 .standalone-app-wrapper { height:100dvh; }

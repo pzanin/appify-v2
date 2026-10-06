@@ -29,17 +29,21 @@ export function AppConfigurator() {
           <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>
             <h3 style={{fontSize:16,fontWeight:700,marginBottom:12}}>Abertura e acesso do cliente</h3>
             <label className="vpb-label"><input type="checkbox" checked={pwaConfig.welcomeEnabled !== false} onChange={e=>updateConfig({welcomeEnabled:e.target.checked})}/> Mostrar boas-vindas com logotipo</label>
-            <label className="vpb-label">Forma de acesso</label>
-            <select className="vpb-input" value={pwaConfig.customerAccessMode || 'demo'} onChange={e=>updateConfig({customerAccessMode:e.target.value as 'open'|'demo'})}>
-              <option value="demo">Demonstração — simula a tela de acesso</option>
-              <option value="open">Acesso aberto — entra direto no conteúdo</option>
+            <label className="vpb-label" htmlFor="splash-duration">Tempo do logotipo na abertura</label>
+            <select id="splash-duration" className="vpb-input" value={pwaConfig.splashDurationMs ?? 2500} onChange={e=>updateConfig({splashDurationMs:Number(e.target.value)})}>
+              <option value={1500}>1,5 segundo — breve</option><option value={2500}>2,5 segundos — recomendado</option><option value={3500}>3,5 segundos — mais presença</option><option value={5000}>5 segundos — prolongado</option>
             </select>
-            <p style={{fontSize:13,color:'var(--muted)'}}>A demonstração não valida compras nem protege o conteúdo. O e-mail do teste não é enviado ou salvo.</p>
+            <label className="vpb-label" htmlFor="splash-animation">Animação de abertura</label>
+            <select id="splash-animation" className="vpb-input" value={pwaConfig.splashAnimation || 'fade'} onChange={e=>updateConfig({splashAnimation:e.target.value as 'fade'|'zoom'|'none'})}>
+              <option value="fade">Aparecer suavemente</option><option value="zoom">Zoom suave</option><option value="none">Sem animação</option>
+            </select>
+            <label className="vpb-label"><input type="checkbox" checked={pwaConfig.customerAccessMode === 'demo'} onChange={e=>updateConfig({customerAccessMode:e.target.checked?'demo':'open'})}/> Simular tela de login somente na prévia</label>
+            <p style={{fontSize:13,color:'var(--muted)'}}>O PWA publicado abre o conteúdo sem pedir e-mail. A instalação é opcional nas boas-vindas. A validação de compradores ainda não está implementada; a simulação de login fica restrita à prévia.</p>
             <button className="btn-ghost" onClick={()=>setPreviewEntry(true)}>Testar abertura e instalação</button>
           </div></div>
           {previewEntry && <div style={{position:'fixed',inset:0,zIndex:300,background:'rgba(0,0,0,.85)',display:'flex',flexDirection:'column',alignItems:'center',padding:20}}>
             <button className="btn-ghost" onClick={()=>setPreviewEntry(false)} style={{marginBottom:12}}>Fechar prévia</button>
-            <div style={{width:'100%',maxWidth:430,flex:1,minHeight:0,borderRadius:24,overflow:'hidden'}}><CustomerEntry config={{...pwaConfig,welcomeEnabled:true}} preview><div className="customer-screen"><h2>Seu conteúdo aparece aqui.</h2><button className="customer-primary" onClick={()=>setPreviewEntry(false)}>Concluir teste</button></div></CustomerEntry></div>
+            <div style={{width:'100%',maxWidth:430,flex:1,minHeight:0,borderRadius:24,overflow:'hidden'}}><CustomerEntry config={pwaConfig} preview><div className="customer-screen"><h2>Seu conteúdo aparece aqui.</h2><button className="customer-primary" onClick={()=>setPreviewEntry(false)}>Concluir teste</button></div></CustomerEntry></div>
           </div>}
 
           <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>

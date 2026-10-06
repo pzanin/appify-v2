@@ -10,7 +10,7 @@ Object.assign(globalThis,{window:dom.window,document:dom.window.document,localSt
 const { createRoot }=await import('react-dom/client');
 await import('../i18n');
 const { initializePwaInstall }=await import('../utils/pwaInstallation');
-const { CustomerEntry,entryStorageKey }=await import('./CustomerEntry');
+const { CustomerEntry,entryStorageKey,splashDuration }=await import('./CustomerEntry');
 const controller=initializePwaInstall();
 const config:PwaConfig={...INITIAL_PWA_CONFIG,appName:'Guia de Viagem',customSplash:false,language:'pt-BR' as const};
 const button=(text:string)=>[...document.querySelectorAll('button')].find(b=>b.textContent?.includes(text))!;
@@ -20,30 +20,85 @@ async function render(settings=config) {
   await act(async()=>root.render(React.createElement(CustomerEntry,{config:settings},React.createElement('div',{'data-testid':'library'},'Aulas'))));
   return root;
 }
-test('customer sees branding, explicit demo access, Android manual help and can reach content without installation; email is never persisted',async()=>{
-  localStorage.clear();const root=await render();
+test('published product opens content directly without demo or email even with legacy demo settings, and returning users skip entry',async()=>{
+  localStorage.clear();const root=await render({...config,customerAccessMode:'demo'});
   assert.match(document.body.textContent || '',/Guia de Viagem/);
   assert.equal(document.querySelector('[data-testid="library"]'),null);
-  await act(async()=>click(button('Começar')));
-  assert.match(document.body.textContent || '',/Não verifica compras/);
-  const email=document.querySelector('input[type="email"]') as HTMLInputElement;
-  await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(email,'test@example.com');email.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
-  await act(async()=>click(button('Entrar na demonstração')));
-  assert.match(document.body.textContent || '',/três pontos/);
-  assert.equal(button('Instalar aplicativo'),undefined);
-  await act(async()=>click(button('Continuar no navegador')));
+  assert.equal(document.querySelector('input[type="email"]'),null);
+  assert.doesNotMatch(document.body.textContent || '',/Demonstração|Experimente a tela/);
+  await act(async()=>click(button('Acessar conteúdo')));
   assert.ok(document.querySelector('[data-testid="library"]'));
   assert.equal(localStorage.getItem(entryStorageKey(config.appName)),'done');
   assert.equal(JSON.stringify({...localStorage}).includes('test@example.com'),false);
   await act(async()=>root.unmount());
   const reopened=await render();assert.ok(document.querySelector('[data-testid="library"]'));await act(async()=>reopened.unmount());
 });
+test('login simulation is confined to preview and never stores the test email or marks real onboarding complete',async()=>{
+  localStorage.clear();
+  const root=createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(CustomerEntry,{config:{...config,customerAccessMode:'demo'},preview:true},React.createElement('div',{'data-testid':'library'},'Aulas'))));
+  await act(async()=>click(button('Acessar conteúdo')));
+  assert.match(document.body.textContent || '',/Não verifica compras/);
+  const email=document.querySelector('input[type="email"]') as HTMLInputElement;
+  await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(email,'test@example.com');email.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
+  await act(async()=>click(button('Entrar na demonstração')));
+  assert.ok(document.querySelector('[data-testid="library"]'));
+  assert.equal(localStorage.length,0);
+  await act(async()=>root.unmount());
+});
+test('first opening honors configured brand duration and animation, can be skipped, and does not repeat after entry',async(t)=>{
+  localStorage.clear();
+  let completeSplash:()=>void=()=>{};
+  const timer=t.mock.method(window,'setTimeout',(callback:()=>void)=>{completeSplash=callback;return 123;});
+  const cleared=t.mock.method(window,'clearTimeout',()=>{});
+  const root=await render({...config,customSplash:true,splashDurationMs:3500,splashAnimation:'zoom'});
+  assert.equal(timer.mock.calls[0].arguments[1],3500);
+  assert.ok(document.querySelector('.customer-splash-zoom'));
+  assert.equal(button('Acessar conteúdo'),undefined);
+  await act(async()=>completeSplash());
+  assert.ok(button('Acessar conteúdo'));
+  await act(async()=>click(button('Acessar conteúdo')));
+  await act(async()=>root.unmount());
+  const returned=await render({...config,customSplash:true});
+  assert.ok(document.querySelector('[data-testid="library"]'));
+  assert.equal(document.querySelector('.customer-splash'),null);
+  await act(async()=>returned.unmount());
+  localStorage.clear();
+  const skipped=await render({...config,customSplash:true,splashAnimation:'none'});
+  await act(async()=>click(button('Continuar')));
+  assert.ok(button('Acessar conteúdo'));
+  assert.ok(cleared.mock.calls.some(call=>call.arguments[0]===123));
+  await act(async()=>skipped.unmount());
+  assert.equal(splashDuration({...config,splashDurationMs:NaN}),2500);
+  assert.equal(splashDuration({...config,splashDurationMs:99999}),5000);
+  assert.equal(splashDuration({...config,splashDurationMs:0}),1000);
+});
+test('disabling welcome opens content immediately and preserves completed entry for the next launch',async()=>{
+  localStorage.clear();const root=await render({...config,welcomeEnabled:false,customerAccessMode:'demo'});
+  assert.ok(document.querySelector('[data-testid="library"]'));
+  assert.equal(document.querySelector('input'),null);
+  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),'done');
+  await act(async()=>root.unmount());
+  const returned=await render({...config,welcomeEnabled:false,customSplash:true});
+  assert.ok(document.querySelector('[data-testid="library"]'));
+  assert.equal(document.querySelector('.customer-splash'),null);
+  await act(async()=>returned.unmount());
+});
+test('installation remains optional and Android instructions are available without a native prompt',async()=>{
+  localStorage.clear();const root=await render();
+  await act(async()=>click(button('Adicionar à tela inicial')));
+  assert.match(document.body.textContent || '',/três pontos/);
+  assert.equal(button('Instalar aplicativo'),undefined);
+  await act(async()=>click(button('Continuar no navegador')));
+  assert.ok(document.querySelector('[data-testid="library"]'));
+  await act(async()=>root.unmount());
+});
 test('early captured prompt produces a real install button; browser acceptance is not reported as installed',async()=>{
   localStorage.clear();let prompts=0;
   const event=new dom.window.Event('beforeinstallprompt',{cancelable:true});
   Object.assign(event,{prompt:async()=>{prompts++;},userChoice:Promise.resolve({outcome:'accepted'})});dom.window.dispatchEvent(event);
   const root=await render({...config,customerAccessMode:'open'});
-  await act(async()=>click(button('Começar')));
+  await act(async()=>click(button('Adicionar à tela inicial')));
   assert.ok(button('Instalar aplicativo'));
   await act(async()=>click(button('Instalar aplicativo')));
   assert.equal(prompts,1);

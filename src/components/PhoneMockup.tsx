@@ -558,7 +558,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         }}>
           <AnimatePresence mode="wait">
             {activeStep === 0 && !entryFinished ? (
-              <div key="customer-entry" className="absolute inset-0"><CustomerEntry config={{...pwaConfig,welcomeEnabled:true}} preview><div className="customer-screen"><h2>{t('experience.previewReady')}</h2><button className="customer-primary" style={{background:themeColor}} onClick={()=>setEntryFinished(true)}>{t('experience.continue')}</button></div></CustomerEntry></div>
+              <div key="customer-entry" className="absolute inset-0"><CustomerEntry config={pwaConfig} preview><div className="customer-screen"><h2>{t('experience.previewReady')}</h2><button className="customer-primary" style={{background:themeColor}} onClick={()=>setEntryFinished(true)}>{t('experience.continue')}</button></div></CustomerEntry></div>
             ) : activeTab === 'perfil' ? (
               <motion.div key="perfil" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col items-center overflow-y-auto no-scrollbar" style={{ padding: '32px 24px 80px 24px' }}>
                 <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '28px', alignSelf: 'flex-start', flexShrink: 0 }}>{t('app.profile.title', 'Meu Perfil')}</div>
