@@ -1,9 +1,10 @@
 import DOMPurify from 'dompurify';
 
 export const LINK_BRIDGE = "document.addEventListener('click',function(event){if(!event.isTrusted)return;var link=event.target.closest&&event.target.closest('a[href]');if(!link)return;event.preventDefault();var value=link.getAttribute('href');try{var url=new URL(value);if(url.protocol!=='https:'&&url.protocol!=='mailto:')return;if(url.username||url.password)return;if(parent!==window)parent.postMessage({type:'appify:external-link',url:url.href},'*');else window.open(url.href,'_blank','noopener,noreferrer');}catch(e){}});";
-import { LINK_BRIDGE_HASH } from './securityPolicies';
-export { LINK_BRIDGE_HASH } from './securityPolicies';
-export const IMPORTED_HTML_CSP = `default-src 'none'; script-src '${LINK_BRIDGE_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: data:; frame-src https:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
+export const VIDEO_BRIDGE = "document.addEventListener('click',function(event){if(!event.isTrusted)return;var target=event.target;var trigger=target&&target.closest&&target.closest('[data-appify-youtube]');if(!trigger)return;event.preventDefault();var id=trigger.getAttribute('data-appify-youtube')||'';if(!/^[A-Za-z0-9_-]{6,}$/.test(id))return;var wrap=trigger.parentElement;if(!wrap)return;var frame=document.createElement('iframe');frame.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&controls=1&playsinline=1&rel=0&fs=1';frame.title=trigger.getAttribute('data-title')||'Vídeo';frame.setAttribute('allow','accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');frame.setAttribute('allowfullscreen','');frame.setAttribute('referrerpolicy','strict-origin-when-cross-origin');frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-presentation');frame.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000';wrap.innerHTML='';wrap.appendChild(frame);});";
+import { LINK_BRIDGE_HASH, VIDEO_BRIDGE_HASH } from './securityPolicies';
+export { LINK_BRIDGE_HASH, VIDEO_BRIDGE_HASH } from './securityPolicies';
+export const IMPORTED_HTML_CSP = `default-src 'none'; script-src '${LINK_BRIDGE_HASH}' '${VIDEO_BRIDGE_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: data:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
 
 export function safeEmbedUrl(value: string): string | undefined {
   try {
@@ -27,8 +28,10 @@ export function sanitizeImportedHtml(source: string, wholeDocument = false): str
     const url = safeEmbedUrl(frame.getAttribute('src') || '');
     if (!url) { frame.remove(); return; }
     frame.src = url;
-    frame.setAttribute('sandbox', 'allow-scripts');
-    frame.setAttribute('referrerpolicy', 'no-referrer');
+    const hostname = new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+    const trustedVideoFrame = ['youtube.com', 'youtube-nocookie.com', 'player.vimeo.com'].includes(hostname);
+    frame.setAttribute('sandbox', trustedVideoFrame ? 'allow-scripts allow-same-origin allow-presentation' : 'allow-scripts');
+    frame.setAttribute('referrerpolicy', trustedVideoFrame ? 'strict-origin-when-cross-origin' : 'no-referrer');
   });
   doc.querySelectorAll('link').forEach(link => {
     const url = safeEmbedUrl(link.getAttribute('href') || '');
