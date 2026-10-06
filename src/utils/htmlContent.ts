@@ -1,4 +1,4 @@
-import { sanitizeImportedHtml, IMPORTED_HTML_CSP, LINK_BRIDGE } from './htmlSecurity';
+import { sanitizeImportedHtml, IMPORTED_HTML_CSP, LINK_BRIDGE, VIDEO_BRIDGE } from './htmlSecurity';
 const RESPONSIVE_STYLE = `
 <style id="appify-responsive-html">
   html, body {
@@ -63,8 +63,11 @@ export function prepareResponsiveHtml(html: string): string {
   const doc = new DOMParser().parseFromString(sanitizeImportedHtml(source, true), 'text/html');
   doc.querySelector('#appify-responsive-html')?.remove();
   doc.head.innerHTML = `<meta http-equiv="Content-Security-Policy" content="${IMPORTED_HTML_CSP}">${VIEWPORT_META}${RESPONSIVE_STYLE}` + doc.head.innerHTML;
-  const script = doc.createElement('script');
-  script.textContent = LINK_BRIDGE;
-  doc.body.appendChild(script);
+  const linkScript = doc.createElement('script');
+  linkScript.textContent = LINK_BRIDGE;
+  doc.body.appendChild(linkScript);
+  const videoScript = doc.createElement('script');
+  videoScript.textContent = VIDEO_BRIDGE;
+  doc.body.appendChild(videoScript);
   return `<!DOCTYPE html>${doc.documentElement.outerHTML}`;
 }
