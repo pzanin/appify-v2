@@ -214,6 +214,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('list')}><Check className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Lista com ícones</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Benefícios ou passos</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('card')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Card / Destaque</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Dica ou informação importante</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('accordion')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Acordeão</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Seção que abre e fecha</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
@@ -384,6 +385,30 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <>
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'accordion' && (
+                    <>
+                      <label className="vpb-label" htmlFor="accordion-title">Título da seção</label>
+                      <input id="accordion-title" className="vpb-input" placeholder="Detalhes" value={selectedBlock.props.title ?? ''} onChange={e => updateProp('title', e.target.value)} />
+                      <label className="vpb-label" htmlFor="accordion-content">Texto da seção</label>
+                      <textarea id="accordion-content" className="vpb-textarea" rows={5} value={selectedBlock.props.content ?? ''} onChange={e => updateProp('content', e.target.value)} />
+                      <label className="vpb-label" htmlFor="accordion-open">Estado inicial</label>
+                      <select id="accordion-open" className="vpb-input" value={selectedBlock.props.accordionOpen === true ? 'open' : 'closed'} onChange={e => updateProp('accordionOpen', e.target.value === 'open')}>
+                        <option value="closed">Fechado</option>
+                        <option value="open">Aberto</option>
+                      </select>
+                      <label className="vpb-label" htmlFor="accordion-background">Cor do fundo da seção</label>
+                      <div className="vpb-color-row">
+                        <input id="accordion-background" type="color" className="vpb-color-picker" value={selectedBlock.props.cardBgColor === 'transparent' ? '#ffffff' : selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
+                        <input className="vpb-input" aria-label="Código da cor do fundo da seção" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label" htmlFor="accordion-padding">Espaço interno da seção (px)</label>
+                      <input id="accordion-padding" type="number" className="vpb-input" min="0" max="48" step="1" value={selectedBlock.props.cardPadding ?? 16} onChange={e => { if (e.target.value !== '') updateProp('cardPadding', String(Math.min(48, Math.max(0, Number(e.target.value))))); }} />
+                      <label className="vpb-label" htmlFor="accordion-radius">Bordas arredondadas (px)</label>
+                      <input id="accordion-radius" type="number" className="vpb-input" min="0" max="200" step="1" value={selectedBlock.props.borderRadius ?? 8} onChange={e => { if (e.target.value !== '') updateProp('borderRadius', String(Math.min(200, Math.max(0, Number(e.target.value))))); }} />
+                      <p className="vpb-html-help">Cada bloco cria uma seção. Adicione ou duplique o bloco para criar outras. Clique no título no preview para abrir e fechar.</p>
                     </>
                   )}
 
@@ -755,7 +780,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 </div>}
 
                 {/* ── TÍTULO AVANÇADO ── */}
-                {(selectedBlock.type === 'header' || selectedBlock.type === 'card' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
+                {(selectedBlock.type === 'header' || selectedBlock.type === 'card' || selectedBlock.type === 'accordion' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
                   <div className="vpb-prop-group">
                     <span className="vpb-lib-label">Estilo dos Títulos</span>
 

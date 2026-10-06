@@ -11,6 +11,29 @@ function block(type: string, subtype?: string, overrides: BuilderBlock['props'] 
 }
 function doc(html: string) { return new JSDOM(html).window.document; }
 
+test('accordions retain native toggling, initial state and escaped content after export without custom scripts', () => {
+  for (const accordionOpen of [false,true]) {
+    const item = block('accordion',undefined,{accordionOpen,title:'Cómo empezar <img src=x>',content:'Primera línea\n<script>alert(1)</script> & ' + 'x'.repeat(200),cardPadding:0,borderRadius:0,titleFontSize:'23',titleMarginBottom:0});
+    const saved = doc(prepareResponsiveHtml(generateBuilderHtml(JSON.parse(JSON.stringify([item])))));
+    const details = saved.querySelector('details')!;
+    assert.equal(details.open,accordionOpen);
+    assert.equal(details.querySelector('summary')!.textContent,item.props.title);
+    assert.equal(details.querySelector('summary')!.style.fontSize,'23px');
+    assert.equal(details.querySelector('p')!.textContent,item.props.content);
+    assert.equal(details.querySelector('p')!.style.marginTop,'0px');
+    assert.equal(details.querySelector('p')!.style.whiteSpace,'pre-wrap');
+    assert.equal(details.querySelector('p')!.style.overflowWrap,'anywhere');
+    assert.equal(details.style.padding,'0px');
+    assert.equal(details.style.borderRadius,'0px');
+    assert.equal(details.querySelector('img,script,[onclick]'),null);
+    details.querySelector('summary')!.click();
+    assert.equal(details.open,!accordionOpen);
+    details.querySelector('summary')!.click();
+    assert.equal(details.open,accordionOpen);
+  }
+  assert.equal(doc(getBlockInnerHtml(block('accordion',undefined,{title:''}))).querySelector('summary')!.textContent,'Detalhes');
+});
+
 test('highlight cards preserve optional icons, escaped content, typography and zero spacing through export', () => {
   for (const [cardIcon, symbol] of Object.entries({ none:'', check:'✓', star:'★', arrow:'→', dot:'•' })) {
     const item = block('card',undefined,{cardIcon:cardIcon as BuilderBlock['props']['cardIcon'],title:'Dica <img src=x onerror=alert(1)>',content:'Español & English\n' + 'x'.repeat(200),cardBgColor:'#123456',cardPadding:0,borderRadius:0,titleFontFamily:'Roboto',titleFontSize:'29',titleMarginBottom:0});

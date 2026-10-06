@@ -16,6 +16,50 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   element.dispatchEvent(new dom.window.Event(element.tagName === 'SELECT' ? 'change' : 'input',{bubbles:true}));
 }
 
+test('accordion toggles in the editor and persists edited content and initial state independently for duplicated sections', async () => {
+  const sub: SubModule = {id:5,name:'Seções',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:5},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root = createRoot(document.getElementById('root')!);
+  const render = async (lesson: SubModule) => act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
+  await render(sub);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Acordeão'))!));
+  assert.equal(document.querySelector('details')!.open,false);
+  await act(async()=>click(document.querySelector('summary')!));
+  assert.equal(document.querySelector('details')!.open,true);
+  await act(async()=>click(document.querySelector('summary')!));
+  assert.equal(document.querySelector('details')!.open,false);
+  await act(async()=>change(document.querySelector('#accordion-title') as HTMLInputElement,'Cómo comenzar'));
+  await act(async()=>{
+    const textarea = document.querySelector('#accordion-content')!;
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype,'value')!.set!.call(textarea,'Primera línea\nSegunda línea');
+    textarea.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+  });
+  await act(async()=>change(document.querySelector('#accordion-open') as HTMLSelectElement,'open'));
+  await act(async()=>change(document.querySelector('[aria-label="Tamanho do título em pixels"]') as HTMLInputElement,'23'));
+  await act(async()=>click(document.querySelector('[aria-label="Duplicar bloco"]')!));
+  await act(async()=>change(document.querySelector('#accordion-title') as HTMLInputElement,'Otra sección'));
+  await act(async()=>change(document.querySelector('#accordion-open') as HTMLSelectElement,'closed'));
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
+  const saved = useAppStore.getState().modules[0].subs[0];
+  assert.equal(saved.builder_data![0].props.accordionOpen,true);
+  assert.equal(saved.builder_data![1].props.accordionOpen,false);
+  assert.equal(saved.builder_data![0].props.content,'Primera línea\nSegunda línea');
+  await render(saved);
+  const sections = document.querySelectorAll('details');
+  assert.equal(sections.length,2);
+  assert.equal(sections[0].open,true);
+  assert.equal(sections[1].open,false);
+  assert.equal(sections[0].querySelector('summary')!.textContent,'Cómo comenzar');
+  assert.equal(sections[0].querySelector('summary')!.style.fontSize,'23px');
+  const exported = new JSDOM(saved.contentHtml!).window.document.querySelectorAll('details');
+  assert.equal(exported[0].open,true);
+  assert.equal(exported[1].open,false);
+  await act(async()=>click(sections[1].querySelector('summary')!));
+  assert.equal(sections[1].open,true);
+  assert.equal(sections[0].open,true);
+  await act(async()=>root.unmount());
+});
+
 test('highlight card controls persist through saving and reopening and allow hiding the icon', async () => {
   const sub: SubModule = {id:4,name:'Destaque',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
   useAppStore.setState({editingSubmodule:{modId:1,subId:4},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
