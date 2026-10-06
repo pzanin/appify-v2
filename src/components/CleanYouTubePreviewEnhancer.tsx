@@ -1,6 +1,9 @@
 import React from 'react';
 import { extractYouTubeId, getYouTubePoster } from '../utils/cleanVideo';
 
+let globalObserver: MutationObserver | null = null;
+let globalEnhancerStarted = false;
+
 function enhanceIframe(frame: HTMLIFrameElement) {
   if (frame.dataset.appifyCleanVideo === '1') return;
 
@@ -9,7 +12,11 @@ function enhanceIframe(frame: HTMLIFrameElement) {
   if (!id) return;
 
   const parent = frame.parentElement;
-  if (!parent || !parent.closest('.phone-mockup')) return;
+  if (!parent) return;
+
+  const inPhonePreview = Boolean(parent.closest('.phone-mockup'));
+  const inExportedPwa = Boolean(parent.closest('.standalone-app-wrapper'));
+  if (!inPhonePreview && !inExportedPwa) return;
 
   frame.dataset.appifyCleanVideo = '1';
   frame.dataset.appifyOriginalSrc = src;
@@ -68,22 +75,45 @@ function enhanceIframe(frame: HTMLIFrameElement) {
       fs: '1',
     });
 
+    // YouTube requires same-origin/presentation capabilities inside a sandboxed iframe.
+    // This relaxation is applied only to validated YouTube embeds handled by this enhancer.
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
     overlay.remove();
   }, { once: true });
 }
 
+function scanEligibleIframes() {
+  document
+    .querySelectorAll<HTMLIFrameElement>('.phone-mockup iframe, .standalone-app-wrapper iframe')
+    .forEach(enhanceIframe);
+}
+
+function ensureGlobalEnhancer() {
+  if (globalEnhancerStarted || typeof document === 'undefined') return;
+
+  const start = () => {
+    if (globalEnhancerStarted || !document.body) return;
+    globalEnhancerStarted = true;
+    scanEligibleIframes();
+    globalObserver = new MutationObserver(scanEligibleIframes);
+    globalObserver.observe(document.body, { childList: true, subtree: true });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
+}
+
+ensureGlobalEnhancer();
+
 export function CleanYouTubePreviewEnhancer() {
   React.useEffect(() => {
-    const scan = () => {
-      document.querySelectorAll<HTMLIFrameElement>('.phone-mockup iframe').forEach(enhanceIframe);
-    };
-
-    scan();
-    const observer = new MutationObserver(scan);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
+    ensureGlobalEnhancer();
+    scanEligibleIframes();
   }, []);
 
   return null;
