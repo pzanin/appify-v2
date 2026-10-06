@@ -50,7 +50,7 @@ import { Header } from './components/CommonComponents';
 import i18n from './i18n';
 import { CustomerEntry } from './components/CustomerEntry';
 import { AppifyLogo } from './components/AppLogo';
-import { PhoneMockup } from './components/PhoneMockup';
+import { CleanYouTubePreviewEnhancer } from './components/CleanYouTubePreviewEnhancer';
 import ProjectsDashboard from './components/ProjectsDashboard';
 import BuilderLayout from './components/BuilderLayout';
 
@@ -192,7 +192,7 @@ function AppContent() {
         </div>
         <style>{`
           .spin { animation: spin 1s linear infinite; }
-          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); }
         `}</style>
       </div>
     );
@@ -200,6 +200,7 @@ function AppContent() {
 
   return (
     <>
+      <CleanYouTubePreviewEnhancer />
       <Header
         handleOpenProject={handleOpenProject}
         handlePublish={builderActions.handlePublish}
