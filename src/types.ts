@@ -119,6 +119,9 @@ export interface BuilderBlock {
     listIconColor?: string;
     cardIcon?: 'none' | 'check' | 'star' | 'arrow' | 'dot';
     accordionOpen?: boolean;
+    audioMode?: 'file' | 'url';
+    audioData?: string;
+    audioFileName?: string;
     alt?: string;
     width?: string | number;
     url?: string;

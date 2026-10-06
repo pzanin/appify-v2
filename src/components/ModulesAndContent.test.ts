@@ -3,6 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import React, { act } from 'react';
 import type { SubModule } from '../types';
+import { TEST_MP3 } from '../utils/fixtures/audioMp3';
 const dom = new JSDOM('<div id="root"></div>', { url:'https://appify.test' });
 Object.assign(globalThis, { window:dom.window, document:dom.window.document, DOMParser:dom.window.DOMParser, HTMLElement:dom.window.HTMLElement, localStorage:dom.window.localStorage, IS_REACT_ACT_ENVIRONMENT:true });
 const { createRoot } = await import('react-dom/client');
@@ -15,6 +16,48 @@ function change(element: HTMLInputElement | HTMLSelectElement, value: string) {
   Object.getOwnPropertyDescriptor(proto,'value')!.set!.call(element,value);
   element.dispatchEvent(new dom.window.Event(element.tagName === 'SELECT' ? 'change' : 'input',{bubbles:true}));
 }
+
+test('audio upload and URL modes save and reopen without losing the embedded MP3; removal clears the uploaded source', async () => {
+  const sub: SubModule = {id:6,name:'Áudio',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
+  useAppStore.setState({editingSubmodule:{modId:1,subId:6},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
+  const root = createRoot(document.getElementById('root')!);
+  const render = async (lesson: SubModule) => act(async()=>root.render(React.createElement(ModulesAndContent,{submodule:lesson,onSave:()=>{},onClose:()=>{}})));
+  const save = async () => act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Salvar Aula'))!));
+  await render(sub);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('MP3 ou link externo'))!));
+  const loaded = new Promise<void>(resolve=>{
+    Object.assign(globalThis,{FileReader:class extends (dom.window.FileReader as typeof FileReader) { constructor(){super();this.addEventListener('loadend',()=>resolve());} }});
+  });
+  await act(async()=>{
+    const input = document.querySelector('#audio-file')!;
+    Object.defineProperty(input,'files',{configurable:true,value:[new dom.window.File([Buffer.from(TEST_MP3.split(',')[1],'base64')],'aula.mp3')]});
+    input.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+    await loaded;
+  });
+  assert.equal(document.querySelector('audio')!.getAttribute('src'),TEST_MP3);
+  await save();
+  const saved = useAppStore.getState().modules[0].subs[0];
+  assert.equal(saved.builder_data![0].props.audioFileName,'aula.mp3');
+  await render(saved);
+  await act(async()=>click(document.querySelector('.vpb-block-wrapper')!));
+  assert.equal(document.querySelector('audio')!.getAttribute('src'),TEST_MP3);
+  await act(async()=>change(document.querySelector('#audio-mode') as HTMLSelectElement,'url'));
+  await act(async()=>change(document.querySelector('#audio-url') as HTMLInputElement,'https://example.com/aula.mp3'));
+  assert.equal(document.querySelector('audio')!.getAttribute('src'),'https://example.com/aula.mp3');
+  await save();
+  const linked = useAppStore.getState().modules[0].subs[0];
+  assert.equal(linked.builder_data![0].props.audioData,TEST_MP3);
+  await render(linked);
+  assert.equal(new JSDOM(linked.contentHtml!).window.document.querySelector('audio')!.getAttribute('src'),'https://example.com/aula.mp3');
+  await act(async()=>change(document.querySelector('#audio-mode') as HTMLSelectElement,'file'));
+  assert.equal(document.querySelector('audio')!.getAttribute('src'),TEST_MP3);
+  await act(async()=>click([...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Remover áudio'))!));
+  await save();
+  assert.equal(useAppStore.getState().modules[0].subs[0].builder_data![0].props.audioData,'');
+  assert.equal(document.querySelector('audio'),null);
+  await act(async()=>root.unmount());
+  Object.assign(globalThis,{FileReader:dom.window.FileReader});
+});
 
 test('accordion toggles in the editor and persists edited content and initial state independently for duplicated sections', async () => {
   const sub: SubModule = {id:5,name:'Seções',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};

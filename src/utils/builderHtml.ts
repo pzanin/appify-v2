@@ -3,6 +3,7 @@ import { GOOGLE_FONTS } from '../constants';
 import { sanitizeImportedHtml } from './htmlSecurity';
 import { normalizeExternalUrl } from './externalLinks';
 import { detectYouTubeAspectRatio, extractYouTubeId, getYouTubePoster } from './cleanVideo';
+import { builderAudioSource } from './builderAudio';
 
 export function safeLinkUrl(value?: string): string {
   const raw = value?.trim() || '';
@@ -22,6 +23,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'list': return { ...base, content: 'Primeiro benefício\nSegundo benefício\nTerceiro benefício', listIcon: 'check' as const, listIconColor: '#6b8af0', gap: '12' };
       case 'card': return { ...base, bgColor: 'transparent', padding: '0', title: 'Dica importante', content: 'Destaque aqui uma orientação, benefício ou informação importante.', cardIcon: 'none' as const, cardBgColor: '#f3f4f6', cardPadding: '20', borderRadius: '12', titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'accordion': return { ...base, bgColor: 'transparent', padding: '0', title: 'Clique para ver mais', content: 'Escreva aqui a explicação ou resposta desta seção.', accordionOpen: false, cardBgColor: '#f3f4f6', cardPadding: '16', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
+      case 'audio': return { ...base, title: 'Áudio', audioMode: 'file' as const, audioData: '', audioFileName: '', url: '', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
@@ -116,6 +118,12 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
       case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
+      case 'audio': {
+        const source = builderAudioSource(p);
+        const title = p.title?.trim();
+        const heading = title ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(title)}</h3>` : '';
+        return `${heading}${source ? `<audio controls preload="none" aria-label="${escapeHtml(title || 'Áudio')}" src="${escapeHtml(source)}" style="width:100%;max-width:100%;">${escapeHtml(title || 'Áudio')}</audio>` : '<p style="margin:0;">Envie um MP3 ou informe um link HTTPS direto para o áudio.</p>'}`;
+      }
       case 'accordion': return `<details class="appify-builder-accordion"${p.accordionOpen === true ? ' open' : ''} style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;max-width:100%;"><summary style="${titleStyle}cursor:pointer;overflow-wrap:anywhere;">${escapeHtml(p.title?.trim() || 'Detalhes')}</summary><p style="white-space:pre-wrap;margin:${tmb}px 0 0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></details>`;
       case 'card': {
         const icon = { none: '', check: '✓', star: '★', arrow: '→', dot: '•' }[p.cardIcon || 'none'];
