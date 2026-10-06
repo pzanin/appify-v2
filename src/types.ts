@@ -150,6 +150,8 @@ export interface BuilderBlock {
     columnPadding?: string | number;
     gap?: string | number;
     borderRadius?: string | number;
+    videoAspectRatio?: 'auto' | '16:9' | '9:16';
+    videoTitle?: string;
     // Advanced image controls
     imgHeight?: string | number;
     imgBorderRadius?: string | number;
