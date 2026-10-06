@@ -2,6 +2,7 @@ import type { BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
 import { sanitizeImportedHtml } from './htmlSecurity';
 import { normalizeExternalUrl } from './externalLinks';
+import { detectYouTubeAspectRatio, extractYouTubeId, getYouTubePoster } from './cleanVideo';
 
 export function safeLinkUrl(value?: string): string {
   const raw = value?.trim() || '';
@@ -19,6 +20,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
+      case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', align: 'center' };
       case 'spacer': return { ...base, height: '40', bgColor: 'transparent', padding: '0', align: 'left' };
       case 'divider': return { ...base, dividerColor: '#e5e7eb', thickness: '1', padding: '10', align: 'center' };
@@ -35,7 +37,6 @@ export const getDefaultProps = (type: string, subtype?: string) => {
     }
     return base;
 };
-
 
 export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props'] {
   const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined), ...block.props };
@@ -64,6 +65,7 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
   }
   if (!['left','center','right'].includes(p.align || '')) p.align = 'left';
   if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
+  if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
   return p;
 }
 
@@ -87,17 +89,14 @@ export function builderFontLinks(blocks: BuilderBlock[]): string {
 
 export const getBlockInnerHtml = (mod: BuilderBlock) => {
     const p = normalizedBlockProps(mod);
-    // Helper: resolve title styling
     const tfs = p.titleFontSize || p.fontSize || '32';
     const tfw = p.titleFontWeight || '700';
     const tmb = p.titleMarginBottom ?? '8';
     const tff = p.titleFontFamily || p.fontFamily || 'DM Sans';
     const titleStyle = `font-family:'${tff}',sans-serif;font-size:${tfs}px;font-weight:${tfw};`;
-    // Helper: resolve image styling for standalone image block
     const imgH = p.imgHeight && p.imgHeight !== 'auto' ? `height:${p.imgHeight}px;` : 'height:auto;';
     const imgR = `border-radius:${p.imgBorderRadius || 0}px;`;
     const imgF = `object-fit:${p.imgObjectFit || 'cover'};`;
-    // Helper: resolve image styling for imageText container
     const itImgW = p.imageWidth ? `width:${p.imageWidth}%;` : 'max-width:100%;';
     const itImgH = p.imageHeight && p.imageHeight !== 'auto' ? `height:${p.imageHeight}px;` : 'height:auto;';
     const itImgR = `border-radius:${p.imageBorderRadius ?? 8}px;`;
@@ -107,6 +106,19 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
       case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
       case 'image': return p.src ? `<img class="appify-sized-image" src="${escapeHtml(p.src)}" alt="${escapeHtml(p.alt)}" style="width:${p.width || 100}% !important;max-width:100%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:${p.borderRadius}px;">Clique para adicionar imagem</div>`;
+      case 'video': {
+        const url = String(p.url || '').trim();
+        const id = extractYouTubeId(url);
+        if (!id) return `<div style="border:2px dashed #ccc;padding:36px 20px;text-align:center;color:#777;border-radius:${p.borderRadius}px;background:#f8fafc;">Cole uma URL válida do YouTube ou Shorts nas propriedades do bloco.</div>`;
+        const autoRatio = detectYouTubeAspectRatio(url);
+        const ratio = p.videoAspectRatio === 'auto' ? autoRatio : (p.videoAspectRatio || autoRatio);
+        const ratioCss = ratio === '9:16' ? '9 / 16' : '16 / 9';
+        const maxWidth = ratio === '9:16' ? '360px' : '100%';
+        const poster = getYouTubePoster(url) || '';
+        const title = escapeHtml(p.videoTitle || 'Vídeo');
+        const posterStyle = poster ? `background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.25)),url('${escapeHtml(poster)}') center/cover no-repeat;` : 'background:linear-gradient(135deg,#161b22,#0b1117);';
+        return `<div class="appify-clean-video" style="position:relative;width:100%;max-width:${maxWidth};margin:0 auto;aspect-ratio:${ratioCss};border-radius:${p.borderRadius}px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.18);"><a href="#video" role="button" aria-label="Reproduzir ${title}" data-appify-youtube="${escapeHtml(id)}" data-title="${title}" style="position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;border:0;padding:0;cursor:pointer;text-decoration:none;${posterStyle}"><span style="width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.94);color:#111827;font-size:30px;line-height:1;box-shadow:0 10px 30px rgba(0,0,0,.28);padding-left:4px;">▶</span></a></div>`;
+      }
       case 'link': {
         const href = safeLinkUrl(p.url);
         const external = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : '';
@@ -135,7 +147,6 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
     }
     return '';
   };
-
 
 export function generateBuilderHtml(blocks: BuilderBlock[]): string {
   const sections = blocks.map(block => {
