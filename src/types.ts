@@ -85,6 +85,19 @@ export interface Version {
 export type VideoProvider = 'youtube' | 'vimeo' | 'direct';
 export type VideoAspectRatio = '16:9' | '9:16' | '1:1';
 export type HtmlExecutionMode = 'safe' | 'sandbox';
+export type EntryAnimation = 'none' | 'fade' | 'fade-up' | 'fade-down' | 'slide-left' | 'slide-right' | 'zoom';
+
+export interface AccordionItem {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export interface TabItem {
+  id: string;
+  label: string;
+  content: string;
+}
 
 export interface BuilderBlock {
   id: string;
@@ -172,6 +185,16 @@ export interface BuilderBlock {
     videoWidth?: string | number;
     // Single-column container controls
     containerMaxWidth?: string | number;
+    // Accordion / tabs controls
+    accordionItems?: AccordionItem[];
+    accordionAllowMultiple?: boolean;
+    tabs?: TabItem[];
+    tabsActiveIndex?: number;
+    // Entry animation controls
+    entryAnimation?: EntryAnimation;
+    animationDurationMs?: number;
+    animationDelayMs?: number;
+    animationOnce?: boolean;
   };
 }
 
