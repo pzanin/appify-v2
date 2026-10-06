@@ -406,7 +406,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         {!builderAudioSource(selectedBlock.props) && <p className="vpb-html-help">Informe um link HTTPS direto para o arquivo de áudio. Links de páginas do YouTube, Spotify ou Google Drive não são links diretos de áudio.</p>}
                       </> : <>
                         <label className="vpb-label" htmlFor="audio-file">Arquivo MP3 (até 5 MB)</label>
-                        <input id="audio-file" className="vpb-input" type="file" accept=".mp3,audio/mpeg" onChange={async e => {
+                        <input id="audio-file" className="vpb-input" type="file" onChange={async e => {
                           const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
                           const blockId = selectedBlock.id;
                           setAudioImportStatus({ blockId, message: 'Lendo MP3…' });
