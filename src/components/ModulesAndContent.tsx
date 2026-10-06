@@ -402,11 +402,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       </select>
                       {selectedBlock.props.audioMode === 'url' ? <>
                         <label className="vpb-label" htmlFor="audio-url">Link direto para o áudio</label>
-                        <input id="audio-url" className="vpb-input" placeholder="https://seusite.com/audio.mp3" value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
+                        <input key="audio-url" id="audio-url" className="vpb-input" placeholder="https://seusite.com/audio.mp3" value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
                         {!builderAudioSource(selectedBlock.props) && <p className="vpb-html-help">Informe um link HTTPS direto para o arquivo de áudio. Links de páginas do YouTube, Spotify ou Google Drive não são links diretos de áudio.</p>}
                       </> : <>
                         <label className="vpb-label" htmlFor="audio-file">Arquivo MP3 ou M4A (até 5 MB)</label>
-                        <input id="audio-file" className="vpb-input" type="file" onChange={async e => {
+                        <input key="audio-file" id="audio-file" className="vpb-input" type="file" onChange={async e => {
                           const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
                           const blockId = selectedBlock.id;
                           setAudioImportStatus({ blockId, message: 'Lendo áudio…', kind: 'loading' });

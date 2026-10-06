@@ -43,7 +43,8 @@ test('M4A uploads generate a player and failed replacements display an error wit
   Object.assign(globalThis,{FileReader:dom.window.FileReader});
 });
 
-test('audio upload and URL modes save and reopen without losing the embedded MP3; removal clears the uploaded source', async () => {
+test('audio upload and URL modes save and reopen without losing the embedded MP3; removal clears the uploaded source', async (t) => {
+  const errors = t.mock.method(console, 'error', () => {});
   const sub: SubModule = {id:6,name:'Áudio',type:'html',htmlMode:'visual',contentType:'html',builder_data:[]};
   useAppStore.setState({editingSubmodule:{modId:1,subId:6},modules:[{id:1,name:'Módulo',iconName:'Book',status:'Ativo',subs:[sub]}]});
   const root = createRoot(document.getElementById('root')!);
@@ -83,6 +84,7 @@ test('audio upload and URL modes save and reopen without losing the embedded MP3
   assert.equal(document.querySelector('audio'),null);
   await act(async()=>root.unmount());
   Object.assign(globalThis,{FileReader:dom.window.FileReader});
+  assert.deepEqual(errors.mock.calls.map(call => call.arguments), [], 'Switching audio sources should not produce React input errors');
 });
 
 test('accordion toggles in the editor and persists edited content and initial state independently for duplicated sections', async () => {
