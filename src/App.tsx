@@ -7,14 +7,34 @@ interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, error: null };
   static getDerivedStateFromError(error: Error): ErrorBoundaryState { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) { console.error("[Appify] Falha ao carregar a tela."); }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[Appify] Falha ao carregar a tela.', error, errorInfo);
+  }
   render() {
     const { hasError, error } = this.state;
     if (hasError) {
+      const isDev = Boolean((import.meta as any).env?.DEV);
       return (
         <div style={{ padding: '40px', textAlign: 'center', color: '#ff6b6b' }}>
           <h1>Algo deu errado</h1>
           <p>Não foi possível carregar esta tela. Recarregue o aplicativo e tente novamente.</p>
+          {isDev && error?.message && (
+            <pre style={{
+              maxWidth: 760,
+              margin: '20px auto',
+              padding: 16,
+              textAlign: 'left',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              background: 'rgba(255,255,255,.06)',
+              border: '1px solid rgba(255,255,255,.12)',
+              borderRadius: 10,
+              color: '#ffd2d2',
+              fontSize: 12,
+            }}>
+              {error.message}
+            </pre>
+          )}
           <button className="btn-primary" onClick={() => window.location.reload()}>Recarregar App</button>
         </div>
       );
@@ -34,7 +54,6 @@ import { PhoneMockup } from './components/PhoneMockup';
 import ProjectsDashboard from './components/ProjectsDashboard';
 import BuilderLayout from './components/BuilderLayout';
 
-// Lazy loading exclusivo para o PWA no build final
 const PWARuntime = React.lazy(() => import('./components/PWARuntime').then(m => ({ default: m.PWARuntime })));
 
 const buildTarget = (import.meta as any).env?.VITE_BUILD_TARGET;
@@ -50,23 +69,18 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
         return res.json();
       })
       .then(data => {
-        // Hidrata o Zustand com os dados do cliente de forma segura
         useAppStore.setState(data);
-
-        // Altera o idioma do i18n para corresponder ao configurado no PWA
         const lang = data.pwaConfig?.language || data.activeLocale || 'pt-BR';
         document.documentElement.lang = lang;
         i18n.changeLanguage(lang.split('-')[0]);
-
         setLoaded(true);
       })
-      .catch(err => {
+      .catch(() => {
         console.error('[Appify] Operação não concluída.');
         setError(true);
       });
   }, []);
 
-  // Mensagens dinâmicas agnósticas antes de inicializar o PWA (i18n Compliance)
   const browserLang = document.documentElement.lang || navigator.language || 'pt';
   const isEn = browserLang.startsWith('en');
   const isEs = browserLang.startsWith('es');
@@ -109,7 +123,6 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
     );
   }
 
-  // SÓ MONTA O APP QUANDO OS DADOS ESTIVEREM 100% PRONTOS
   return (
     <Suspense fallback={<Loader2 className="animate-spin text-white" size={32} />}>
       <CustomerEntry config={useAppStore.getState().pwaConfig}><PWARuntime isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>
@@ -143,7 +156,7 @@ function AppContent() {
         if (state.currentProjectId) {
           await projectService.saveProject(state.currentProjectId, getProjectWorkspaceSnapshot(state));
         }
-      } catch (error) {
+      } catch {
         console.error('[Appify] Falha ao salvar antes de fechar:');
       } finally {
         lifecycle.readyToClose();
@@ -151,10 +164,8 @@ function AppContent() {
     });
   }, []);
 
-  // Check if we are in standalone/production mode via URL
   const isStandaloneMode = new URLSearchParams(window.location.search).get('mode') === 'app';
 
-  // Modo PWA Exclusivo (via Variável de Ambiente) ou Fallback via URL
   if (buildTarget === 'pwa' || isStandaloneMode) {
     return (
       <div className="standalone-app-wrapper w-screen h-screen flex items-center justify-center bg-[#000]">
