@@ -6,6 +6,27 @@ const dom=new JSDOM('<div id="root"></div>',{url:'https://appify.test/'});
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,DOMParser:dom.window.DOMParser,IS_REACT_ACT_ENVIRONMENT:true});
 const {createRoot}=await import('react-dom/client');
 const {HtmlFrame}=await import('./HtmlFrame');
+const {generateBuilderHtml,getDefaultProps}=await import('../utils/builderHtml');
+const {TEST_MP3,TEST_M4A}=await import('../utils/fixtures/audioMp3');
+
+test('phone iframe preserves uploaded and linked audio controls with a minimum height despite responsive media height auto',async()=>{
+  const root=createRoot(document.getElementById('root')!);
+  for (const source of [TEST_MP3,TEST_M4A,'https://example.com/audio.mp3','https://example.com/audio.m4a']) {
+    const html=generateBuilderHtml([{id:'audio',type:'audio',props:{...getDefaultProps('audio'),...(source.startsWith('data:')?{audioData:source}:{audioMode:'url',url:source})}}]);
+    await act(async()=>root.render(React.createElement(HtmlFrame,{html,title:'Simulação',style:{width:320,height:480}})));
+    const frame=document.querySelector('iframe')!;
+    assert.equal(frame.getAttribute('sandbox'),'allow-scripts');
+    const content=new JSDOM(frame.getAttribute('srcdoc')!).window.document;
+    const player=content.querySelector('audio')!;
+    assert.equal(player.getAttribute('src'),source);
+    assert.ok(player.hasAttribute('controls'));
+    assert.equal(player.hasAttribute('autoplay'),false);
+    assert.equal(player.style.minHeight,'54px');
+    assert.equal(player.style.display,'block');
+    assert.match(content.querySelector('#appify-responsive-html')!.textContent!,/height: auto !important/);
+  }
+  await act(async()=>root.unmount());
+});
 
 test('exported activities load the compiled lesson file with an opaque sandbox; invalid paths are not rendered',async()=>{
   const root=createRoot(document.getElementById('root')!);

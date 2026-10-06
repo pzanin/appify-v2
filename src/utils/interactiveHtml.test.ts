@@ -6,6 +6,7 @@ const dom=new JSDOM('');
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,DOMParser:dom.window.DOMParser});
 const { prepareInteractiveHtml,normalizeHtmlPaste,INTERACTIVE_CSP }=await import('./interactiveHtml');
 const { prepareResponsiveHtml }=await import('./htmlContent');
+const { LINK_BRIDGE, VIDEO_BRIDGE }=await import('./htmlSecurity');
 const fixture=readFileSync('docs/examples/interactive-breathing.html','utf8');
 
 test('interactive activity compiles Tailwind locally and keeps buttons, SVG dimensions and event handlers; static mode remains restricted',async()=>{
@@ -23,7 +24,7 @@ test('interactive activity compiles Tailwind locally and keeps buttons, SVG dime
   assert.equal(parsed.querySelector('[http-equiv]')?.getAttribute('content'),INTERACTIVE_CSP);
   const staticDoc=new JSDOM(prepareResponsiveHtml(fixture)).window.document;
   assert.equal(staticDoc.querySelector('button'),null);
-  assert.equal(staticDoc.querySelectorAll('script').length,1);
+  assert.deepEqual([...staticDoc.querySelectorAll('script')].map(script=>script.textContent),[LINK_BRIDGE,VIDEO_BRIDGE]);
 });
 
 test('activity can start, tick, change modes, pause and reset without contacting a server',async()=>{

@@ -28,6 +28,8 @@ test('audio players retain controls and uploaded bytes or HTTPS sources in sanit
     assert.ok(audio.hasAttribute('controls'));
     assert.equal(audio.hasAttribute('autoplay'),false);
     assert.equal(audio.getAttribute('preload'),'none');
+    assert.equal(audio.style.minHeight,'54px');
+    assert.equal(audio.style.display,'block');
     assert.equal(audio.getAttribute('src'),props.audioMode === 'file' ? props.audioData : props.url);
     assert.equal(audio.getAttribute('aria-label'),item.props.title);
     assert.equal(saved.querySelector('h3')!.textContent,item.props.title);
