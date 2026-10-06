@@ -425,6 +425,19 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input className="vpb-input" placeholder="https://youtube.com/watch?v=..." value={selectedBlock.props.url || ''} onChange={e => updateProp('url', e.target.value)} />
                       <label className="vpb-label">Título acessível</label>
                       <input className="vpb-input" value={selectedBlock.props.videoTitle || 'Vídeo'} onChange={e => updateProp('videoTitle', e.target.value)} />
+                      <label className="vpb-label">Capa personalizada (opcional)</label>
+                      <input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'videoPoster')} />
+                      {selectedBlock.props.videoPoster && (
+                        <>
+                          <div style={{ marginBottom: '8px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                            <img src={selectedBlock.props.videoPoster as string} alt="Capa personalizada do vídeo" style={{ width: '100%', maxHeight: '120px', objectFit: 'cover', display: 'block' }} />
+                          </div>
+                          <button type="button" className="btn-ghost" style={{ marginBottom: '12px' }} onClick={() => updateProp('videoPoster', '')}>Usar capa automática do YouTube</button>
+                        </>
+                      )}
+                      <label className="vpb-label">Largura ({selectedBlock.props.videoWidth ?? 100}%)</label>
+                      <input type="range" min="10" max="100" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.videoWidth ?? 100} onChange={e => updateProp('videoWidth', e.target.value)} />
+                      <input type="number" className="vpb-input" aria-label="Largura do vídeo em porcentagem" min="10" max="100" step="1" value={selectedBlock.props.videoWidth ?? 100} onChange={e => { if (e.target.value !== '') updateProp('videoWidth', String(Math.min(100, Math.max(10, Number(e.target.value))))); } } />
                       <label className="vpb-label">Proporção</label>
                       <select className="vpb-input" value={selectedBlock.props.videoAspectRatio || 'auto'} onChange={e => updateProp('videoAspectRatio', e.target.value as 'auto' | '16:9' | '9:16')}>
                         <option value="auto">Automática</option>
@@ -433,7 +446,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       </select>
                       <label className="vpb-label">Arredondamento ({selectedBlock.props.borderRadius ?? 16}px)</label>
                       <input type="range" min="0" max="48" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.borderRadius ?? 16} onChange={e => updateProp('borderRadius', e.target.value)} />
-                      <p className="vpb-html-help">A capa vem automaticamente do YouTube. O player só é carregado depois do clique no play.</p>
+                      <label className="vpb-label">Legenda abaixo do vídeo (opcional)</label>
+                      <textarea className="vpb-textarea" placeholder="Ex: Assista antes de continuar para a próxima etapa." value={selectedBlock.props.videoCaption || ''} onChange={e => updateProp('videoCaption', e.target.value)} />
+                      <p className="vpb-html-help">Sem capa personalizada, o Appify usa automaticamente a miniatura do YouTube. O player continua sendo carregado somente após o clique no play.</p>
                     </>
                   )}
 
