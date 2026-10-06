@@ -20,7 +20,7 @@ export const getDefaultProps = (type: string, subtype?: string) => {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
-      case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
+      case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', align: 'center' };
       case 'spacer': return { ...base, height: '40', bgColor: 'transparent', padding: '0', align: 'left' };
       case 'divider': return { ...base, dividerColor: '#e5e7eb', thickness: '1', padding: '10', align: 'center' };
@@ -42,7 +42,7 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
   const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined), ...block.props };
   const ranges: Record<string, [number, number]> = {
     fontSize: [10,72], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
-    maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], width: [10,100], imageWidth: [10,100],
+    maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
     imgBorderRadius: [0,999], imageBorderRadius: [0,999], height: [0,200], thickness: [1,8],
     columnPadding: [0,48], cardPadding: [0,48], quoteSize: [10,72],
   };
@@ -113,11 +113,14 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
         const autoRatio = detectYouTubeAspectRatio(url);
         const ratio = p.videoAspectRatio === 'auto' ? autoRatio : (p.videoAspectRatio || autoRatio);
         const ratioCss = ratio === '9:16' ? '9 / 16' : '16 / 9';
-        const maxWidth = ratio === '9:16' ? '360px' : '100%';
-        const poster = getYouTubePoster(url) || '';
+        const ratioMaxWidth = ratio === '9:16' ? '420px' : '100%';
+        const width = p.videoWidth || 100;
+        const poster = String(p.videoPoster || '').trim() || getYouTubePoster(url) || '';
         const title = escapeHtml(p.videoTitle || 'Vídeo');
+        const caption = String(p.videoCaption || '').trim();
         const posterStyle = poster ? `background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.25)),url('${escapeHtml(poster)}') center/cover no-repeat;` : 'background:linear-gradient(135deg,#161b22,#0b1117);';
-        return `<div class="appify-clean-video" style="position:relative;width:100%;max-width:${maxWidth};margin:0 auto;aspect-ratio:${ratioCss};border-radius:${p.borderRadius}px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.18);"><a href="#video" role="button" aria-label="Reproduzir ${title}" data-appify-youtube="${escapeHtml(id)}" data-title="${title}" style="position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;border:0;padding:0;cursor:pointer;text-decoration:none;${posterStyle}"><span style="width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.94);color:#111827;font-size:30px;line-height:1;box-shadow:0 10px 30px rgba(0,0,0,.28);padding-left:4px;">▶</span></a></div>`;
+        const captionHtml = caption ? `<p style="margin:10px 0 0;text-align:center;font-size:14px;line-height:1.5;color:${p.color || '#333333'};">${escapeHtml(caption)}</p>` : '';
+        return `<div style="width:${width}%;max-width:${ratioMaxWidth};margin:0 auto;"><div class="appify-clean-video" style="position:relative;width:100%;aspect-ratio:${ratioCss};border-radius:${p.borderRadius}px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.18);"><a href="#video" role="button" aria-label="Reproduzir ${title}" data-appify-youtube="${escapeHtml(id)}" data-title="${title}" style="position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;border:0;padding:0;cursor:pointer;text-decoration:none;${posterStyle}"><span style="width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.94);color:#111827;font-size:30px;line-height:1;box-shadow:0 10px 30px rgba(0,0,0,.28);padding-left:4px;">▶</span></a></div>${captionHtml}</div>`;
       }
       case 'link': {
         const href = safeLinkUrl(p.url);
