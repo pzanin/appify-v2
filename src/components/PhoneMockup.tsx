@@ -1,3 +1,4 @@
+import { activityStorageKey } from '../utils/activityStorage';
 import { useLessonProgress } from '../hooks/useLessonProgress';
 import { ContinueLearning } from './ContinueLearning';
 import { CustomerEntry } from './CustomerEntry';
@@ -772,6 +773,8 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                               if (type === 'html') {
                                 return (
                                   <HtmlFrame
+                                    uiLanguage={pwaLanguage}
+                                    storageKey={activityStorageKey(pwaConfig,true,currentProjectId,selectedMockupModule.id,selectedMockupSubmodule.id)}
                                     interactive={selectedMockupSubmodule.htmlInteractive === true}
                                     html={selectedMockupSubmodule.customHtml || selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || ''}
                                     title="Conteúdo da Aula" 

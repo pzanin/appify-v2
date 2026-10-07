@@ -1,3 +1,4 @@
+import { activityStorageKey } from '../utils/activityStorage';
 import React, { useRef, useState } from 'react';
 import {
   ArrowLeft, Check, LayoutGrid, Columns, Grid, Image as ImageIcon,
@@ -22,6 +23,8 @@ interface ModulesAndContentProps {
 
 
 export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndContentProps) {
+  const storageConfig=useAppStore(state=>state.pwaConfig);
+  const storageProjectId=useAppStore(state=>state.currentProjectId);
   const updateSubmoduleContent = useAppStore(state => state.updateSubmoduleContent);
   const editingSubmodule = useAppStore(state => state.editingSubmodule);
 
@@ -282,7 +285,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <option value="static">Estático — textos, imagens e links</option>
                     <option value="interactive">Interativo isolado — timers, exercícios e quizzes locais</option>
                   </select>
-                  <p className="vpb-html-help">{htmlInteractive?'Executa JavaScript inline na atividade, sem acesso aos projetos, rede, cookies ou armazenamento. Tailwind padrão e cores/fontes de theme.extend são convertidos em CSS local. Outras bibliotecas externas não são executadas.':'Scripts e controles interativos são removidos. Para exercícios com JavaScript, selecione Interativo isolado.'}</p>
+                  <p className="vpb-html-help">{htmlInteractive?'Executa JavaScript inline na atividade, sem acesso aos projetos, rede ou cookies. O histórico via localStorage fica separado por atividade e salvo neste aparelho. Tailwind padrão e cores/fontes de theme.extend são convertidos em CSS local. Outras bibliotecas externas não são executadas.':'Scripts e controles interativos são removidos. Para exercícios com JavaScript, selecione Interativo isolado.'}</p>
                   {htmlInteractive && interactiveWarnings(contentHtml).map(warning=><p key={warning} className="vpb-html-import-status">{warning}</p>)}
                   <button type="button" className="btn-ghost" onClick={()=>setContentHtml(normalizeHtmlPaste(contentHtml))}>Limpar formatação de código copiado</button>
                   {htmlImportStatus && <div className="vpb-html-import-status">{htmlImportStatus}</div>}
@@ -300,6 +303,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <div className="vpb-html-preview-panel">
                       <div className="vpb-html-preview-title"><Eye size={14} /> Preview mobile</div>
                       <HtmlFrame
+                        storageKey={editingSubmodule ? activityStorageKey(storageConfig,true,storageProjectId,editingSubmodule.modId,submodule.id) : undefined}
                         interactive={htmlInteractive}
                         title="Preview do HTML personalizado"
                         html={contentHtml}

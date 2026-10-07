@@ -1,20 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { prepareResponsiveHtml } from '../utils/htmlContent';
 import { prepareInteractiveHtml } from '../utils/interactiveHtml';
+import { readActivityData, writeActivityData } from '../utils/activityStorage';
+import { useTranslation } from 'react-i18next';
 import { openExternalLink } from '../utils/externalLinks';
 
-type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; onMaterialClick?:(targetId:string)=>void };
+type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
 
-export function HtmlFrame({ html, interactive=false, activityPath, onMaterialClick, className, style, ...props }: Props) {
+export function HtmlFrame({ html, interactive=false, activityPath, storageKey, uiLanguage, onMaterialClick, className, style, ...props }: Props) {
+  const {i18n}=useTranslation();
+  const [storageRevision,setStorageRevision]=useState(0);
+  const [storageFailed,setStorageFailed]=useState(false);
+  const storageError=({pt:'Não foi possível salvar o histórico neste aparelho. Verifique o espaço disponível e as permissões do navegador.',en:'Could not save history on this device. Check available space and browser permissions.',es:'No se pudo guardar el historial en este dispositivo. Revisa el espacio disponible y los permisos del navegador.',fr:"Impossible d’enregistrer l’historique sur cet appareil. Vérifiez l’espace disponible et les autorisations du navigateur."} as Record<string,string>)[(uiLanguage || i18n.language)?.split('-')[0]] || 'Could not save history on this device.';
+  const storageReady=useRef(false);
   const frame = useRef<HTMLIFrameElement>(null);
   const [activity,setActivity] = useState<{source:string;url?:string;error?:string} | null>(null);
   const [videoOverlay,setVideoOverlay] = useState<VideoOverlay | null>(null);
   const hasBuilderVideo = !interactive && html.includes('data-appify-youtube');
 
   useEffect(() => {
-    setVideoOverlay(null);
-  }, [html]);
+    setVideoOverlay(null);setStorageFailed(false);storageReady.current=false;
+  }, [html,storageKey,storageRevision]);
 
   useEffect(() => {
     if (!interactive) return;
@@ -35,9 +42,31 @@ export function HtmlFrame({ html, interactive=false, activityPath, onMaterialCli
   }, [html,interactive,activityPath]);
 
   useEffect(() => {
+    let writes=0;let reads=0;let windowStart=Date.now();
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow) return;
       if(interactive) {
+        const message=event.data;
+        if(message?.type==='appify:storage-init') {
+          try {
+            if(!storageKey || ++reads>20)throw Error('Missing scope');
+            const data=readActivityData(window.localStorage,storageKey);storageReady.current=true;
+            frame.current?.contentWindow?.postMessage({type:'appify:storage-ready',data},'*');
+          } catch {
+            storageReady.current=false;setStorageFailed(true);
+            frame.current?.contentWindow?.postMessage({type:'appify:storage-ready',data:{}},'*');
+          }
+        }
+        if(message?.type==='appify:storage-write' && Number.isSafeInteger(message.id) && message.id>0) {
+          let ok=false;
+          try {
+            if(Date.now()-windowStart>1000){writes=0;windowStart=Date.now();}
+            if(!storageKey || !storageReady.current || ++writes>30)throw Error('Storage unavailable');
+            writeActivityData(window.localStorage,storageKey,message.data);ok=true;
+          } catch {setStorageFailed(true);}
+          frame.current?.contentWindow?.postMessage({type:'appify:storage-result',id:message.id,ok},'*');
+        }
+        if(['appify:storage-unavailable','appify:storage-failure'].includes(message?.type))setStorageFailed(true);
         if(event.data?.type==='appify:activity-error' && typeof event.data.message==='string') setActivity({source:html,error:`Erro na atividade: ${event.data.message.slice(0,160)}`});
         return;
       }
@@ -61,24 +90,31 @@ export function HtmlFrame({ html, interactive=false, activityPath, onMaterialCli
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [interactive,html,onMaterialClick]);
+  }, [interactive,html,storageKey,storageRevision,onMaterialClick]);
 
   if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : 'Preparando atividade…'}</div>;
 
+  const locale=(uiLanguage || i18n.language)?.split('-')[0];
+  const resetText=({pt:'Limpar histórico desta atividade',en:'Clear this activity’s history',es:'Borrar el historial de esta actividad',fr:'Effacer l’historique de cette activité'} as Record<string,string>)[locale] || 'Clear this activity’s history';
+  const resetHistory=()=>{
+    if(!storageKey || !window.confirm(`${resetText}?`))return;
+    try {window.localStorage.removeItem(storageKey);setStorageFailed(false);setStorageRevision(value=>value+1);}catch{setStorageFailed(true);}
+  };
   const innerFrame = (
     <iframe
       {...props}
+      key={`${storageKey || ""}:${storageRevision}:${html}`}
       ref={frame}
       src={interactive?activity?.url:undefined}
       srcDoc={interactive?undefined:prepareResponsiveHtml(html)}
       sandbox="allow-scripts"
       referrerPolicy="strict-origin-when-cross-origin"
-      className={hasBuilderVideo ? undefined : className}
-      style={hasBuilderVideo ? { width:'100%', height:'100%', border:0, display:'block', background:'#fff' } : style}
+      className={hasBuilderVideo || interactive ? undefined : className}
+      style={hasBuilderVideo || interactive ? { width:'100%', height:'100%', border:0, display:'block', background:'#fff' } : style}
     />
   );
 
-  if(!hasBuilderVideo) return innerFrame;
+  if(!hasBuilderVideo) return interactive ? <div className={className} style={{flex:1,minHeight:0,width:'100%',...style,display:'flex',flexDirection:'column'}}>{storageKey && /\blocalStorage\b/.test(html) && <button type="button" onClick={resetHistory} style={{padding:6,fontSize:12,background:'#fff',color:'#555',border:0,textAlign:'right',cursor:'pointer'}}>{resetText}</button>}<div hidden={!storageFailed} role="alert" style={{padding:8,background:'#fff3cd',color:'#574200',fontSize:13}}>{storageError}</div><div style={{flex:1,minHeight:0,position:'relative'}}>{innerFrame}</div></div> : innerFrame;
 
   return (
     <div className={className} style={{ ...style, position: style?.position || 'relative', overflow:'hidden' }}>

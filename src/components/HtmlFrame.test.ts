@@ -85,3 +85,38 @@ test('material click instrumentation accepts only the current static frame and i
   assert.deepEqual(clicks,['material-7']);
   await act(async()=>root.unmount());
 });
+
+test('scoped activity bridge persists across remount, rejects forged senders and invalid data, and warns on failed writes',async(t)=>{
+ const root=createRoot(document.getElementById('root')!);const storageKey='appify-activity:test';
+ const html='<script>localStorage.getItem("history")</script>';
+ window.localStorage.clear();window.localStorage.setItem('private-project','secret');
+ const render=()=>root.render(React.createElement(HtmlFrame,{html,interactive:true,activityPath:'pages/lesson-1-2.html',storageKey}));
+ await act(async()=>render());let frame=document.querySelector('iframe')!;
+ const send=async(data:any,source:Window|null=frame.contentWindow)=>act(async()=>{window.dispatchEvent(new dom.window.MessageEvent('message',{source,data}));});
+ await send({type:'appify:storage-init'});
+ await send({type:'appify:storage-write',id:1,data:{history:'saved'}},window);
+ assert.equal(window.localStorage.getItem(storageKey),null);
+ await send({type:'appify:storage-write',id:2,data:{history:'saved'}});
+ assert.equal(JSON.parse(window.localStorage.getItem(storageKey)!).history,'saved');
+ await act(async()=>root.render(null));await act(async()=>render());frame=document.querySelector('iframe')!;
+ const replies:any[]=[];const original=frame.contentWindow!.postMessage;
+ frame.contentWindow!.postMessage=(data:any)=>replies.push(data);
+ await send({type:'appify:storage-init'});assert.deepEqual(replies[0].data,Object.assign(Object.create(null),{history:'saved'}));
+ await send({type:'appify:storage-write',id:3,data:{history:9}});
+ assert.equal(JSON.parse(window.localStorage.getItem(storageKey)!).history,'saved');assert.equal(replies.at(-1).ok,false);
+ assert.equal(window.localStorage.getItem('private-project'),'secret');assert.equal(document.querySelector('[role="alert"]')?.hasAttribute('hidden'),false);
+ assert.equal(document.querySelector('iframe'),frame);
+ await send({type:'appify:storage-write',id:4,data:{}});assert.deepEqual(JSON.parse(window.localStorage.getItem(storageKey)!),{});
+ frame.contentWindow!.postMessage=original;
+ await act(async()=>root.render(React.createElement(HtmlFrame,{html,interactive:true,activityPath:'pages/lesson-1-2.html',storageKey,onMaterialClick:()=>{}})));
+ await send({type:'appify:storage-write',id:5,data:{history:'after render'}});
+ assert.equal(JSON.parse(window.localStorage.getItem(storageKey)!).history,'after render');
+ const confirm=t.mock.method(window,'confirm',()=>false);
+ await act(async()=>(document.querySelector('button') as HTMLButtonElement).click());
+ assert.ok(window.localStorage.getItem(storageKey));assert.equal(document.querySelector('iframe'),frame);
+ confirm.mock.mockImplementation(()=>true);
+ await act(async()=>(document.querySelector('button') as HTMLButtonElement).click());
+ assert.equal(window.localStorage.getItem(storageKey),null);assert.equal(window.localStorage.getItem('private-project'),'secret');
+ assert.notEqual(document.querySelector('iframe'),frame);
+ await act(async()=>root.unmount());
+});

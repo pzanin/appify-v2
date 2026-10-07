@@ -3,6 +3,7 @@ import JSON5 from 'json5';
 import themeCss from './tailwindTheme.json';
 import preflightCss from './tailwindPreflight.json';
 import { assertPublicExport } from './exportSecurity';
+import { ACTIVITY_STORAGE_BRIDGE } from './activityStorage';
 
 import { INTERACTIVE_CSP } from './securityPolicies';
 export { INTERACTIVE_CSP } from './securityPolicies';
@@ -19,7 +20,7 @@ export function normalizeHtmlPaste(source: string) {
 export function interactiveWarnings(source: string): string[] {
   const warnings: string[] = [];
   if (/\b(?:src|href)\s*=\s*["'](?:https?:|\/|\.\/)/i.test(source)) warnings.push('Recursos externos/arquivos relativos ficam bloqueados. O Tailwind reconhecido será convertido em CSS local; use imagens embutidas e fontes locais.');
-  if (/\b(?:fetch\s*\(|XMLHttpRequest|WebSocket|localStorage|sessionStorage|document\.cookie|\bimport\s)/.test(source)) warnings.push('Rede, armazenamento, cookies e módulos externos não estão disponíveis neste modo.');
+  if (/\b(?:fetch\s*\(|XMLHttpRequest|WebSocket|sessionStorage|document\.cookie|\bimport\s)/.test(source)) warnings.push('Rede, sessionStorage, cookies e módulos externos não estão disponíveis neste modo.');
   return warnings;
 }
 
@@ -75,6 +76,11 @@ async function prepare(source: string): Promise<string> {
   const csp=doc.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content=INTERACTIVE_CSP;doc.head.prepend(csp);
   const viewport=doc.createElement('meta');viewport.name='viewport';viewport.content='width=device-width,initial-scale=1.0,maximum-scale=5.0';doc.head.append(viewport);
   const responsive=doc.createElement('style');responsive.textContent='html{min-height:100%;overflow-x:hidden}html,body{overflow-y:auto!important}body{min-height:100dvh;height:auto!important}';doc.head.append(responsive);
+  if (/\blocalStorage\b/.test(source)) {
+    // Delay inline activity code until its scoped history has been loaded by the host.
+    doc.querySelectorAll('script:not([type]),script[type=""],script[type="text/javascript"],script[type="application/javascript"]').forEach(script=>script.setAttribute('type','application/appify-pending'));
+    const bridge=doc.createElement('script');bridge.textContent=ACTIVITY_STORAGE_BRIDGE;doc.head.insertBefore(bridge,doc.head.querySelector('script'));
+  }
   const guard=doc.createElement('script');guard.textContent="window.addEventListener('error',function(event){if(parent!==window)parent.postMessage({type:'appify:activity-error',message:String(event.message||'Erro de JavaScript').slice(0,160)},'*')});";
   doc.head.insertBefore(guard,doc.head.querySelector('script'));
   return '<!DOCTYPE html>'+doc.documentElement.outerHTML;

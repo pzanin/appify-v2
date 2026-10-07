@@ -1,3 +1,4 @@
+import { activityStorageKey } from '../utils/activityStorage';
 import { useLessonProgress } from '../hooks/useLessonProgress';
 import { ContinueLearning } from './ContinueLearning';
 import { trackAnalyticsEvent } from '../utils/analytics';
@@ -598,6 +599,8 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                               if (type === 'html') {
                                 return (
                                   <HtmlFrame
+                                    uiLanguage={pwaLanguage}
+                                    storageKey={activityStorageKey(pwaConfig,!analyticsLive,currentProjectId,selectedMockupModule.id,selectedMockupSubmodule.id)}
                                     onMaterialClick={targetId => { void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'link_click', moduleId:String(selectedMockupModuleId), lessonId:String(selectedMockupSubmoduleId),targetKind:'material',targetId}); }}
                                     interactive={selectedMockupSubmodule.htmlInteractive === true}
                                     activityPath={`pages/lesson-${selectedMockupModule.id}-${selectedMockupSubmodule.id}.html`}

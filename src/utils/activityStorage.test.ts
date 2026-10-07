@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {JSDOM} from 'jsdom';
+import {activityStorageKey,readActivityData,writeActivityData,validActivityData} from './activityStorage';
+const setup=new JSDOM('',{url:'https://appify.test'});
+Object.assign(globalThis,{window:setup.window,document:setup.window.document,DOMParser:setup.window.DOMParser});
+const {prepareInteractiveHtml}=await import('./interactiveHtml');
+test('history is partitioned by product, lesson and preview; quotas reject invalid and excessive records',()=>{
+ const config={productId:'one'} as any;
+ const key=activityStorageKey(config,false,null,1,2);
+ for(const other of [activityStorageKey(config,true,null,1,2),activityStorageKey(config,false,null,1,3),activityStorageKey({productId:'two'} as any,false,null,1,2)])assert.notEqual(key,other);
+ const storage=setup.window.localStorage;
+ writeActivityData(storage,key,{history:'[]'});assert.equal(readActivityData(storage,key).history,'[]');
+ assert.throws(()=>writeActivityData(storage,key,{history:'x'.repeat(64001)}));
+ assert.equal(validActivityData({x:7}),false);assert.equal(validActivityData(Array(5)),false);
+ assert.equal(validActivityData(Object.fromEntries(Array.from({length:101},(_,i)=>[String(i),'x']))),false);
+ assert.equal(readActivityData(storage,key).history,'[]');
+});
+test('opaque activity waits for history, runs load handler once and supports synchronous legacy storage without native storage',async()=>{
+ const html=await prepareInteractiveHtml(`<button onclick="save()">Save</button><script>let loads=0;window.onload=()=>{loads++;document.body.dataset.restored=localStorage.getItem('history')};function save(){localStorage.setItem('history','new');document.body.dataset.saved=localStorage.getItem('history')}</script>`);
+ const dom=new JSDOM(html,{runScripts:'dangerously'});const w=dom.window;
+ await new Promise(resolve=>w.addEventListener('load',resolve));
+ assert.equal(w.document.body.dataset.restored,undefined);
+ w.dispatchEvent(new w.MessageEvent('message',{source:{} as any,data:{type:'appify:storage-ready',data:{history:'attacker'}}}));
+ assert.equal(w.document.body.dataset.restored,undefined);
+ w.dispatchEvent(new w.MessageEvent('message',{source:w.parent,data:{type:'appify:storage-ready',data:{history:'previous'}}}));
+ assert.equal(w.document.body.dataset.restored,'previous');assert.equal(w.eval('loads'),1);
+ w.document.querySelector('button')!.click();assert.equal(w.document.body.dataset.saved,'new');
+ w.localStorage.removeItem('history');assert.equal(w.localStorage.getItem('history'),null);
+ w.localStorage.setItem('__proto__','safe');assert.equal(w.localStorage.getItem('__proto__'),'safe');
+ w.localStorage.clear();assert.equal(w.localStorage.length,0);
+ assert.throws(()=>w.localStorage.setItem('large','x'.repeat(64001)));
+ w.dispatchEvent(new w.MessageEvent('message',{source:w.parent,data:{type:'appify:storage-ready',data:{history:'duplicate'}}}));assert.equal(w.eval('loads'),1);
+ dom.window.close();
+});

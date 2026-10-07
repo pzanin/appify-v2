@@ -50,7 +50,7 @@ Os testes exercitam persistência/assets/backups, rejeição de senders e URLs, 
 
 ## Limites e teste no Windows
 
-- HTML estático remove scripts e formulários arbitrários. A opção interativa por aula mantém scripts inline dentro de um iframe isolado, sem acesso ao editor, Node, armazenamento ou rede. Consulte `interactive-html-0.9.md`. O HTML original do projeto continua disponível para edição.
+- HTML estático remove scripts e formulários arbitrários. A opção interativa por aula mantém scripts inline dentro de um iframe isolado, sem acesso ao editor, Node, armazenamento nativo ou rede. O histórico local usa ponte limitada por atividade, sem acesso às outras chaves do host. Consulte `interactive-html-0.9.md`. O HTML original do projeto continua disponível para edição.
 - Vídeos/sites externos em iframe com origem opaca podem exigir permissões que agora são bloqueadas. Verifique os provedores usados no seu produto; não foi validada a reprodução real neste ambiente.
 - Detecção de secrets usa nomes/padrões conhecidos; não prova ausência de credenciais desconhecidas, codificadas ou divididas em fragmentos. Backup de projeto é um arquivo privado do editor, não um pacote para publicação.
 - CSP permite HTTPS para mídia/frames e conexões do backend opcional já existente; não há allowlist de domínio específica por produto nesta etapa.
