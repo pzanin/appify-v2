@@ -128,7 +128,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
         const url = builderDownloadUrl(p.url);
         const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
         const description = p.content?.trim() ? `<p style="white-space:pre-wrap;margin:0 0 12px;">${escapeHtml(p.content)}</p>` : '';
-        const button = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || 'Baixar material')}</a>` : '<p style="margin:0;opacity:.7;">Informe um link HTTPS para o arquivo.</p>';
+        const button = url ? `<a data-appify-material="${escapeHtml(String(mod.id))}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || 'Baixar material')}</a>` : '<p style="margin:0;opacity:.7;">Informe um link HTTPS para o arquivo.</p>';
         return `${heading}${description}${button}`;
       }
       case 'audio': {

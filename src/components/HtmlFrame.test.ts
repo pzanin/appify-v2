@@ -70,3 +70,18 @@ test('desktop preview uses native memory content, rejects activity requests to o
   await act(async()=>root.unmount());assert.equal(released,'appify-content://activity/test');
   delete window.appifyDesktop;
 });
+
+test('material click instrumentation accepts only the current static frame and identified download links',async t=>{
+  const clicks:string[]=[];
+  t.mock.method(window,'open',()=>null);
+  const html=generateBuilderHtml([{id:'material-7',type:'download',props:{...getDefaultProps('download'),url:'https://example.com/guide.pdf'}}]);
+  const root=createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(HtmlFrame,{html,onMaterialClick:id=>clicks.push(id)})));
+  const frame=document.querySelector('iframe')!;
+  const send=(source:Window|null,url:string)=>window.dispatchEvent(new dom.window.MessageEvent('message',{source,data:{type:'appify:external-link',url}}));
+  await act(async()=>{send(window,'https://example.com/guide.pdf');send(frame.contentWindow,'https://example.com/other.pdf');});
+  assert.deepEqual(clicks,[]);
+  await act(async()=>send(frame.contentWindow,'https://example.com/guide.pdf'));
+  assert.deepEqual(clicks,['material-7']);
+  await act(async()=>root.unmount());
+});

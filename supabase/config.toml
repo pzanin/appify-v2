@@ -1,0 +1,5 @@
+project_id = "appify-analytics"
+
+# Public anonymous ingestion; authorization/validation is performed by the handler.
+[functions.analytics-ingest]
+verify_jwt = false

@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import React,{act} from 'react';
+import { JSDOM } from 'jsdom';
+import { INITIAL_PWA_CONFIG } from '../constants';
+const dom=new JSDOM('<div id="root"></div>',{url:'https://appify.test/'});
+Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true});
+const {createRoot}=await import('react-dom/client');
+const {useAppStore}=await import('../store/useAppStore');
+const {AnalyticsDashboard}=await import('./AnalyticsDashboard');
+const projectId='11111111-1111-4111-8111-111111111111';
+const button=(name:string)=>[...document.querySelectorAll('button')].find(item=>item.textContent?.includes(name))!;
+const change=(selector:string,value:string)=>{
+  const input=document.querySelector(selector)!;
+  Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(input,value);
+  input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+};
+test('dashboard shows three unavailable metrics instead of fabricated zeros, omits old funnels and blocks unconfigured refresh',async()=>{
+  useAppStore.setState({pwaConfig:INITIAL_PWA_CONFIG});
+  const root=createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(AnalyticsDashboard)));
+  assert.equal(document.querySelectorAll('section strong').length,3);
+  assert.ok([...document.querySelectorAll('section strong')].every(item=>item.textContent==='—'));
+  assert.equal(button('Atualizar dados').disabled,true);
+  assert.doesNotMatch(document.body.textContent||'',/Usuários Ativos|Retenção|Termômetro|prefere a experiência instalada/);
+  await act(async()=>root.unmount());
+});
+test('owner login reads actual report totals, period/project changes clear stale data and owner credentials stay out of project data',async t=>{
+  useAppStore.setState({currentProjectId:1,pwaConfig:{...INITIAL_PWA_CONFIG,analyticsEnabled:true,analyticsProjectId:projectId,supabaseUrl:'https://test.supabase.co',supabaseAnonKey:'sb_publishable_test'}});
+  const requests:string[]=[];
+  let unauthorized=false;
+  t.mock.method(globalThis,'fetch',async (input:RequestInfo|URL)=>{
+    const url=String(input);requests.push(url);
+    if(unauthorized && url.includes('/rest/v1/')) return new Response(JSON.stringify({message:'denied'}),{status:403,headers:{'Content-Type':'application/json'}});
+    const body=url.includes('/auth/v1/token') ? {access_token:'test',refresh_token:'test',expires_in:3600,token_type:'bearer',user:{id:projectId,email:'owner@example.com'}} : url.includes('/rest/v1/rpc/') ? [{event_name:'lesson_open',module_id:'1',lesson_id:'2',target_kind:'',target_id:'',total:5}] : {id:projectId};
+    return new Response(JSON.stringify(body),{status:200,headers:{'Content-Type':'application/json'}});
+  });
+  const root=createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(AnalyticsDashboard)));
+  await act(async()=>{change('#analytics-email','owner@example.com');change('#analytics-password','test');});
+  await act(async()=>document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
+  assert.equal(button('Atualizar dados').disabled,false);
+  await act(async()=>button('Atualizar dados').click());
+  assert.equal(document.querySelector('section strong')?.textContent,'5');
+  assert.ok(requests.some(url=>url.includes('appify_analytics_report')));
+  unauthorized=true;
+  await act(async()=>button('Atualizar dados').click());
+  assert.equal(document.querySelector('section strong')?.textContent,'—');
+  assert.match(document.body.textContent||'',/Não foi possível concluir/);
+  assert.equal(JSON.stringify(useAppStore.getState().pwaConfig).includes('owner@example.com'),false);
+  assert.equal(JSON.stringify({...localStorage}).includes('owner@example.com'),false);
+  await act(async()=>{
+    const select=document.querySelector('#analytics-period') as HTMLSelectElement;select.value='30';select.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
+  });
+  assert.equal(document.querySelector('section strong')?.textContent,'—');
+  await act(async()=>useAppStore.setState({currentProjectId:2,pwaConfig:INITIAL_PWA_CONFIG}));
+  assert.equal(button('Atualizar dados').disabled,true);
+  assert.equal(document.querySelector('section strong')?.textContent,'—');
+  await act(async()=>root.unmount());
+});

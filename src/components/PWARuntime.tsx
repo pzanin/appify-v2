@@ -1,6 +1,7 @@
+import { trackAnalyticsEvent } from '../utils/analytics';
 import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
-import { openExternalLink } from '../utils/externalLinks';
+import { openExternalLink, normalizeExternalUrl } from '../utils/externalLinks';
 import { engagementIsEnabled } from '../utils/projectFeatures';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock, Loader2 } from 'lucide-react';
@@ -11,7 +12,8 @@ import { useTranslation } from 'react-i18next';
 import { InstallGuide } from './InstallGuide';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
-interface PWARuntimeProps { 
+interface PWARuntimeProps {
+  analyticsLive?: boolean;
   isPhoneDark: boolean; 
   setIsPhoneDark: (val: boolean) => void; 
 }
@@ -34,7 +36,7 @@ function EmptyState({ icon: Icon, text }: EmptyStateProps) {
   );
 }
 
-export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
+export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false }: PWARuntimeProps) {
   const { i18n } = useTranslation();
   const appName = useAppStore(state => state.appName);
   const modules = useAppStore(state => state.modules);
@@ -137,6 +139,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   const selectedMockupModule = modules.find(m => m.id === selectedMockupModuleId) || null;
   const selectedMockupSubmodule = selectedMockupModule?.subs?.find(s => s.id === selectedMockupSubmoduleId) || null;
 
+  useEffect(() => {
+    if (selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null) {
+      void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_open', moduleId:String(selectedMockupModuleId), lessonId:String(selectedMockupSubmoduleId)});
+    }
+  }, [selectedMockupModuleId, selectedMockupSubmoduleId, analyticsLive]);
+
   const themeColor = pwaConfig?.themeColor || '#7c6fff';
   const displayAppName = pwaConfig?.appName || appName;
   const gamification = pwaConfig?.gamification || { enabled: false, progressStyle: 'none', enableStreaks: false, streakIcon: '🔥', enableCelebration: false };
@@ -161,6 +169,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
 
   const handleSimulateCompletion = () => {
     if (canCompleteLesson && !isCurrentLessonCompleted) {
+      void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
       setIsCurrentLessonCompleted(true);
       setMockProgressPercentage(100);
       if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
@@ -596,6 +605,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                               if (type === 'html') {
                                 return (
                                   <HtmlFrame
+                                    onMaterialClick={targetId => { void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'link_click', moduleId:String(selectedMockupModuleId), lessonId:String(selectedMockupSubmoduleId),targetKind:'material',targetId}); }}
                                     interactive={selectedMockupSubmodule.htmlInteractive === true}
                                     activityPath={`pages/lesson-${selectedMockupModule.id}-${selectedMockupSubmodule.id}.html`}
                                     html={selectedMockupSubmodule.customHtml || selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || ''}
@@ -891,7 +901,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                 </div>
                 <h3 className="text-xl font-black mb-2">{t('app.upsell.lockedTitle', 'Conteúdo Bloqueado')}</h3>
                 <p className="text-sm opacity-60 mb-8 leading-relaxed">Para acessar o módulo <strong>{lockedModuleClick.name}</strong>, é necessário adquirir este upgrade.</p>
-                <button className="w-full py-5 rounded-2xl font-black bg-gray-900 text-white shadow-xl mb-3" style={{ border: 'none', cursor: 'pointer' }}>{t('app.upsell.checkoutButton', 'Ir para o Checkout')}</button>
+                <button onClick={() => {
+                  const url = normalizeExternalUrl(lockedModuleClick.checkoutUrl);
+                  if (!url || !url.startsWith('https://')) return;
+                  void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'link_click',moduleId:String(lockedModuleClick.id),lessonId:'',targetKind:'offer',targetId:String(lockedModuleClick.id)});
+                  openExternalLink(url);
+                }} className="w-full py-5 rounded-2xl font-black bg-gray-900 text-white shadow-xl mb-3" style={{ border: 'none', cursor: 'pointer' }}>{t('app.upsell.checkoutButton', 'Ir para o Checkout')}</button>
                 <button onClick={() => setLockedModuleClick(null)} className="w-full py-3 font-bold opacity-40" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>{t('app.upsell.cancelButton', 'Cancelar')}</button>
               </motion.div>
             </motion.div>

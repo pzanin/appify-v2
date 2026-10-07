@@ -3,10 +3,10 @@ import { prepareResponsiveHtml } from '../utils/htmlContent';
 import { prepareInteractiveHtml } from '../utils/interactiveHtml';
 import { openExternalLink } from '../utils/externalLinks';
 
-type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string };
+type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
 
-export function HtmlFrame({ html, interactive=false, activityPath, className, style, ...props }: Props) {
+export function HtmlFrame({ html, interactive=false, activityPath, onMaterialClick, className, style, ...props }: Props) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [activity,setActivity] = useState<{source:string;url?:string;error?:string} | null>(null);
   const [videoOverlay,setVideoOverlay] = useState<VideoOverlay | null>(null);
@@ -52,11 +52,16 @@ export function HtmlFrame({ html, interactive=false, activityPath, className, st
         return;
       }
       if(event.data?.type !== 'appify:external-link') return;
-      openExternalLink(event.data.url);
+      const url = typeof event.data.url === 'string' ? event.data.url : '';
+      const doc = new DOMParser().parseFromString(html,'text/html');
+      const material = [...doc.querySelectorAll('a[data-appify-material]')].find(link => link.getAttribute('href') === url);
+      const targetId = material?.getAttribute('data-appify-material') || '';
+      if (/^[a-zA-Z0-9._:-]{1,80}$/.test(targetId) && /^https:\/\//.test(url)) onMaterialClick?.(targetId);
+      openExternalLink(url);
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [interactive,html]);
+  }, [interactive,html,onMaterialClick]);
 
   if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : 'Preparando atividade…'}</div>;
 

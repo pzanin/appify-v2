@@ -101,7 +101,7 @@ const browserFallback = {
     const name = `${source.project.name} (cópia)`;
     const workspace = clone(source.workspace);
     workspace.appName = name;
-    workspace.pwaConfig = { ...workspace.pwaConfig, appName: name };
+    workspace.pwaConfig = { ...workspace.pwaConfig, appName: name, analyticsEnabled: false, analyticsProjectId: undefined };
     return browserFallback.create(name, workspace);
   },
   async remove(id: number) {

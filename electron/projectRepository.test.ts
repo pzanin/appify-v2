@@ -113,3 +113,25 @@ test('externalizes images, writes pages and rehydrates projects and backups', as
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('analytics settings survive local save and backups while duplicated projects start with collection disabled',async()=>{
+  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'appify-analytics-'));
+  try {
+    const repository=new ProjectRepository(directory);
+    const data=workspace();
+    const projectId='11111111-1111-4111-8111-111111111111';
+    data.pwaConfig={...data.pwaConfig,analyticsEnabled:true,analyticsProjectId:projectId,supabaseUrl:'https://test.supabase.co'};
+    const created=await repository.create('Analytics',data);
+    const reopened=await repository.open(created.id);
+    assert.equal(reopened.workspace.pwaConfig.analyticsProjectId,projectId);
+    assert.equal(reopened.workspace.pwaConfig.analyticsEnabled,true);
+    const backup=await repository.readBackup(created.id);
+    const imported=await repository.importDocument(backup);
+    assert.equal((await repository.open(imported.id)).workspace.pwaConfig.analyticsProjectId,projectId);
+    const duplicate=await repository.duplicate(created.id);
+    const copy=await repository.open(duplicate.id);
+    assert.equal(copy.workspace.pwaConfig.analyticsEnabled,false);
+    assert.equal(copy.workspace.pwaConfig.analyticsProjectId,undefined);
+    assert.equal((await repository.open(created.id)).workspace.pwaConfig.analyticsEnabled,true);
+  } finally {await fs.rm(directory,{recursive:true,force:true});}
+});

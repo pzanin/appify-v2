@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import React,{act} from 'react';
+import { JSDOM } from 'jsdom';
+import { INITIAL_PWA_CONFIG } from '../constants';
+const dom=new JSDOM('<div id="root"></div>',{url:'https://product.test/',pretendToBeVisual:true});
+Object.assign(globalThis,{window:dom.window,document:dom.window.document,DOMParser:dom.window.DOMParser,HTMLElement:dom.window.HTMLElement,Element:dom.window.Element,SVGElement:dom.window.SVGElement,getComputedStyle:dom.window.getComputedStyle,requestAnimationFrame:dom.window.requestAnimationFrame.bind(dom.window),cancelAnimationFrame:dom.window.cancelAnimationFrame.bind(dom.window),localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true});
+const {createRoot}=await import('react-dom/client');
+await import('../i18n');
+const {useAppStore}=await import('../store/useAppStore');
+const {PWARuntime}=await import('./PWARuntime');
+const button=(text:string)=>[...document.querySelectorAll('button')].find(item=>item.textContent?.includes(text))!;
+
+test('checkout instrumentation excludes the Builder and opens the offer even when the published PWA cannot send analytics',async t=>{
+  const events:Record<string,string>[]=[];
+  let offline=false;
+  t.mock.method(globalThis,'fetch',async (_url:RequestInfo|URL,options?:RequestInit)=>{if(options?.body)events.push(JSON.parse(options.body as string));if(offline)throw new Error('offline');return new Response(null,{status:204});});
+  const opened=t.mock.method(window,'open',()=>null);
+  useAppStore.setState({currentProjectId:1,mockupOnboardingCompleted:true,pwaConfig:{...INITIAL_PWA_CONFIG,analyticsEnabled:true,analyticsProjectId:'11111111-1111-4111-8111-111111111111',supabaseUrl:'https://test.supabase.co',customSplash:false},modules:[{id:1,name:'Aulas',iconName:'Book',status:'Ativo',subs:[{id:2,name:'Aula de teste',type:'html',contentType:'html',contentHtml:'<p>Aula</p>'}]},{id:3,name:'Oferta',iconName:'Book',status:'Ativo',releaseType:'upsell',checkoutUrl:'https://example.com/checkout',subs:[]}]});
+  let root=createRoot(document.getElementById('root')!);
+  const render=async(live:boolean)=>act(async()=>root.render(React.createElement(PWARuntime,{analyticsLive:live,isPhoneDark:false,setIsPhoneDark:()=>{}})));
+  await render(false);
+  await act(async()=>document.querySelectorAll<HTMLElement>('.phone-module-wrapper')[1].click());
+  await act(async()=>button('Ir para o Checkout').click());
+  assert.equal(events.length,0);
+  await act(async()=>root.unmount());
+  root=createRoot(document.getElementById('root')!);
+  await render(true);
+  await act(async()=>document.querySelectorAll<HTMLElement>('.phone-module-wrapper')[1].click());
+  offline=true;
+  await act(async()=>button('Ir para o Checkout').click());
+  assert.equal(events[0].eventName,'link_click');assert.equal(events[0].targetKind,'offer');
+  assert.equal(opened.mock.calls[0].arguments[0],'https://example.com/checkout');
+  await act(async()=>root.unmount());
+});

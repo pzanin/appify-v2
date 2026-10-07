@@ -125,7 +125,7 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
 
   return (
     <Suspense fallback={<Loader2 className="animate-spin text-white" size={32} />}>
-      <CustomerEntry config={useAppStore.getState().pwaConfig}><PWARuntime isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>
+      <CustomerEntry config={useAppStore.getState().pwaConfig}><PWARuntime analyticsLive isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>
     </Suspense>
   );
 }
