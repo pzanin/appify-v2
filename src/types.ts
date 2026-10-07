@@ -18,6 +18,7 @@ export interface FeedPost {
   content: string;
   imageUrl?: string;
   timestamp: string;
+  displayDate?: number;
   createdAt?: number;
 }
 

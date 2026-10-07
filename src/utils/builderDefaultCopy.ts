@@ -1,0 +1,47 @@
+import i18n from '../i18n';
+const keys:Record<string,string> = {
+  "Título Principal": "mainTitle",
+  "Subtítulo da página": "subtitle",
+  "Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.": "text",
+  "Primeiro benefício\nSegundo benefício\nTerceiro benefício": "list",
+  "Dica importante": "tip",
+  "Destaque aqui uma orientação, benefício ou informação importante.": "tipBody",
+  "Clique para ver mais": "accordion",
+  "Escreva aqui a explicação ou resposta desta seção.": "accordionBody",
+  "Áudio": "audio",
+  "Material de apoio": "material",
+  "Baixar material": "download",
+  "Imagem": "image",
+  "Vídeo": "video",
+  "Clique aqui": "click",
+  "Bem-vindo ao seu site": "hero",
+  "Descrição principal em destaque": "heroBody",
+  "Título da seção": "section",
+  "Escreva o conteúdo desta seção.": "sectionBody",
+  "Coluna Esquerda": "left",
+  "Texto descritivo aqui": "leftBody",
+  "Coluna Direita": "right",
+  "Outro texto descritivo": "rightBody",
+  "Card 1": "card1",
+  "Card 2": "card2",
+  "Card 3": "card3",
+  "Descrição do primeiro card": "card1Body",
+  "Descrição do segundo card": "card2Body",
+  "Descrição do terceiro card": "card3Body",
+  "Título com imagem": "imageTitle",
+  "Texto descritivo ao lado da imagem": "imageBody",
+  "\"Este é um depoimento incrível sobre nosso produto ou serviço.\"": "quote",
+  "Nome do Cliente": "author",
+  "Cargo/Empresa": "role",
+  "Pronto para começar?": "cta",
+  "Faça uma ação agora mesmo": "ctaBody",
+  "Clique para adicionar imagem": "addImage",
+  "Cole uma URL válida do YouTube ou Shorts nas propriedades do bloco.": "addVideo",
+  "Envie um MP3 ou M4A, ou informe um link HTTPS direto para o áudio.": "addAudio",
+  "Informe um link HTTPS para o arquivo.": "addFile",
+  "Detalhes": "details"
+};
+// Translate generated defaults, never the author's saved text.
+export function builderDefaultCopy(value:string,language='pt-BR') {
+  return keys[value] ? i18n.getFixedT(language.split('-')[0])('builderDefaults.'+keys[value]) : value;
+}

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { sanitizeImportedHtml, IMPORTED_HTML_CSP, LINK_BRIDGE, VIDEO_BRIDGE } from './htmlSecurity';
 const RESPONSIVE_STYLE = `
 <style id="appify-responsive-html">
@@ -58,9 +59,10 @@ const RESPONSIVE_STYLE = `
 
 const VIEWPORT_META = '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">';
 
-export function prepareResponsiveHtml(html: string): string {
-  const source = html?.trim() || '<p style="text-align:center;font-family:sans-serif;opacity:.5;padding:20px;">Nenhum conteúdo definido.</p>';
+export function prepareResponsiveHtml(html: string,language='pt-BR'): string {
+  const source = html?.trim() || `<p style="text-align:center;font-family:sans-serif;opacity:.5;padding:20px;">${i18n.getFixedT(language.split('-')[0])('app.modules.emptyContent')}</p>`;
   const doc = new DOMParser().parseFromString(sanitizeImportedHtml(source, true), 'text/html');
+  doc.documentElement.lang=language;
   doc.querySelector('#appify-responsive-html')?.remove();
   doc.head.innerHTML = `<meta http-equiv="Content-Security-Policy" content="${IMPORTED_HTML_CSP}">${VIEWPORT_META}${RESPONSIVE_STYLE}` + doc.head.innerHTML;
   const linkScript = doc.createElement('script');

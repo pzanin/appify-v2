@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import {
@@ -13,6 +14,7 @@ interface CleanVideoPlayerProps {
   aspectRatio?: CleanVideoAspectRatio | 'auto';
   borderRadius?: number;
   title?: string;
+  uiLanguage?:string;
 }
 
 export function CleanVideoPlayer({
@@ -20,8 +22,12 @@ export function CleanVideoPlayer({
   poster,
   aspectRatio = 'auto',
   borderRadius = 16,
-  title = 'Vídeo',
+  title,
+  uiLanguage,
 }: CleanVideoPlayerProps) {
+  const {i18n}=useTranslation();
+  const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
+  const displayTitle=title || t('app.media.video');
   const [isPlaying, setIsPlaying] = useState(false);
 
   const resolvedAspectRatio = aspectRatio === 'auto' ? detectYouTubeAspectRatio(url) : aspectRatio;
@@ -44,7 +50,7 @@ export function CleanVideoPlayer({
         padding: 24,
         textAlign: 'center',
       }}>
-        Cole uma URL válida do YouTube ou Shorts.
+        {t('app.media.videoUnavailable')}
       </div>
     );
   }
@@ -64,7 +70,7 @@ export function CleanVideoPlayer({
       {!isPlaying ? (
         <button
           type="button"
-          aria-label={`Reproduzir ${title}`}
+          aria-label={t('app.media.play',{title:displayTitle})}
           onClick={() => setIsPlaying(true)}
           style={{
             position: 'absolute',
@@ -98,7 +104,7 @@ export function CleanVideoPlayer({
       ) : (
         <iframe
           src={embedUrl}
-          title={title}
+          title={displayTitle}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"

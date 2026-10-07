@@ -101,7 +101,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const generateId = () => 'mod_' + Math.random().toString(36).substr(2, 9);
 
 
-  const addBlock = (type: string, subtype?: string) => { const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype) }; setBlocks(current => [...current, newBlock]); setSelectedBlockId(newBlock.id); };
+  const addBlock = (type: string, subtype?: string) => { const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype,storageConfig.language) }; setBlocks(current => [...current, newBlock]); setSelectedBlockId(newBlock.id); };
   const updateProp = <K extends keyof BuilderBlock['props']>(key: K, value: BuilderBlock['props'][K]) => { setBlocks(current => current.map(b => b.id === selectedBlockId ? { ...b, props: { ...b.props, [key]: value } } : b)); };
   const moveBlock = (id: string, dir: number) => setBlocks(current => reorderBlocks(current, id, dir));
   const duplicateBlock = (id: string) => {
@@ -140,10 +140,10 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     reader.readAsText(file);
   };
 
-  const generateHTML = () => generateBuilderHtml(blocks);
+  const generateHTML = () => generateBuilderHtml(blocks,storageConfig.language);
 
   const rawSelectedBlock = blocks.find(b => b.id === selectedBlockId);
-  const selectedBlock = rawSelectedBlock ? { ...rawSelectedBlock, props: normalizedBlockProps(rawSelectedBlock) } : undefined;
+  const selectedBlock = rawSelectedBlock ? { ...rawSelectedBlock, props: normalizedBlockProps(rawSelectedBlock,storageConfig.language) } : undefined;
 
   React.useEffect(() => {
     const holder = document.createElement('div');
@@ -244,7 +244,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 </div>
               ) : (
                 <div className="vpb-canvas-paper appify-builder-document">
-                  {blocks.map((block, index) => { const mod = { ...block, props: normalizedBlockProps(block) }; return (
+                  {blocks.map((block, index) => { const mod = { ...block, props: normalizedBlockProps(block,storageConfig.language) }; return (
                     <div
                       key={mod.id}
                       className={`appify-builder-block vpb-block-wrapper ${mod.id === selectedBlockId ? 'selected' : ''}`}
@@ -255,7 +255,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       }}
                       onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
                     >
-                      <div className="appify-builder-content" style={{maxWidth:mod.props.maxWidth && Number(mod.props.maxWidth)>0?`${mod.props.maxWidth}px`:undefined,marginLeft:mod.props.maxWidth?'auto':undefined,marginRight:mod.props.maxWidth?'auto':undefined}} onClick={e => { if ((e.target as HTMLElement).closest('a')) e.preventDefault(); }} dangerouslySetInnerHTML={{ __html: sanitizeImportedHtml(getBlockInnerHtml(mod)) }} />
+                      <div className="appify-builder-content" style={{maxWidth:mod.props.maxWidth && Number(mod.props.maxWidth)>0?`${mod.props.maxWidth}px`:undefined,marginLeft:mod.props.maxWidth?'auto':undefined,marginRight:mod.props.maxWidth?'auto':undefined}} onClick={e => { if ((e.target as HTMLElement).closest('a')) e.preventDefault(); }} dangerouslySetInnerHTML={{ __html: sanitizeImportedHtml(getBlockInnerHtml(mod,storageConfig.language)) }} />
                       <div className="vpb-block-actions">
                         <button type="button" className="vpb-action-btn" aria-label="Mover bloco para cima" title="Mover para cima" disabled={index === 0} onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, -1); }}><ArrowUp size={14} /></button>
                         <button type="button" className="vpb-action-btn" aria-label="Mover bloco para baixo" title="Mover para baixo" disabled={index === blocks.length - 1} onClick={(e) => { e.stopPropagation(); moveBlock(mod.id, 1); }}><ArrowDown size={14} /></button>

@@ -42,7 +42,10 @@
       "lessonPlural": "leçons",
       "noLessons": "Aucune leçon ajoutée",
       "completed": "terminé",
-      "completed_status": "Terminée"
+      "completed_status": "Terminée",
+      "complete": "Marquer comme terminée",
+      "contentTitle": "Contenu de la leçon",
+      "emptyContent": "Aucun contenu n’a été ajouté."
     },
     "upsell": {
       "lockedTitle": "Contenu Verrouillé",
@@ -62,7 +65,8 @@
       "copyEmail": "Copier l'e-mail",
       "openWa": "Ouvrir WhatsApp",
       "copied": "Copié!",
-      "emailLabel": "E-MAIL DE CONTACT"
+      "emailLabel": "E-MAIL DE CONTACT",
+      "unconfigured": "Le contact du support n’est pas configuré."
     },
     "gamification": {
       "streak": "Série",
@@ -78,7 +82,26 @@
       "continue": "Reprendre là où je me suis arrêté",
       "review": "Revoir la dernière leçon",
       "progress": "{{completed}} leçons terminées sur {{total}}"
-    }
+    },
+    "media": {
+      "video": "Vidéo",
+      "play": "Lire {{title}}",
+      "videoUnavailable": "Cette vidéo n’a pas pu être chargée.",
+      "image": "Image",
+      "postImage": "Image de la publication"
+    },
+    "errors": {
+      "errorTitle": "Une erreur est survenue",
+      "errorBody": "Cette page n’a pas pu être chargée. Rechargez l’application et réessayez.",
+      "reload": "Recharger l’application",
+      "dataError": "Les données de l’application n’ont pas pu être chargées.",
+      "retry": "Réessayer",
+      "activityPreparing": "Préparation de l’activité…",
+      "activityUnavailable": "Cette activité n’a pas pu être ouverte. Réessayez.",
+      "activityDesktop": "Ouvrez cet aperçu dans Appify pour ordinateur. Dans le PWA exporté, l’activité se charge depuis le dossier pages.",
+      "activityError": "Erreur dans l’activité : {{message}}"
+    },
+    "defaultName": "Mon application"
   },
   "onboarding": {
     "install": {
@@ -88,7 +111,16 @@
       "skip": "Plus Tard",
       "iosStep1": "1. Appuyez sur l'icône Partager",
       "iosStep2": "2. Sélectionnez \"Sur l'écran d'accueil\"",
-      "androidStep1": "Appuyez sur « Installer l’application » si le bouton est disponible"
+      "androidStep1": "Appuyez sur « Installer l’application » si le bouton est disponible",
+      "understood": "Compris",
+      "iosLabel": "Sur iPhone ou iPad",
+      "iosStep3": "Activez « Ouvrir comme app web » et appuyez sur Ajouter",
+      "iosFinish": "Ouvrez ensuite l’application avec sa nouvelle icône sur l’écran d’accueil.",
+      "iosConfirm": "Compris, je vais l’installer",
+      "androidStep2": "Confirmez l’installation lorsque votre téléphone le demande",
+      "manualTitle": "La confirmation n’apparaît pas ?",
+      "androidHelp": "Ouvrez le menu du navigateur et choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».",
+      "safeNote": "C’est gratuit et vous pouvez la supprimer à tout moment."
     },
     "push": {
       "title": "Notifications",
@@ -142,5 +174,47 @@
       "skip": "Continuer dans le navigateur",
       "optional": "L’installation est facultative. Votre contenu fonctionne aussi dans le navigateur."
     }
+  },
+  "builderDefaults": {
+    "mainTitle": "Titre principal",
+    "subtitle": "Sous-titre de la page",
+    "text": "Saisissez votre texte ici. Ce paragraphe d’exemple peut être modifié.",
+    "list": "Premier avantage\nDeuxième avantage\nTroisième avantage",
+    "tip": "Conseil utile",
+    "tipBody": "Mettez ici en avant un conseil, un avantage ou une information importante.",
+    "accordion": "Touchez pour en savoir plus",
+    "accordionBody": "Écrivez ici l’explication ou la réponse de cette section.",
+    "audio": "Audio",
+    "material": "Document complémentaire",
+    "download": "Télécharger le document",
+    "image": "Image",
+    "video": "Vidéo",
+    "click": "Touchez ici",
+    "hero": "Bienvenue sur votre site",
+    "heroBody": "Description principale",
+    "section": "Titre de la section",
+    "sectionBody": "Écrivez le contenu de cette section.",
+    "left": "Colonne de gauche",
+    "leftBody": "Texte descriptif ici",
+    "right": "Colonne de droite",
+    "rightBody": "Autre texte descriptif",
+    "card1": "Carte 1",
+    "card2": "Carte 2",
+    "card3": "Carte 3",
+    "card1Body": "Description de la première carte",
+    "card2Body": "Description de la deuxième carte",
+    "card3Body": "Description de la troisième carte",
+    "imageTitle": "Titre avec image",
+    "imageBody": "Texte descriptif à côté de l’image",
+    "quote": "\"Voici un témoignage sur notre produit ou service.\"",
+    "author": "Nom du client",
+    "role": "Poste / Entreprise",
+    "cta": "Prêt à commencer ?",
+    "ctaBody": "Passez à l’étape suivante",
+    "addImage": "Touchez pour ajouter une image",
+    "addVideo": "Ajoutez une URL YouTube ou Shorts valide dans les propriétés du bloc.",
+    "addAudio": "Importez un MP3 ou M4A, ou ajoutez un lien HTTPS direct vers l’audio.",
+    "addFile": "Ajoutez un lien HTTPS vers le fichier.",
+    "details": "Détails"
   }
 }

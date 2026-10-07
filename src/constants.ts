@@ -26,7 +26,7 @@ export const INITIAL_MODULES: Module[] = [];
 
 export const INITIAL_PWA_CONFIG: PwaConfig = {
   appName: 'Meu App',
-  tagline: 'O melhor app do mundo',
+  tagline: '',
   themeColor: '#6b8af0',
   textColor: '#FFFFFF',
   bgColor: '#161b22',

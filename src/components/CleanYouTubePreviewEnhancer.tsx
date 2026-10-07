@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+import { useAppStore } from '../store/useAppStore';
 import React from 'react';
 import { extractYouTubeId, getYouTubePoster } from '../utils/cleanVideo';
 
@@ -24,7 +26,8 @@ function enhanceIframe(frame: HTMLIFrameElement) {
 
   const overlay = document.createElement('button');
   overlay.type = 'button';
-  overlay.setAttribute('aria-label', 'Reproduzir vídeo');
+  const t=i18n.getFixedT((useAppStore.getState().pwaConfig.language || document.documentElement.lang || 'pt-BR').split('-')[0]);
+  overlay.setAttribute('aria-label',t('app.media.play',{title:t('app.media.video')}));
   overlay.dataset.appifyCleanOverlay = '1';
 
   const poster = getYouTubePoster(src);

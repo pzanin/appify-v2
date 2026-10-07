@@ -42,7 +42,10 @@
       "lessonPlural": "clases",
       "noLessons": "Ninguna clase añadida",
       "completed": "completado",
-      "completed_status": "Completada"
+      "completed_status": "Completada",
+      "complete": "Marcar como completada",
+      "contentTitle": "Contenido de la lección",
+      "emptyContent": "No se ha añadido contenido."
     },
     "upsell": {
       "lockedTitle": "Contenido Bloqueado",
@@ -62,7 +65,8 @@
       "copyEmail": "Copiar Correo",
       "openWa": "Abrir WhatsApp",
       "copied": "¡Copiado!",
-      "emailLabel": "CORREO DE CONTACTO"
+      "emailLabel": "CORREO DE CONTACTO",
+      "unconfigured": "El contacto de soporte no está configurado."
     },
     "gamification": {
       "streak": "Racha",
@@ -78,7 +82,26 @@
       "continue": "Continuar donde lo dejé",
       "review": "Repasar la última lección",
       "progress": "{{completed}} de {{total}} lecciones completadas"
-    }
+    },
+    "media": {
+      "video": "Vídeo",
+      "play": "Reproducir {{title}}",
+      "videoUnavailable": "No se pudo cargar este vídeo.",
+      "image": "Imagen",
+      "postImage": "Imagen de la publicación"
+    },
+    "errors": {
+      "errorTitle": "Algo salió mal",
+      "errorBody": "No se pudo cargar esta pantalla. Recarga la aplicación e inténtalo de nuevo.",
+      "reload": "Recargar aplicación",
+      "dataError": "No se pudieron cargar los datos de la aplicación.",
+      "retry": "Intentar de nuevo",
+      "activityPreparing": "Preparando actividad…",
+      "activityUnavailable": "No se pudo abrir esta actividad. Inténtalo de nuevo.",
+      "activityDesktop": "Abre esta vista previa en Appify para escritorio. En el PWA exportado, la actividad se carga desde la carpeta pages.",
+      "activityError": "Error en la actividad: {{message}}"
+    },
+    "defaultName": "Mi aplicación"
   },
   "onboarding": {
     "install": {
@@ -151,5 +174,47 @@
       "skip": "Continuar en el navegador",
       "optional": "La instalación es opcional. Tu contenido también funciona en el navegador."
     }
+  },
+  "builderDefaults": {
+    "mainTitle": "Título principal",
+    "subtitle": "Subtítulo de la página",
+    "text": "Escribe tu texto aquí. Este es un párrafo de ejemplo que puedes editar.",
+    "list": "Primer beneficio\nSegundo beneficio\nTercer beneficio",
+    "tip": "Consejo importante",
+    "tipBody": "Destaca aquí un consejo, beneficio o información importante.",
+    "accordion": "Toca para ver más",
+    "accordionBody": "Escribe aquí la explicación o respuesta de esta sección.",
+    "audio": "Audio",
+    "material": "Material de apoyo",
+    "download": "Descargar material",
+    "image": "Imagen",
+    "video": "Vídeo",
+    "click": "Toca aquí",
+    "hero": "Bienvenido a tu sitio",
+    "heroBody": "Descripción principal destacada",
+    "section": "Título de la sección",
+    "sectionBody": "Escribe el contenido de esta sección.",
+    "left": "Columna izquierda",
+    "leftBody": "Texto descriptivo aquí",
+    "right": "Columna derecha",
+    "rightBody": "Otro texto descriptivo",
+    "card1": "Tarjeta 1",
+    "card2": "Tarjeta 2",
+    "card3": "Tarjeta 3",
+    "card1Body": "Descripción de la primera tarjeta",
+    "card2Body": "Descripción de la segunda tarjeta",
+    "card3Body": "Descripción de la tercera tarjeta",
+    "imageTitle": "Título con imagen",
+    "imageBody": "Texto descriptivo junto a la imagen",
+    "quote": "\"Este es un testimonio sobre nuestro producto o servicio.\"",
+    "author": "Nombre del cliente",
+    "role": "Cargo / Empresa",
+    "cta": "¿Listo para empezar?",
+    "ctaBody": "Da el siguiente paso",
+    "addImage": "Toca para añadir una imagen",
+    "addVideo": "Añade una URL válida de YouTube o Shorts en las propiedades del bloque.",
+    "addAudio": "Sube un MP3 o M4A, o añade un enlace HTTPS directo al audio.",
+    "addFile": "Añade un enlace HTTPS al archivo.",
+    "details": "Detalles"
   }
 }

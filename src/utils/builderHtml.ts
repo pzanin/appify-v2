@@ -1,3 +1,5 @@
+import { builderDefaultCopy } from './builderDefaultCopy';
+import i18n from '../i18n';
 import type { BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
 import { sanitizeImportedHtml } from './htmlSecurity';
@@ -20,7 +22,7 @@ export function builderDownloadUrl(value?: string): string {
   return url.startsWith('https:') ? url : '';
 }
 
-export const getDefaultProps = (type: string, subtype?: string) => {
+const baseDefaultProps = (type: string, subtype?: string) => {
     const base = { bgColor: '#ffffff', padding: '20', align: 'left', fontFamily: 'DM Sans', fontSize: '16', color: '#333333', gap: '16', borderRadius: '8' };
     switch(type) {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
@@ -49,8 +51,13 @@ export const getDefaultProps = (type: string, subtype?: string) => {
     return base;
 };
 
-export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props'] {
-  const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined), ...block.props };
+export function getDefaultProps(type:string,subtype?:string,language='pt-BR') {
+  const defaults=baseDefaultProps(type,subtype);
+  return Object.fromEntries(Object.entries(defaults).map(([key,value])=>[key,typeof value==='string'?builderDefaultCopy(value,language):value])) as typeof defaults;
+}
+
+export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): BuilderBlock['props'] {
+  const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined,language), ...block.props };
   const ranges: Record<string, [number, number]> = {
     fontSize: [10,72], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
     maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
@@ -58,7 +65,7 @@ export function normalizedBlockProps(block: BuilderBlock): BuilderBlock['props']
     columnPadding: [0,48], cardPadding: [0,48], quoteSize: [10,72],
   };
   const values = p as Record<string, unknown>;
-  const defaults = getDefaultProps(block.type, block.subtype || undefined) as Record<string, unknown>;
+  const defaults = getDefaultProps(block.type, block.subtype || undefined,language) as Record<string, unknown>;
   for (const [key, [min,max]] of Object.entries(ranges)) {
     if (values[key] === undefined) continue;
     const number = Number(values[key]);
@@ -106,8 +113,9 @@ export function builderFontLinks(blocks: BuilderBlock[]): string {
   return [...fonts].map(font => `<link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g,'+')}:wght@400;600;700;800&amp;display=swap" rel="stylesheet">`).join('');
 }
 
-export const getBlockInnerHtml = (mod: BuilderBlock) => {
-    const p = normalizedBlockProps(mod);
+export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
+    const p = normalizedBlockProps(mod,language);
+    const copy=(text:string)=>builderDefaultCopy(text,language);
     const tfs = p.titleFontSize || p.fontSize || '32';
     const tfw = p.titleFontWeight || '700';
     const tmb = p.titleMarginBottom ?? '8';
@@ -128,16 +136,16 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
         const url = builderDownloadUrl(p.url);
         const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
         const description = p.content?.trim() ? `<p style="white-space:pre-wrap;margin:0 0 12px;">${escapeHtml(p.content)}</p>` : '';
-        const button = url ? `<a data-appify-material="${escapeHtml(String(mod.id))}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || 'Baixar material')}</a>` : '<p style="margin:0;opacity:.7;">Informe um link HTTPS para o arquivo.</p>';
+        const button = url ? `<a data-appify-material="${escapeHtml(String(mod.id))}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || copy('Baixar material'))}</a>` : `<p style="margin:0;opacity:.7;">${escapeHtml(copy('Informe um link HTTPS para o arquivo.'))}</p>`;
         return `${heading}${description}${button}`;
       }
       case 'audio': {
         const source = builderAudioSource(p);
         const title = p.title?.trim();
         const heading = title ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(title)}</h3>` : '';
-        return `${heading}${source ? `<audio controls preload="none" aria-label="${escapeHtml(title || 'Áudio')}" src="${escapeHtml(source)}" style="display:block;width:100%;max-width:100%;min-height:54px;">${escapeHtml(title || 'Áudio')}</audio>` : '<p style="margin:0;">Envie um MP3 ou M4A, ou informe um link HTTPS direto para o áudio.</p>'}`;
+        return `${heading}${source ? `<audio controls preload="none" aria-label="${escapeHtml(title || copy('Áudio'))}" src="${escapeHtml(source)}" style="display:block;width:100%;max-width:100%;min-height:54px;">${escapeHtml(title || copy('Áudio'))}</audio>` : `<p style="margin:0;">${escapeHtml(copy('Envie um MP3 ou M4A, ou informe um link HTTPS direto para o áudio.'))}</p>`}`;
       }
-      case 'accordion': return `<details class="appify-builder-accordion"${p.accordionOpen === true ? ' open' : ''} style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;max-width:100%;"><summary style="${titleStyle}cursor:pointer;overflow-wrap:anywhere;">${escapeHtml(p.title?.trim() || 'Detalhes')}</summary><p style="white-space:pre-wrap;margin:${tmb}px 0 0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></details>`;
+      case 'accordion': return `<details class="appify-builder-accordion"${p.accordionOpen === true ? ' open' : ''} style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;max-width:100%;"><summary style="${titleStyle}cursor:pointer;overflow-wrap:anywhere;">${escapeHtml(p.title?.trim() || copy('Detalhes'))}</summary><p style="white-space:pre-wrap;margin:${tmb}px 0 0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></details>`;
       case 'card': {
         const icon = { none: '', check: '✓', star: '★', arrow: '→', dot: '•' }[p.cardIcon || 'none'];
         const iconHtml = icon ? `<span aria-hidden="true" style="display:inline-block;font-size:24px;line-height:1;margin-bottom:12px;">${icon}</span>` : '';
@@ -149,22 +157,22 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
         const items = (p.content || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean);
         return `<ul role="list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:${p.gap}px;">${items.map(item => `<li style="display:flex;align-items:baseline;gap:10px;"><span aria-hidden="true" style="color:${p.listIconColor};flex-shrink:0;width:1.25em;text-align:center;">${icon}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere;">${escapeHtml(item)}</span></li>`).join('')}</ul>`;
       }
-      case 'image': return p.src ? `<img class="appify-sized-image" src="${escapeHtml(p.src)}" alt="${escapeHtml(p.alt)}" style="width:${p.width || 100}% !important;max-width:100%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:${p.borderRadius}px;">Clique para adicionar imagem</div>`;
+      case 'image': return p.src ? `<img class="appify-sized-image" src="${escapeHtml(p.src)}" alt="${escapeHtml(p.alt)}" style="width:${p.width || 100}% !important;max-width:100%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:${p.borderRadius}px;">${escapeHtml(copy('Clique para adicionar imagem'))}</div>`;
       case 'video': {
         const url = String(p.url || '').trim();
         const id = extractYouTubeId(url);
-        if (!id) return `<div style="border:2px dashed #ccc;padding:36px 20px;text-align:center;color:#777;border-radius:${p.borderRadius}px;background:#f8fafc;">Cole uma URL válida do YouTube ou Shorts nas propriedades do bloco.</div>`;
+        if (!id) return `<div style="border:2px dashed #ccc;padding:36px 20px;text-align:center;color:#777;border-radius:${p.borderRadius}px;background:#f8fafc;">${escapeHtml(copy('Cole uma URL válida do YouTube ou Shorts nas propriedades do bloco.'))}</div>`;
         const autoRatio = detectYouTubeAspectRatio(url);
         const ratio = p.videoAspectRatio === 'auto' ? autoRatio : (p.videoAspectRatio || autoRatio);
         const ratioCss = ratio === '9:16' ? '9 / 16' : '16 / 9';
         const ratioMaxWidth = ratio === '9:16' ? '420px' : '100%';
         const width = p.videoWidth || 100;
         const poster = String(p.videoPoster || '').trim() || getYouTubePoster(url) || '';
-        const title = escapeHtml(p.videoTitle || 'Vídeo');
+        const title = escapeHtml(p.videoTitle || copy('Vídeo'));
         const caption = String(p.videoCaption || '').trim();
         const posterStyle = poster ? `background:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.25)),url('${escapeHtml(poster)}') center/cover no-repeat;` : 'background:linear-gradient(135deg,#161b22,#0b1117);';
         const captionHtml = caption ? `<p style="margin:10px 0 0;text-align:center;font-size:14px;line-height:1.5;color:${p.color || '#333333'};">${escapeHtml(caption)}</p>` : '';
-        return `<div style="width:${width}%;max-width:${ratioMaxWidth};margin:0 auto;"><div class="appify-clean-video" style="position:relative;width:100%;aspect-ratio:${ratioCss};border-radius:${p.borderRadius}px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.18);"><a href="#video" role="button" aria-label="Reproduzir ${title}" data-appify-youtube="${escapeHtml(id)}" data-title="${title}" style="position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;border:0;padding:0;cursor:pointer;text-decoration:none;${posterStyle}"><span style="width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.94);color:#111827;font-size:30px;line-height:1;box-shadow:0 10px 30px rgba(0,0,0,.28);padding-left:4px;">▶</span></a></div>${captionHtml}</div>`;
+        return `<div style="width:${width}%;max-width:${ratioMaxWidth};margin:0 auto;"><div class="appify-clean-video" style="position:relative;width:100%;aspect-ratio:${ratioCss};border-radius:${p.borderRadius}px;overflow:hidden;background:#000;box-shadow:0 10px 30px rgba(0,0,0,.18);"><a href="#video" role="button" aria-label="${escapeHtml(i18n.getFixedT(language.split('-')[0])('app.media.play',{title:p.videoTitle || copy('Vídeo')}))}" data-appify-youtube="${escapeHtml(id)}" data-title="${title}" style="position:absolute;inset:0;display:grid;place-items:center;width:100%;height:100%;border:0;padding:0;cursor:pointer;text-decoration:none;${posterStyle}"><span style="width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.94);color:#111827;font-size:30px;line-height:1;box-shadow:0 10px 30px rgba(0,0,0,.28);padding-left:4px;">▶</span></a></div>${captionHtml}</div>`;
       }
       case 'link': {
         const href = safeLinkUrl(p.url);
@@ -190,7 +198,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
           case 'twoColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.leftTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.leftText)}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.rightTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.rightText)}</p></div></div>`;
           case 'threeColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col1Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col1Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col2Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col2Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col3Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col3Text)}</p></div></div>`;
           case 'imageText': {
-            const imgHtml = p.imageSrc ? `<img class="appify-sized-image" src="${escapeHtml(p.imageSrc)}" alt="${escapeHtml(p.imageAlt)}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:${p.borderRadius}px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">Clique para adicionar imagem</div>`;
+            const imgHtml = p.imageSrc ? `<img class="appify-sized-image" src="${escapeHtml(p.imageSrc)}" alt="${escapeHtml(p.imageAlt)}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:${p.borderRadius}px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">${escapeHtml(copy('Clique para adicionar imagem'))}</div>`;
             const titleH = `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>`;
             return p.imagePosition === 'left' ? `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:center;"><div>${imgHtml}</div><div>${titleH}<p style="white-space:pre-wrap;margin:0;line-height:1.8;">${escapeHtml(p.text)}</p></div></div>` : `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:center;"><div>${titleH}<p style="white-space:pre-wrap;margin:0;line-height:1.8;">${escapeHtml(p.text)}</p></div><div>${imgHtml}</div></div>`;
           }
@@ -205,11 +213,11 @@ export const getBlockInnerHtml = (mod: BuilderBlock) => {
     return '';
   };
 
-export function generateBuilderHtml(blocks: BuilderBlock[]): string {
+export function generateBuilderHtml(blocks: BuilderBlock[],language='pt-BR'): string {
   const sections = blocks.map(block => {
-    const p = normalizedBlockProps(block);
+    const p = normalizedBlockProps(block,language);
     const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;margin-top:${p.marginTop || 0}px;margin-bottom:${p.marginBottom || 0}px;`;
-    return `<section class="appify-builder-block" style="${escapeHtml(style)}"><div class="appify-builder-content" style="${p.maxWidth && Number(p.maxWidth)>0 ? `max-width:${p.maxWidth}px;margin-left:auto;margin-right:auto;` : ''}">${sanitizeImportedHtml(getBlockInnerHtml(block))}</div></section>`;
+    return `<section class="appify-builder-block" style="${escapeHtml(style)}"><div class="appify-builder-content" style="${p.maxWidth && Number(p.maxWidth)>0 ? `max-width:${p.maxWidth}px;margin-left:auto;margin-right:auto;` : ''}">${sanitizeImportedHtml(getBlockInnerHtml(block,language))}</div></section>`;
   }).join('\n');
   return `${builderFontLinks(blocks)}<style>${BUILDER_CSS}</style><div class="appify-builder-document">${sections}</div>`;
 }

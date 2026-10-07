@@ -1,3 +1,4 @@
+import { productTagline, productName } from '../utils/productCopy';
 import { customerButtonTextColor } from '../utils/customerTheme';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookOpen, Mail } from 'lucide-react';
@@ -13,7 +14,7 @@ export function splashDuration(config:PwaConfig) { const value=Number(config.spl
 export function CustomerEntry({ config, children, preview = false }: { config:PwaConfig; children:React.ReactNode; preview?:boolean }) {
   const {i18n} = useTranslation();
   const t=i18n.getFixedT((config.language || 'pt-BR').split('-')[0]);
-  const name=config.appName || document.title;
+  const name=productName(config.appName || document.title,config.language || 'pt-BR');
   const {isStandalone} = usePWAInstall();
   const completed = () => { try { return !preview && localStorage.getItem(entryStorageKey(name)) === 'done'; } catch { return false; } };
   const mode=preview && config.customerAccessMode === 'demo' ? 'demo' : 'open';
@@ -29,18 +30,18 @@ export function CustomerEntry({ config, children, preview = false }: { config:Pw
   const finish=()=>{ if(!preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Continue when storage is unavailable. */}}setEmail('');setStep('ready'); };
   const next=finish;
   if(step==='ready' && !splash)return <>{children}</>;
-  if(splash && media && !mediaFailed) return <div className="customer-screen customer-media-screen" style={{background:/^#[a-f0-9]{6}$/i.test(config.splashMediaBackground || '') ? config.splashMediaBackground : '#f7f9fc'}}>
+  if(splash && media && !mediaFailed) return <div lang={config.language} className="customer-screen customer-media-screen" style={{background:/^#[a-f0-9]{6}$/i.test(config.splashMediaBackground || '') ? config.splashMediaBackground : '#f7f9fc'}}>
     <SplashArtwork source={media.source} kind={media.kind} name={name} fit={config.splashMediaFit === 'cover' ? 'cover' : 'contain'} onComplete={()=>setSplash(false)} onFailure={()=>setMediaFailed(true)}/>
     <div className="customer-media-actions"><button className="customer-primary" style={{background:color,color:customerButtonTextColor(color)}} onClick={()=>setSplash(false)}>{t('experience.splashSkip')}</button></div>
   </div>;
   const brand=<div className="customer-brand">{config.logoBase64 || config.iconBase64 ? <img src={config.logoBase64 || config.iconBase64!} alt={name}/> : <div className="customer-monogram" style={{background:color,color:customerButtonTextColor(color)}}>{name.trim().charAt(0).toUpperCase()}</div>}</div>;
-  return <div className="customer-screen" style={{'--customer-accent':color} as React.CSSProperties}>
+  return <div lang={config.language} className="customer-screen" style={{'--customer-accent':color} as React.CSSProperties}>
     <div className={`customer-card${splash ? ` customer-splash customer-splash-${config.splashAnimation === 'zoom' ? 'zoom' : config.splashAnimation === 'none' ? 'none' : 'fade'}` : ''}`}>
       {brand}
-      {splash ? <><h1>{name}</h1><p>{config.tagline || t('experience.welcomeDescription')}</p><button className="customer-secondary" onClick={()=>setSplash(false)}>{t('experience.splashContinue')}</button></> : step==='welcome' ? <>
+      {splash ? <><h1>{name}</h1><p>{productTagline(config) || t('experience.welcomeDescription')}</p><button className="customer-secondary" onClick={()=>setSplash(false)}>{t('experience.splashContinue')}</button></> : step==='welcome' ? <>
         <div className="customer-eyebrow">{t('experience.welcome')}</div>
         <h1>{name}</h1>
-        <p>{config.tagline || t('experience.welcomeDescription')}</p>
+        <p>{productTagline(config) || t('experience.welcomeDescription')}</p>
         <div className="customer-note customer-benefit"><BookOpen size={24}/><span>{t('experience.benefit')}</span></div>
         <button className="customer-primary" style={{background:color,color:customerButtonTextColor(color)}} onClick={()=> mode==='demo' ? setStep('access') : next()}>{t('experience.start')}<ArrowRight size={20}/></button>
         {(!isStandalone || preview) && <button className="customer-secondary" onClick={()=>setStep('install')}>{t('experience.installInvite')}</button>}

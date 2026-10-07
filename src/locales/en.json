@@ -42,7 +42,10 @@
       "lessonPlural": "lessons",
       "noLessons": "No lessons added",
       "completed": "completed",
-      "completed_status": "Completed"
+      "completed_status": "Completed",
+      "complete": "Mark as complete",
+      "contentTitle": "Lesson content",
+      "emptyContent": "No content has been added."
     },
     "upsell": {
       "lockedTitle": "Locked Content",
@@ -62,7 +65,8 @@
       "copyEmail": "Copy Email",
       "openWa": "Open WhatsApp",
       "copied": "Copied!",
-      "emailLabel": "CONTACT EMAIL"
+      "emailLabel": "CONTACT EMAIL",
+      "unconfigured": "Support contact has not been configured."
     },
     "gamification": {
       "streak": "Streak",
@@ -78,7 +82,26 @@
       "continue": "Continue learning",
       "review": "Review your last lesson",
       "progress": "{{completed}} of {{total}} lessons completed"
-    }
+    },
+    "media": {
+      "video": "Video",
+      "play": "Play {{title}}",
+      "videoUnavailable": "This video could not be loaded.",
+      "image": "Image",
+      "postImage": "Post image"
+    },
+    "errors": {
+      "errorTitle": "Something went wrong",
+      "errorBody": "This screen could not be loaded. Reload the app and try again.",
+      "reload": "Reload app",
+      "dataError": "The application data could not be loaded.",
+      "retry": "Try again",
+      "activityPreparing": "Preparing activity…",
+      "activityUnavailable": "This activity could not be opened. Please try again.",
+      "activityDesktop": "Open this preview in the Appify desktop app. In the exported PWA, the activity loads from the pages folder.",
+      "activityError": "Activity error: {{message}}"
+    },
+    "defaultName": "My App"
   },
   "onboarding": {
     "install": {
@@ -151,5 +174,47 @@
       "skip": "Continue in browser",
       "optional": "Installation is optional. Your content also works in your browser."
     }
+  },
+  "builderDefaults": {
+    "mainTitle": "Main heading",
+    "subtitle": "Page subtitle",
+    "text": "Enter your text here. This is an example paragraph you can edit.",
+    "list": "First benefit\nSecond benefit\nThird benefit",
+    "tip": "Helpful tip",
+    "tipBody": "Highlight a useful tip, benefit or important information here.",
+    "accordion": "Tap to learn more",
+    "accordionBody": "Write the explanation or answer for this section here.",
+    "audio": "Audio",
+    "material": "Supporting material",
+    "download": "Download material",
+    "image": "Image",
+    "video": "Video",
+    "click": "Tap here",
+    "hero": "Welcome to your site",
+    "heroBody": "Featured description",
+    "section": "Section heading",
+    "sectionBody": "Write the content for this section.",
+    "left": "Left column",
+    "leftBody": "Descriptive text here",
+    "right": "Right column",
+    "rightBody": "More descriptive text",
+    "card1": "Card 1",
+    "card2": "Card 2",
+    "card3": "Card 3",
+    "card1Body": "First card description",
+    "card2Body": "Second card description",
+    "card3Body": "Third card description",
+    "imageTitle": "Heading with image",
+    "imageBody": "Descriptive text beside the image",
+    "quote": "\"This is a testimonial about our product or service.\"",
+    "author": "Customer name",
+    "role": "Role / Company",
+    "cta": "Ready to get started?",
+    "ctaBody": "Take the next step",
+    "addImage": "Tap to add an image",
+    "addVideo": "Add a valid YouTube or Shorts URL in the block settings.",
+    "addAudio": "Upload an MP3 or M4A, or add a direct HTTPS link to the audio.",
+    "addFile": "Add an HTTPS link to the file.",
+    "details": "Details"
   }
 }

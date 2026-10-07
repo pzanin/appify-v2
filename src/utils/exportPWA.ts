@@ -1,3 +1,5 @@
+import { lessonHtml } from './lessonHtml';
+import { productName } from './productCopy';
 import JSZip from 'jszip';
 import FileSaver from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
@@ -57,8 +59,8 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     if (!useAppStore.getState().pwaConfig.productId) useAppStore.getState().updatePwaConfig({productId:crypto.randomUUID()});
     const state = useAppStore.getState();
     assertPublicExport({ appName: state.appName, pwaConfig: state.pwaConfig, modules: state.modules });
-    const appName = state.appName || 'Meu App';
     const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
+    const appName = productName(state.appName,pwaLanguage);
     
     // Extrai apenas os dados necessários do construtor
     const { description, noIndex, showAdvanced, exportHistory, publishedUrl, ...cleanPwaConfig } = publicFeatureConfig(state.pwaConfig);
@@ -83,11 +85,11 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     for (const module of state.modules) {
       for (const lesson of module.subs || []) {
         if (lesson.contentType !== 'html') continue;
-        const html = lesson.customHtml || lesson.contentHtml || lesson.content_html || '';
+        const html = lessonHtml(lesson,pwaLanguage);
         if (!html.trim()) continue;
         const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
         if (!isAllowedExportPath(pagePath)) throw new Error('Identificador de aula inválido.');
-        zip.file(pagePath, lesson.htmlInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html));
+        zip.file(pagePath, lesson.htmlInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html,pwaLanguage));
         pageMatches.push(pagePath);
         pageHeaders.push(`/${pagePath}\n  Content-Security-Policy: ${lesson.htmlInteractive ? `sandbox allow-scripts; ${INTERACTIVE_CSP}` : IMPORTED_HTML_CSP}\n`);
       }

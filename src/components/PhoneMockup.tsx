@@ -1,3 +1,5 @@
+import { lessonHtml } from '../utils/lessonHtml';
+import { feedTimestamp, productName } from '../utils/productCopy';
 import { activityStorageKey } from '../utils/activityStorage';
 import { useLessonProgress } from '../hooks/useLessonProgress';
 import { ContinueLearning } from './ContinueLearning';
@@ -107,7 +109,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   },[selectedMockupModuleId,selectedMockupSubmoduleId,pwaConfig.productId,currentProjectId]);
 
   const themeColor = pwaConfig?.themeColor || '#6b8af0';
-  const displayAppName = pwaConfig?.appName || appName;
+  const displayAppName = productName(pwaConfig?.appName || appName,pwaLanguage);
 
   // Gamification state with safe fallbacks
   const gamification = pwaConfig?.gamification || { 
@@ -249,7 +251,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
 
-      <div className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily || 'inherit', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
+      <div lang={pwaLanguage} className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily || 'inherit', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
         
         {/* Hardware UI Elements */}
         <div className="phone-hw-buttons">
@@ -319,10 +321,10 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     <Trophy size={32} />
                   </div>
                   <h3 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>
-                    {t('app.gamification.completed', 'Concluído!')}
+                    {t('app.gamification.completed')}
                   </h3>
                   <p style={{ fontSize: '14px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', fontWeight: 600 }}>
-                    {t('app.gamification.keepGoing', 'Continue assim!')}
+                    {t('app.gamification.keepGoing')}
                   </p>
                 </motion.div>
               </div>
@@ -386,14 +388,14 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', border: '6px solid #FFE0B2' }}>
                   <Lock size={32} color="#F57C00" />
                 </div>
-                <h3 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>{t('app.upsell.lockedTitle', 'Conteúdo Bloqueado')}</h3>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>{t('app.upsell.lockedTitle')}</h3>
                 <p style={{ fontSize: '14px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '28px', lineHeight: 1.5 }}>
-                  {t('app.upsell.lockedMessagePart1', 'Para acessar o módulo')} <strong>{lockedModuleClick.name}</strong>, {t('app.upsell.lockedMessagePart2', 'é necessário adquirir este upgrade.')}
+                  {t('app.upsell.lockedMessagePart1')} <strong>{lockedModuleClick.name}</strong>, {t('app.upsell.lockedMessagePart2')}
                 </p>
                 <button onClick={() => { if (lockedModuleClick.checkoutUrl) openExternalLink(lockedModuleClick.checkoutUrl); setLockedModuleClick(null); }} style={{ width: '100%', padding: '16px', background: '#0F172A', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 700, fontSize: '16px', cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)' }}>
-                  <PackageOpen size={18} /> {t('app.upsell.checkoutButton', 'Ir para o Checkout')}
+                  <PackageOpen size={18} /> {t('app.upsell.checkoutButton')}
                 </button>
-                <button onClick={() => setLockedModuleClick(null)} style={{ background: 'transparent', color: isPhoneDark ? '#9CA3AF' : '#6B7280', width: '100%', padding: '12px', border: 'none', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}>{t('app.upsell.cancelButton', 'Cancelar')}</button>
+                <button onClick={() => setLockedModuleClick(null)} style={{ background: 'transparent', color: isPhoneDark ? '#9CA3AF' : '#6B7280', width: '100%', padding: '12px', border: 'none', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}>{t('app.upsell.cancelButton')}</button>
               </motion.div>
             </motion.div>
           )}
@@ -553,24 +555,24 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
               <div key="customer-entry" className="absolute inset-0"><CustomerEntry config={pwaConfig} preview><div className="customer-screen"><h2>{t('experience.previewReady')}</h2><button className="customer-primary" style={{background:themeColor}} onClick={()=>setEntryFinished(true)}>{t('experience.continue')}</button></div></CustomerEntry></div>
             ) : activeTab === 'perfil' ? (
               <motion.div key="perfil" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col items-center overflow-y-auto no-scrollbar" style={{ padding: '32px 24px 80px 24px' }}>
-                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '28px', alignSelf: 'flex-start', flexShrink: 0 }}>{t('app.profile.title', 'Meu Perfil')}</div>
+                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '28px', alignSelf: 'flex-start', flexShrink: 0 }}>{t('app.profile.title')}</div>
                 <div style={{ position: 'relative', marginBottom: '12px', flexShrink: 0 }}>
                   <label style={{ cursor: 'pointer', display: 'block' }}>
                     <input type="file" hidden accept="image/jpeg, image/jpg" onChange={(e) => { if (e.target.files && e.target.files[0]) setMockProfileImg(URL.createObjectURL(e.target.files[0])); }} />
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: isPhoneDark ? 'rgba(255,255,255,0.08)' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: themeColor, overflow: 'hidden', border: `2px solid ${themeColor}33`, boxShadow: isPhoneDark ? 'none' : '0 4px 12px rgba(0,0,0,0.05)' }}>
-                      {mockProfileImg ? <img src={mockProfileImg} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={32} />}
+                      {mockProfileImg ? <img src={mockProfileImg} alt={t('app.profile.title')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={32} />}
                     </div>
                     <div style={{ position: 'absolute', bottom: '0', right: '0', background: themeColor, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: isPhoneDark ? '2px solid #111' : '2px solid #fff' }}>
                       <User size={12} />
                     </div>
                   </label>
                 </div>
-                <span style={{ fontSize: '10px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '32px', fontWeight: 600, flexShrink: 0 }}>{t('app.profile.fileFormat', 'Apenas arquivos .JPG ou .JPEG')}</span>
+                <span style={{ fontSize: '10px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '32px', fontWeight: 600, flexShrink: 0 }}>{t('app.profile.fileFormat')}</span>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px', flexShrink: 0 }}>
-                  <input type="text" placeholder={t('app.profile.namePlaceholder', 'Nome Completo') as string} value={userName} onChange={(e) => setUserName(e.target.value)} style={{ width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '14px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)', color: isPhoneDark ? '#ffffff' : '#111111', fontSize: '14px', outline: 'none' }} />
+                  <input type="text" placeholder={t('app.profile.namePlaceholder') as string} value={userName} onChange={(e) => setUserName(e.target.value)} style={{ width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '14px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)', color: isPhoneDark ? '#ffffff' : '#111111', fontSize: '14px', outline: 'none' }} />
                   <input
                     type="email"
-                    placeholder={t('app.profile.emailPlaceholder', 'E-mail (Chave de Acesso)') as string}
+                    placeholder={t('app.profile.emailPlaceholder') as string}
                     value={userEmail}
                     onChange={(e) => setUserEmail(e.target.value)}
                     style={{
@@ -586,14 +588,14 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                   <div style={{ width: '100%', marginBottom: '32px', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '16px', marginBottom: '16px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPhoneDark ? '#ffffff' : '#111111', fontWeight: 600, fontSize: '14px' }}>
-                        <Trophy size={18} color={themeColor} /> {t('app.gamification.points', 'Meus Pontos')}
+                        <Trophy size={18} color={themeColor} /> {t('app.gamification.points')}
                       </div>
                       <div style={{ fontSize: '20px', fontWeight: 900, color: themeColor }}>{mockTotalPoints}</div>
                     </div>
 
                     {awards.length > 0 && (
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '12px' }}>{t('app.gamification.achievements', 'Minhas Conquistas')}</div>
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '12px' }}>{t('app.gamification.achievements')}</div>
                         <div className="grid grid-cols-3 gap-3">
                           {awards.map((award) => {
                             const isEarned = mockEarnedBadges.includes(award.id);
@@ -625,7 +627,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                   </div>
                 )}
 
-                <button onClick={() => setActiveTab('inicio')} style={{ width: '100%', padding: '16px', background: themeColor, color: '#ffffff', borderRadius: '14px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: `0 8px 20px ${themeColor}33`, flexShrink: 0 }}>{t('app.profile.saveButton', 'Salvar Alterações')}</button>
+                <button onClick={() => setActiveTab('inicio')} style={{ width: '100%', padding: '16px', background: themeColor, color: '#ffffff', borderRadius: '14px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: `0 8px 20px ${themeColor}33`, flexShrink: 0 }}>{t('app.profile.saveButton')}</button>
               </motion.div>
             ) : activeTab === 'suporte' ? (
               <motion.div key="suporte" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col items-center overflow-y-auto no-scrollbar" style={{ padding: '32px 24px 80px 24px' }}>
@@ -645,9 +647,10 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 ) : (
                   <div style={{ width: '100%', background: isPhoneDark ? '#1F2937' : '#F9FAFB', padding: '20px', borderRadius: '24px', border: `1px solid ${isPhoneDark ? '#374151' : '#E5E7EB'}`, flexShrink: 0 }}>
                     <p style={{ fontSize: '11px', fontWeight: 800, color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '8px', letterSpacing: '0.5px' }}>{t('app.support.emailLabel')}</p>
-                    <p style={{ fontSize: '16px', fontWeight: 600, color: isPhoneDark ? 'white' : '#111', marginBottom: '16px', wordBreak: 'break-all', lineHeight: '1.4' }}>{pwaConfig.supportConfig?.contact || 'suporte@sua-plataforma.com'}</p>
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: isPhoneDark ? 'white' : '#111', marginBottom: '16px', wordBreak: 'break-all', lineHeight: '1.4' }}>{pwaConfig.supportConfig?.contact || t('app.support.unconfigured')}</p>
                     <button 
                       onClick={() => {
+                        if(!pwaConfig.supportConfig?.contact)return;
                         navigator.clipboard.writeText(pwaConfig.supportConfig?.contact || '');
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
@@ -662,7 +665,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
               </motion.div>
             ) : activeTab === 'comunidade' ? (
               <motion.div key="comunidade" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '24px 20px 80px 20px' }}>
-                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '20px', flexShrink: 0 }}>{t('app.community.title', 'Comunidade')}</div>
+                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '20px', flexShrink: 0 }}>{t('app.community.title')}</div>
                 {feedPosts && feedPosts.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
                     {feedPosts.map((post) => (
@@ -673,7 +676,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                           </div>
                           <div>
                             <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111' }}>{post.author}</div>
-                            <div style={{ fontSize: '11px', color: isPhoneDark ? '#9CA3AF' : '#6B7280' }}>{post.timestamp}</div>
+                            <div style={{ fontSize: '11px', color: isPhoneDark ? '#9CA3AF' : '#6B7280' }}>{feedTimestamp(post,pwaLanguage)}</div>
                           </div>
                         </div>
                         <div style={{ fontSize: '13px', color: isPhoneDark ? '#D1D5DB' : '#4B5563', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
@@ -681,19 +684,19 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                         </div>
                         {post.imageUrl && (
                           <div style={{ marginTop: '12px', borderRadius: '12px', overflow: 'hidden', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb' }}>
-                            <img src={post.imageUrl} alt="Post content" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
+                            <img src={post.imageUrl} alt={t('app.media.postImage')} style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon={Users} text={t('app.community.emptyState', 'Nenhum conteúdo disponível no momento')} />
+                  <EmptyState icon={Users} text={t('app.community.emptyState')} />
                 )}
               </motion.div>
             ) : activeTab === 'conteudo' ? (
               <motion.div key="conteudo" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '24px 20px 80px 24px' }}>
-                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '20px', flexShrink: 0 }}>{t('app.content.title', 'Conteúdo')}</div>
+                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '20px', flexShrink: 0 }}>{t('app.content.title')}</div>
                 {pushNotifications && pushNotifications.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
                     {pushNotifications.map(push => (
@@ -708,7 +711,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                           </div>
                         )}
                         <div style={{ padding: '16px' }}>
-                          <div style={{ fontSize: '11px', color: themeColor, fontWeight: 800, marginBottom: '6px', letterSpacing: '0.5px' }}>{t('app.content.badge', 'NOVIDADE')}</div>
+                          <div style={{ fontSize: '11px', color: themeColor, fontWeight: 800, marginBottom: '6px', letterSpacing: '0.5px' }}>{t('app.content.badge')}</div>
                           <div style={{ fontSize: '15px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '8px' }}>{push.title}</div>
                           <div style={{ fontSize: '13px', color: isPhoneDark ? '#9CA3AF' : '#4B5563', lineHeight: '1.5' }}>{push.body}</div>
                         </div>
@@ -716,7 +719,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState icon={Rss} text={t('app.content.emptyState', 'Nenhum conteúdo disponível no momento')} />
+                  <EmptyState icon={Rss} text={t('app.content.emptyState')} />
                 )}
               </motion.div>
             ) : (
@@ -732,7 +735,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                         flexShrink: 0 
                       }}>
                         <button onClick={() => { if (selectedMockupSubmodule) setSelectedMockupSubmoduleId(null); else setSelectedMockupModuleId(null); }} style={{ background: 'transparent', border: 'none', color: isPhoneDark ? '#ffffff' : '#111111', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 0', fontSize: '13px', fontWeight: 700 }}>
-                          <ArrowLeft size={16} /> {t('app.modules.back', 'Voltar')}
+                          <ArrowLeft size={16} /> {t('app.modules.back')}
                         </button>
                         {selectedMockupSubmodule && (
                           <div className="flex items-center">
@@ -749,7 +752,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                   style={{ color: themeColor, backgroundColor: `${themeColor}20` }}
                                 >
                                   <CheckCircle size={18} />
-                                  <span>{t('app.modules.complete', 'Concluir')}</span>
+                                  <span>{t('app.modules.complete')}</span>
                                 </button>
                               )
                             ) : (
@@ -757,7 +760,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                 <div style={{ background: '#22c55e', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                                   <Check size={12} strokeWidth={4} />
                                 </div>
-                                <span>{t('app.modules.completed_status', 'Concluída')}</span>
+                                <span>{t('app.modules.completed_status')}</span>
                               </div>
                             )}
                           </div>
@@ -776,8 +779,8 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                     uiLanguage={pwaLanguage}
                                     storageKey={activityStorageKey(pwaConfig,true,currentProjectId,selectedMockupModule.id,selectedMockupSubmodule.id)}
                                     interactive={selectedMockupSubmodule.htmlInteractive === true}
-                                    html={selectedMockupSubmodule.customHtml || selectedMockupSubmodule.contentHtml || selectedMockupSubmodule.content_html || ''}
-                                    title="Conteúdo da Aula" 
+                                    html={lessonHtml(selectedMockupSubmodule,pwaLanguage)}
+                                    title={t('app.modules.contentTitle')}
                                     className="absolute inset-0 w-full h-full border-none block" 
                                     style={{ background: '#ffffff' }} 
                                   />
@@ -798,7 +801,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                   src={safeEmbedUrl(embedUrl)}
                                   sandbox="allow-scripts"
                                   referrerPolicy="no-referrer"
-                                  title="Conteúdo da Aula" 
+                                  title={t('app.modules.contentTitle')}
                                   className="absolute inset-0 w-full h-full border-none block" 
                                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                   allowFullScreen
@@ -811,7 +814,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                       ) : (
                         <>
                           <div style={{ fontWeight: 700, fontSize: '18px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '4px', flexShrink: 0 }}>{selectedMockupModule.name}</div>
-                          <div style={{ fontSize: '12px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '16px', flexShrink: 0 }}>{selectedMockupModule.subs?.length || 0} {selectedMockupModule.subs?.length === 1 ? t('app.modules.lessonSingle', 'aula') : t('app.modules.lessonPlural', 'aulas')}</div>
+                          <div style={{ fontSize: '12px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '16px', flexShrink: 0 }}>{selectedMockupModule.subs?.length || 0} {selectedMockupModule.subs?.length === 1 ? t('app.modules.lessonSingle') : t('app.modules.lessonPlural')}</div>
 
                           {/* Progress Bar Refinement */}
                           <p style={{fontSize:13,margin:'0 0 12px',color:isPhoneDark?'#d1d5db':'#4b5563'}}>{t('app.learning.progress',{completed:learning.moduleProgress(selectedMockupModule).completed,total:learning.moduleProgress(selectedMockupModule).total})}</p>
@@ -820,7 +823,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                               <div style={{ marginBottom: '16px', flexShrink: 0 }}>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
                                   <span style={{ fontSize: '11px', fontWeight: 700, color: themeColor }}>
-                                    {mockProgressPercentage}% {t('app.modules.completed', 'concluído')}
+                                    {mockProgressPercentage}% {t('app.modules.completed')}
                                   </span>
                                 </div>
                                 <div style={{ 
@@ -846,13 +849,13 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                           })()}
 
                           {(selectedMockupModule.subs?.length || 0) === 0 ? (
-                            <EmptyState icon={PackageOpen} text={t('app.modules.noLessons', 'Nenhuma aula adicionada')} />
+                            <EmptyState icon={PackageOpen} text={t('app.modules.noLessons')} />
                           ) : (
                             <div className={selectedMockupModule.subs.length === 1 ? 'grid grid-cols-1 w-[66%] mx-auto gap-4' : selectedMockupModule.subs.length === 2 ? 'grid grid-cols-2 gap-4' : 'grid grid-cols-3 gap-3'}>
                               {selectedMockupModule.subs.map((sub, index) => (
                                 <div key={sub.id} onClick={() => setSelectedMockupSubmoduleId(sub.id)} style={{ display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }}>
                                   {sub.coverImageUrl ? <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', backgroundImage: `url(${sub.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)', boxShadow: isPhoneDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }} /> : <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', background: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '22px', fontWeight: 700, border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)', boxShadow: isPhoneDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }}>{index + 1}</div>}
-                                  <div style={{ width: '100%', paddingLeft: '4px' }}>{learning.completed(selectedMockupModule.id,sub.id) && <span style={{display:'block',fontSize:12,color:themeColor,fontWeight:700,marginBottom:4}}>✓ {t('app.modules.completed_status','Concluída')}</span>}<div style={{ fontSize: '12px', fontWeight: 600, color: isPhoneDark ? '#ffffff' : '#111111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.name}</div></div>
+                                  <div style={{ width: '100%', paddingLeft: '4px' }}>{learning.completed(selectedMockupModule.id,sub.id) && <span style={{display:'block',fontSize:12,color:themeColor,fontWeight:700,marginBottom:4}}>✓ {t('app.modules.completed_status')}</span>}<div style={{ fontSize: '12px', fontWeight: 600, color: isPhoneDark ? '#ffffff' : '#111111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.name}</div></div>
                                 </div>
                               ))}
                             </div>
@@ -908,11 +911,11 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                       <ContinueLearning location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');setSelectedMockupModuleId(location.moduleId);setSelectedMockupSubmoduleId(location.lessonId);}} />
 
                       <div className="phone-modules-header" style={{ flexShrink: 0 }}>
-                        <div className="text-lg font-semibold" style={{ color: isPhoneDark ? '#FFFFFF' : '#111111' }}>{t('app.modules.title', 'Módulos')}</div>
+                        <div className="text-lg font-semibold" style={{ color: isPhoneDark ? '#FFFFFF' : '#111111' }}>{t('app.modules.title')}</div>
                       </div>
 
                       {modules.length === 0 ? (
-                        <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState', 'Nenhum módulo criado')} />
+                        <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState')} />
                       ) : (
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                           {modules.map((mod, idx) => {
@@ -988,7 +991,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                                   )}
                                   {!isLocked && !isByPoints && (
                                     <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, zIndex: 2 }}>
-                                      {mod.subs?.length || 0} {t('app.modules.lessonPlural', 'Aulas')}
+                                      {mod.subs?.length || 0} {t('app.modules.lessonPlural')}
                                     </div>
                                   )}
                                 </div>
@@ -1010,9 +1013,9 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         </div>
 
         <div className="phone-bottom-nav">
-          <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => { setActiveTab('inicio'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Home size={20} /><span>{t('nav.home', 'Início')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => { setActiveTab('inicio'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Home size={20} /><span>{t('nav.home')}</span></div>
           {engagementEnabled && <>
-          <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => { setActiveTab('conteudo'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Rss size={20} /><span>{t('nav.content', 'Conteúdo')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => { setActiveTab('conteudo'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Rss size={20} /><span>{t('nav.content')}</span></div>
           <div 
             className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} 
             onClick={() => { 
@@ -1038,10 +1041,10 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                 />
               )}
             </div>
-            <span>{t('nav.community', 'Comunidade')}</span>
+            <span>{t('nav.community')}</span>
           </div>
           </>}
-          <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>{t('nav.profile', 'Perfil')}</span></div>
+          <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>{t('nav.profile')}</span></div>
           {pwaConfig.supportConfig?.type !== 'none' && (
             <div className={`phone-nav-item ${activeTab === 'suporte' ? 'active' : ''}`} onClick={() => setActiveTab('suporte')}><Headset size={20} /><span>{t('nav.support')}</span></div>
           )}

@@ -10,6 +10,7 @@ type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; w
 
 export function HtmlFrame({ html, interactive=false, activityPath, storageKey, uiLanguage, onMaterialClick, className, style, ...props }: Props) {
   const {i18n}=useTranslation();
+  const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
   const [storageRevision,setStorageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
   const storageError=({pt:'Não foi possível salvar o histórico neste aparelho. Verifique o espaço disponível e as permissões do navegador.',en:'Could not save history on this device. Check available space and browser permissions.',es:'No se pudo guardar el historial en este dispositivo. Revisa el espacio disponible y los permisos del navegador.',fr:"Impossible d’enregistrer l’historique sur cet appareil. Vérifiez l’espace disponible et les autorisations du navigateur."} as Record<string,string>)[(uiLanguage || i18n.language)?.split('-')[0]] || 'Could not save history on this device.';
@@ -29,7 +30,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     const api=window.appifyDesktop?.content;
     setActivity(null);
     if(!api) {
-      setActivity(/^pages\/lesson-\d+-\d+\.html$/.test(activityPath || '') ? {source:html,url:activityPath} : {source:html,error:'Abra esta prévia no Appify desktop. No PWA exportado, a atividade será carregada da pasta pages.'});
+      setActivity(/^pages\/lesson-\d+-\d+\.html$/.test(activityPath || '') ? {source:html,url:activityPath} : {source:html,error:t('app.errors.activityDesktop')});
       return;
     }
     void prepareInteractiveHtml(html).then(async prepared=>{
@@ -37,9 +38,9 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       url=await api.create(prepared);
       if(canceled) { void api.release(url);return; }
       setActivity({source:html,url});
-    }).catch(error=>{if(!canceled)setActivity({source:html,error:error instanceof Error?error.message:'Não foi possível preparar a atividade.'});});
+    }).catch(()=>{if(!canceled)setActivity({source:html,error:t('app.errors.activityUnavailable')});});
     return ()=>{canceled=true;if(url){void api.release(url);}};
-  }, [html,interactive,activityPath]);
+  }, [html,interactive,activityPath,uiLanguage]);
 
   useEffect(() => {
     let writes=0;let reads=0;let windowStart=Date.now();
@@ -67,12 +68,12 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
           frame.current?.contentWindow?.postMessage({type:'appify:storage-result',id:message.id,ok},'*');
         }
         if(['appify:storage-unavailable','appify:storage-failure'].includes(message?.type))setStorageFailed(true);
-        if(event.data?.type==='appify:activity-error' && typeof event.data.message==='string') setActivity({source:html,error:`Erro na atividade: ${event.data.message.slice(0,160)}`});
+        if(event.data?.type==='appify:activity-error' && typeof event.data.message==='string') setActivity({source:html,error:t('app.errors.activityError',{message:event.data.message.slice(0,160)})});
         return;
       }
       if(event.data?.type === 'appify:youtube-play') {
         const id = typeof event.data.id === 'string' ? event.data.id : '';
-        const title = typeof event.data.title === 'string' ? event.data.title.slice(0,120) : 'Vídeo';
+        const title = typeof event.data.title === 'string' ? event.data.title.slice(0,120) : t('app.media.video');
         const rect = event.data.rect;
         const validRect = rect && [rect.top,rect.left,rect.width,rect.height].every((value:unknown)=>typeof value==='number' && Number.isFinite(value));
         if(/^[A-Za-z0-9_-]{6,}$/.test(id) && validRect && rect.width > 0 && rect.height > 0) {
@@ -90,9 +91,9 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [interactive,html,storageKey,storageRevision,onMaterialClick]);
+  }, [interactive,html,storageKey,storageRevision,onMaterialClick,uiLanguage]);
 
-  if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : 'Preparando atividade…'}</div>;
+  if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : t('app.errors.activityPreparing')}</div>;
 
   const locale=(uiLanguage || i18n.language)?.split('-')[0];
   const resetText=({pt:'Limpar histórico desta atividade',en:'Clear this activity’s history',es:'Borrar el historial de esta actividad',fr:'Effacer l’historique de cette activité'} as Record<string,string>)[locale] || 'Clear this activity’s history';
@@ -106,7 +107,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       key={`${storageKey || ""}:${storageRevision}:${html}`}
       ref={frame}
       src={interactive?activity?.url:undefined}
-      srcDoc={interactive?undefined:prepareResponsiveHtml(html)}
+      srcDoc={interactive?undefined:prepareResponsiveHtml(html,uiLanguage || i18n.language)}
       sandbox="allow-scripts"
       referrerPolicy="strict-origin-when-cross-origin"
       className={hasBuilderVideo || interactive ? undefined : className}

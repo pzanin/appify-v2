@@ -177,7 +177,8 @@ export function EngagementHub({ showToast }: EngagementHubProps) {
       author: authorName.trim(),
       content: postContent.trim(),
       imageUrl: feedImagePreview || undefined,
-      timestamp: feedDate ? new Date(feedDate).toLocaleString('pt-BR') : 'Agora mesmo',
+      timestamp: '',
+      displayDate: feedDate ? new Date(feedDate).getTime() : undefined,
       createdAt: Date.now()
     };
     addFeedPost(newPost);

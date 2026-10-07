@@ -1,47 +1,7 @@
 import React, { useState, Component, ErrorInfo, ReactNode, Suspense } from 'react';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
-interface ErrorBoundaryProps { children: ReactNode; }
-interface ErrorBoundaryState { hasError: boolean; error: Error | null; }
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false, error: null };
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState { return { hasError: true, error }; }
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[Appify] Falha ao carregar a tela.', error, errorInfo);
-  }
-  render() {
-    const { hasError, error } = this.state;
-    if (hasError) {
-      const isDev = Boolean((import.meta as any).env?.DEV);
-      return (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#ff6b6b' }}>
-          <h1>Algo deu errado</h1>
-          <p>Não foi possível carregar esta tela. Recarregue o aplicativo e tente novamente.</p>
-          {isDev && error?.message && (
-            <pre style={{
-              maxWidth: 760,
-              margin: '20px auto',
-              padding: 16,
-              textAlign: 'left',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-              background: 'rgba(255,255,255,.06)',
-              border: '1px solid rgba(255,255,255,.12)',
-              borderRadius: 10,
-              color: '#ffd2d2',
-              fontSize: 12,
-            }}>
-              {error.message}
-            </pre>
-          )}
-          <button className="btn-primary" onClick={() => window.location.reload()}>Recarregar App</button>
-        </div>
-      );
-    }
-    return (this as any).props.children;
-  }
-}
+import { ScreenErrorBoundary } from './components/ScreenErrorBoundary';
 
 import { getProjectWorkspaceSnapshot, useAppStore } from './store/useAppStore';
 import { projectService } from './services/projectService';
@@ -58,7 +18,7 @@ const PWARuntime = React.lazy(() => import('./components/PWARuntime').then(m => 
 
 const buildTarget = (import.meta as any).env?.VITE_BUILD_TARGET;
 
-function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, setIsPhoneDark: (val: boolean) => void }) {
+export function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, setIsPhoneDark: (val: boolean) => void }) {
   const [loaded, setLoaded] = React.useState(false);
   const [error, setError] = React.useState(false);
 
@@ -81,43 +41,18 @@ function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boolean, s
       });
   }, []);
 
-  const browserLang = document.documentElement.lang || navigator.language || 'pt';
-  const isEn = browserLang.startsWith('en');
-  const isEs = browserLang.startsWith('es');
-  const isFr = browserLang.startsWith('fr');
-
-  if (error) {
-    const errorText = isEn
-      ? 'An error occurred while loading the application data.'
-      : isEs
-      ? 'Ocurrió un error al cargar los datos de la aplicación.'
-      : isFr
-      ? 'Une erreur est survenue lors du chargement des données de l\'application.'
-      : 'Ocorreu um erro ao carregar os dados do aplicativo.';
-
-    return (
-      <div style={{width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: '#111', color: '#ff4a4a', fontFamily: 'sans-serif', padding: '20px', textAlign: 'center'}}>
-        <p>{errorText}</p>
-        <button className="btn-primary" onClick={()=>window.location.reload()}>{isEn ? 'Try again' : isEs ? 'Intentar de nuevo' : isFr ? 'Réessayer' : 'Tentar novamente'}</button>
-      </div>
-    );
-  }
+  const t=i18n.getFixedT((document.documentElement.lang || navigator.language || 'pt').split('-')[0]);
+  if (error) return <div style={{width:'100vw',height:'100vh',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',background:'#111',color:'#ff4a4a',fontFamily:'sans-serif',padding:20,textAlign:'center'}}>
+    <p>{t('app.errors.dataError')}</p><button className="btn-primary" onClick={()=>window.location.reload()}>{t('app.errors.retry')}</button>
+  </div>;
 
   if (!loaded) {
-    const loadingText = isEn
-      ? 'Opening your content...'
-      : isEs
-      ? 'Abriendo tu contenido...'
-      : isFr
-      ? 'Ouverture de votre contenu...'
-      : 'Abrindo seu conteúdo...';
-
     return (
       <div style={{width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f7f9fc', color: '#172033', fontFamily: 'sans-serif', fontSize: '18px'}}>
         <div style={{textAlign:'center'}}>
           <img src="./icon-192x192.png" alt="" style={{width:80,height:80,borderRadius:22,margin:'0 auto 20px'}} />
           <h1 style={{fontSize:24,marginBottom:12}}>{document.title}</h1>
-          <p role="status">{loadingText}</p>
+          <p role="status">{t('experience.loading')}</p>
         </div>
       </div>
     );
@@ -250,9 +185,9 @@ function AppContent() {
 export default function App() {
   return (
     <div className="v-root">
-      <ErrorBoundary>
+      <ScreenErrorBoundary product={buildTarget==='pwa' || new URLSearchParams(window.location.search).get('mode')==='app'}>
         <AppContent />
-      </ErrorBoundary>
+      </ScreenErrorBoundary>
     </div>
   );
 }
