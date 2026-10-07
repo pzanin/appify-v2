@@ -2,14 +2,14 @@
   "name": "appify",
   "private": true,
   "main": "dist-electron/main.js",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=127.0.0.1",
     "build": "npm run build:pwa && vite build",
     "build:pwa": "cross-env VITE_BUILD_TARGET=pwa vite build --outDir dist-pwa",
     "postbuild:pwa": "node scripts/copy-pwa-template.mjs",
-    "build:app": "npm run build && electron-builder --win nsis",
+    "build:app": "npm run verify && npm run build && npm run check:secrets -- --build && electron-builder --win nsis --x64 --publish never",
     "build:win": "npm run build:app",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -18,7 +18,8 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "security:hooks": "git config core.hooksPath .githooks",
     "predev": "npm run build:pwa",
-    "test:interactive": "npm run build && node scripts/test-interactive-electron.mjs"
+    "test:interactive": "npm run build && node scripts/test-interactive-electron.mjs",
+    "verify": "node scripts/check-build-node.mjs && npm run lint && npm test && npm run check:secrets && npm audit --audit-level=low"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
@@ -81,5 +82,10 @@
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "description": "Appify: criador local de produtos digitais e PWAs",
+  "author": "Paulo Fernando Zanin",
+  "overrides": {
+    "@electron/get": "5.1.0"
   }
 }

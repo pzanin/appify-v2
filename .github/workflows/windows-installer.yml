@@ -1,0 +1,53 @@
+name: Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/appify-0.9-recovery]
+    paths:
+      - '.github/workflows/windows-installer.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'electron/**'
+      - 'scripts/**'
+      - 'public/**'
+      - 'build/**'
+      - 'vite.config.*'
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Checksum
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release/Appify-Setup-*.exe
+          if ($installer.Count -ne 1) { throw 'Expected exactly one installer' }
+          $hash = Get-FileHash $installer.FullName -Algorithm SHA256
+          "$($hash.Hash.ToLower())  $($installer.Name)" | Set-Content release/SHA256SUMS.txt
+          "Commit: $env:GITHUB_SHA" | Set-Content release/BUILD.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Appify-Windows-x64
+          path: |
+            release/Appify-Setup-*.exe
+            release/SHA256SUMS.txt
+            release/BUILD.txt
+          if-no-files-found: error
+          retention-days: 14
