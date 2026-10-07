@@ -2,9 +2,11 @@ import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { openExternalLink } from '../utils/externalLinks';
+import { normalizePublishedUrl } from '../utils/publication';
 
 export function DeployInstructions() {
   const pwaConfig = useAppStore(state => state.pwaConfig);
+  const publishedUrl = normalizePublishedUrl(pwaConfig.publishedUrl ?? pwaConfig.domain ?? '');
   const updateConfig = useAppStore(state => state.updatePwaConfig);
   return <>
     <h4 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: '16px' }}>Instruções de Deploy</h4>
@@ -22,21 +24,21 @@ export function DeployInstructions() {
       ] : [
         { step: '1️⃣', text: 'Extraia o ZIP exportado e envie seus arquivos para um repositório GitHub, com index.html na raiz.', btn: 'Abrir GitHub', url: 'https://github.com' },
         { step: '2️⃣', text: 'No Cloudflare Pages, conecte o repositório. Como os arquivos já estão prontos, deixe o comando de build vazio e use a raiz como diretório de publicação.', btn: 'Abrir Cloudflare', url: 'https://dash.cloudflare.com' },
-        { step: '3️⃣', text: 'Configure o domínio personalizado no provedor e seu DNS. Preencha também o endereço em Identidade para usar o QR Code.', special: true },
-        { step: '4️⃣', text: 'Quando o deploy terminar, abra o endereço HTTPS do projeto e teste no celular.', btn: 'Testar App', url: `https://${pwaConfig.domain}`, disabled: !pwaConfig.domain }
+        { step: '3️⃣', text: 'Configure o domínio personalizado no provedor e seu DNS. Informe o endereço publicado abaixo para usar o QR Code.', special: true },
+        { step: '4️⃣', text: 'Quando o deploy terminar, abra o endereço HTTPS do projeto e teste no celular.', btn: 'Testar App', url: publishedUrl || '', disabled: !publishedUrl }
       ]).map((step, idx) => (
         <div key={idx} style={{ display: 'flex', gap: '12px' }}>
           <span style={{ fontSize: '18px' }}>{step.step}</span>
           <div>
             <p style={{ fontSize: '13px', lineHeight: '1.4', marginBottom: '8px' }}>{step.text}</p>
             {step.special ? (
-              pwaConfig.domain ? (
+              publishedUrl ? (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--accent-glow)', color: 'var(--accent)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
-                  Seu domínio: {pwaConfig.domain}
+                  Seu endereço: {publishedUrl}
                 </div>
               ) : (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>
-                  Em Identidade, informe o endereço publicado para gerar o QR Code
+                  Informe o endereço publicado abaixo para gerar o QR Code
                 </div>
               )
             ) : (

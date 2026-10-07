@@ -62,6 +62,8 @@ export interface PwaConfig {
   splashMediaFit?: 'contain' | 'cover';
   splashMediaBackground?: string;
   engagementEnabled?: boolean;
+  publishedUrl?: string;
+  exportHistory?: Array<{ version: string; date: string; notes: string }>;
   deploymentProvider?: 'netlify' | 'cloudflare';
   welcomeEnabled?: boolean;
   customerAccessMode?: 'open' | 'demo';

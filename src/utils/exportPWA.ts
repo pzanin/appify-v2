@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import FileSaver from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
 import { assertPublicExport, assertSafeArchive, isAllowedExportPath, EXPORT_SECURITY_MESSAGE } from './exportSecurity';
@@ -60,7 +60,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
     
     // Extrai apenas os dados necessários do construtor
-    const { description, noIndex, showAdvanced, ...cleanPwaConfig } = publicFeatureConfig(state.pwaConfig);
+    const { description, noIndex, showAdvanced, exportHistory, publishedUrl, ...cleanPwaConfig } = publicFeatureConfig(state.pwaConfig);
     
     const appData = {
       appName: state.appName,
@@ -225,7 +225,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         console.error('Não foi possível salvar a cópia em build/:');
       }
     }
-    saveAs(content, filename);
+    FileSaver.saveAs(content, filename);
 
     if (showToast) {
       showToast(
@@ -233,8 +233,10 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         buildCopyFailed ? 'error' : 'success',
       );
     }
+    return true;
   } catch (error) {
     console.error('Erro ao gerar o ZIP do PWA:');
     if (showToast) showToast(error instanceof Error && error.message === EXPORT_SECURITY_MESSAGE ? EXPORT_SECURITY_MESSAGE : 'Erro ao exportar PWA. Verifique se o template está completo e tente novamente.', 'error');
+    return false;
   }
 };
