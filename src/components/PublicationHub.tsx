@@ -16,6 +16,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
   const updateConfig = useAppStore(state => state.updatePwaConfig);
   const setStep = useAppStore(state => state.setStep);
   const [exporting, setExporting] = useState(false);
+  const [showMobileTools, setShowMobileTools] = useState(false);
   const requirements = [
     { label: 'Nome do aplicativo definido', ok: !!config.appName.trim() && config.appName !== 'Meu App', step: 0 },
     { label: 'Ao menos um módulo ativo com aula', ok: modules.some(m => m.status === 'Ativo' && m.subs.length > 0), step: 1 },
@@ -76,13 +77,16 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
             <input id="export-notes" className="vpb-input" placeholder="O que mudou?" value={config.changelogNotes || ''} onChange={e => updateConfig({ changelogNotes: e.target.value })} />
           </div>
         </div>
-        <button className="btn-primary" disabled={!ready || exporting} onClick={exportZip}><Download size={18} /> {exporting ? 'Gerando ZIP…' : 'Gerar e baixar ZIP'}</button>
+        <button className="btn-primary" style={{ alignSelf: 'flex-start', width: 'auto', maxWidth: '100%', padding: '8px 16px' }} disabled={!ready || exporting} onClick={exportZip}><Download size={18} /> {exporting ? 'Gerando ZIP…' : 'Gerar e baixar ZIP'}</button>
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>Exportar gera os arquivos no computador. Para disponibilizar o app, publique-os no provedor abaixo.</p>
       </section>
       <section className="eng-card" style={cardStyle}>
-        <h3>3. Hospedar e testar</h3>
+        <h3>3. Hospedar o aplicativo</h3>
         <DeployInstructions />
-        <div style={{ marginTop: 24 }}>
+        <button className="btn-ghost" style={{ alignSelf: 'flex-start', marginTop: 20 }} aria-expanded={showMobileTools} aria-controls="publication-mobile-tools" onClick={() => setShowMobileTools(value => !value)}>
+          {showMobileTools ? 'Ocultar teste no celular' : 'Testar no celular — opcional'}
+        </button>
+        {showMobileTools && <div id="publication-mobile-tools" style={{ marginTop: 16 }}>
           <label className="vpb-label" htmlFor="published-url">Endereço publicado</label>
           <input id="published-url" className="vpb-input" placeholder="https://meuapp.netlify.app" value={config.publishedUrl ?? config.domain ?? ''} onChange={e => updateConfig({ publishedUrl: e.target.value })} />
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>Cole o endereço HTTPS fornecido pela hospedagem. Este campo não publica arquivos nem configura DNS.</p>
@@ -97,7 +101,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
             <button className="btn-ghost" onClick={() => openExternalLink(qrUrl)}>Abrir QR para salvar <ExternalLink size={14} /></button>
           </div>}
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>No celular, confira a abertura, as aulas, os áudios e os links. Para instalar, siga “Adicionar à tela inicial” e as instruções do navegador. Na atualização, use o mesmo projeto da hospedagem.</p>
-        </div>
+        </div>}
       </section>
       <section className="eng-card" style={cardStyle}>
         <h3>Histórico de exportações</h3>

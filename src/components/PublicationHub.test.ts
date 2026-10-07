@@ -23,9 +23,18 @@ test('publication accepts default branding without Supabase or custom domain, en
   const exportButton = () => [...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Gerar e baixar ZIP'))!;
   assert.equal(exportButton().disabled, false);
   assert.ok(!document.body.textContent?.includes('Service Role'));
+  assert.equal(document.querySelector('#published-url'),null);
+  assert.equal(document.querySelector('img'),null);
+  const mobileTools = [...document.querySelectorAll('button')].find(b=>b.textContent?.includes('Testar no celular — opcional'))!;
+  assert.equal(mobileTools.getAttribute('aria-expanded'),'false');
+  await act(async () => mobileTools.click());
+  assert.equal(mobileTools.getAttribute('aria-expanded'),'true');
   const qr = document.querySelector('img')!;
   assert.equal(new URL(qr.src).searchParams.get('data'), 'https://example.com/app/?a=1&b=2');
   assert.ok(document.body.textContent?.includes('Materiais novos'));
+  await act(async () => mobileTools.click());
+  assert.equal(document.querySelector('img'),null);
+  assert.equal(useAppStore.getState().pwaConfig.publishedUrl,'https://example.com/app/?a=1&b=2');
   await act(async () => useAppStore.setState({ currentProjectId: 2, pwaConfig: {...INITIAL_PWA_CONFIG, appName:'Segundo'} }));
   assert.ok(!document.body.textContent?.includes('Materiais novos'));
   assert.ok(document.body.textContent?.includes('Nenhuma exportação registrada'));
