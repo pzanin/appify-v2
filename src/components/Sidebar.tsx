@@ -5,8 +5,8 @@ import { visibleProjectSteps } from '../utils/projectFeatures';
 import { RenderDynamicIcon } from './RenderDynamicIcon';
 import { AppifyLogo } from './AppLogo';
 
-interface SidebarProps { isOpen?: boolean; onClose?: () => void; }
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+interface SidebarProps { isOpen?: boolean; onClose?: () => void; onOpenHelp?:()=>void; onCloseHelp?:()=>void; isHelpOpen?:boolean; }
+export function Sidebar({ isOpen, onClose, onOpenHelp, onCloseHelp, isHelpOpen }: SidebarProps) {
   const config = useAppStore(state => state.pwaConfig);
   const steps = visibleProjectSteps(config);
   const activeStep = useAppStore(state => state.activeStep);
@@ -17,8 +17,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const setView = useAppStore(state => state.setView);
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
-  const handleStepClick = (stepId: number) => { setStep(stepId); if (onClose) onClose(); };
-  const handleModuleClick = (modId: number) => { setStep(3); setSelectedModule(modId); if (onClose) onClose(); };
+  const handleStepClick = (stepId: number) => { onCloseHelp?.(); setStep(stepId); if (onClose) onClose(); };
+  const handleModuleClick = (modId: number) => { onCloseHelp?.(); setStep(3); setSelectedModule(modId); if (onClose) onClose(); };
   const handleLogoClick = () => { setView('projects'); if (onClose) onClose(); };
 
   return (
@@ -33,7 +33,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {steps.map((step, index) => (
         <React.Fragment key={step.id}>
           <div 
-            className={`pipeline-step ${activeStep === step.id ? 'active' : ''}`} 
+            className={`pipeline-step ${activeStep === step.id && !isHelpOpen ? 'active' : ''}`}
             onClick={() => handleStepClick(step.id)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleStepClick(step.id); }}
             role="button"
@@ -50,6 +50,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {index < steps.length - 1 && <div className={`step-connector ${step.id < activeStep ? 'done' : ''}`}></div>}
         </React.Fragment>
       ))}
+      {onOpenHelp && <button className="btn-ghost" style={{margin:'16px',textAlign:'left'}} aria-pressed={isHelpOpen} onClick={()=>{onOpenHelp();onClose?.();}}>Ajuda e documentação</button>}
       <div className="sidebar-divider"></div>
       <div className="sidebar-label">Módulos do Projeto</div>
       <div className="module-tree">
@@ -69,8 +70,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div 
                   key={sub.id} 
                   className="module-item sub"
-                  onClick={() => setEditingSubmodule({ modId: mod.id, subId: sub.id })}
-                  onKeyDown={(e) => { if (e.key === 'Enter') setEditingSubmodule({ modId: mod.id, subId: sub.id }); }}
+                  onClick={() => {onCloseHelp?.();setEditingSubmodule({ modId: mod.id, subId: sub.id });}}
+                  onKeyDown={(e) => { if (e.key === 'Enter') {onCloseHelp?.();setEditingSubmodule({ modId: mod.id, subId: sub.id });} }}
                   role="button"
                   tabIndex={0}
                 >

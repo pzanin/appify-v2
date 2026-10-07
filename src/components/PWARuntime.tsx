@@ -1,3 +1,5 @@
+import { useLessonProgress } from '../hooks/useLessonProgress';
+import { ContinueLearning } from './ContinueLearning';
 import { trackAnalyticsEvent } from '../utils/analytics';
 import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
@@ -131,13 +133,20 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   // Anti-Cheat states
   const [canCompleteLesson, setCanCompleteLesson] = useState(false);
   const [lessonCompletionTimer, setLessonCompletionTimer] = useState(5);
-  const [mockProgressPercentage, setMockProgressPercentage] = useState(0);
-  const [isCurrentLessonCompleted, setIsCurrentLessonCompleted] = useState(false);
 
   const carouselTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const selectedMockupModule = modules.find(m => m.id === selectedMockupModuleId) || null;
   const selectedMockupSubmodule = selectedMockupModule?.subs?.find(s => s.id === selectedMockupSubmoduleId) || null;
+  const learning = useLessonProgress(pwaConfig,modules,currentProjectId,!analyticsLive);
+  const isCurrentLessonCompleted = selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null && learning.completed(selectedMockupModuleId,selectedMockupSubmoduleId);
+  const mockProgressPercentage = selectedMockupModule ? learning.moduleProgress(selectedMockupModule).percent : 0;
+  const learningScope = `${pwaConfig.productId || ''}:${currentProjectId}`;
+  const previousLearningScope = useRef(learningScope);
+  useEffect(()=>{
+    if(previousLearningScope.current !== learningScope) { previousLearningScope.current = learningScope; return; }
+    if(selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null) learning.visit(selectedMockupModuleId,selectedMockupSubmoduleId);
+  },[selectedMockupModuleId,selectedMockupSubmoduleId,pwaConfig.productId,currentProjectId]);
 
   useEffect(() => {
     if (selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null) {
@@ -161,17 +170,9 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   }
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
 
-  const getModuleProgress = (index: number) => {
-    if (index === 0) return 100;
-    if (index === 1) return 60;
-    return 0;
-  };
-
   const handleSimulateCompletion = () => {
-    if (canCompleteLesson && !isCurrentLessonCompleted) {
+    if (canCompleteLesson && !isCurrentLessonCompleted && selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null && learning.complete(selectedMockupModuleId,selectedMockupSubmoduleId)) {
       void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
-      setIsCurrentLessonCompleted(true);
-      setMockProgressPercentage(100);
       if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
         setIsCelebrating(true);
         setTimeout(() => setIsCelebrating(false), 3500);
@@ -179,13 +180,6 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
     }
   };
 
-
-  useEffect(() => {
-    if (selectedMockupModuleId !== null) {
-      const modIndex = modules.findIndex(m => m.id === selectedMockupModuleId);
-      setMockProgressPercentage(getModuleProgress(modIndex));
-    }
-  }, [selectedMockupModuleId, modules]);
 
   useEffect(() => {
     const banners = (pwaConfig?.banners || []).filter(b => b.imageUrl);
@@ -220,7 +214,6 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
       const timeGate = gamification.enabled ? (selectedMockupSubmodule?.gamificationConfig?.timeGateSeconds || 0) : 0;
       setCanCompleteLesson(timeGate === 0);
       setLessonCompletionTimer(timeGate);
-      setIsCurrentLessonCompleted(false);
       if (timeGate > 0) {
         interval = setInterval(() => {
           setLessonCompletionTimer((prev) => {
@@ -645,7 +638,9 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                           <div style={{ fontWeight: 700, fontSize: '18px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '4px', flexShrink: 0 }}>{selectedMockupModule.name}</div>
                           <div style={{ fontSize: '12px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '16px', flexShrink: 0 }}>{selectedMockupModule.subs?.length || 0} {selectedMockupModule.subs?.length === 1 ? t('app.modules.lessonSingle', 'aula') : t('app.modules.lessonPlural', 'aulas')}</div>
 
+
                           {/* Progress Bar */}
+                          <p style={{fontSize:13,margin:'0 0 12px',color:isPhoneDark?'#d1d5db':'#4b5563'}}>{t('app.learning.progress',{completed:learning.moduleProgress(selectedMockupModule).completed,total:learning.moduleProgress(selectedMockupModule).total})}</p>
                           {gamification.enabled && gamification.progressStyle !== 'none' && (() => {
                             return (
                               <div style={{ marginBottom: '16px', flexShrink: 0 }}>
@@ -683,7 +678,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                               {selectedMockupModule.subs.map((sub, index) => (
                                 <div key={sub.id} onClick={() => setSelectedMockupSubmoduleId(sub.id)} style={{ display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }}>
                                   {sub.coverImageUrl ? <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', backgroundImage: `url(${sub.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)', boxShadow: isPhoneDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }} /> : <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', background: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '22px', fontWeight: 700, border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)', boxShadow: isPhoneDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }}>{index + 1}</div>}
-                                  <div style={{ width: '100%', paddingLeft: '4px' }}><div style={{ fontSize: '12px', fontWeight: 600, color: isPhoneDark ? '#ffffff' : '#111111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.name}</div></div>
+                                  <div style={{ width: '100%', paddingLeft: '4px' }}>{learning.completed(selectedMockupModule.id,sub.id) && <span style={{display:'block',fontSize:12,color:themeColor,fontWeight:700,marginBottom:4}}>✓ {t('app.modules.completed_status','Concluída')}</span>}<div style={{ fontSize: '12px', fontWeight: 600, color: isPhoneDark ? '#ffffff' : '#111111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.name}</div></div>
                                 </div>
                               ))}
                             </div>
@@ -736,6 +731,8 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                         );
                       })()}
 
+                      <ContinueLearning location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');setSelectedMockupModuleId(location.moduleId);setSelectedMockupSubmoduleId(location.lessonId);}} />
+
                       <div className="phone-modules-header" style={{ flexShrink: 0 }}>
                         <div className="text-lg font-semibold" style={{ color: isPhoneDark ? '#FFFFFF' : '#111111' }}>{t('app.modules.title', 'Módulos')}</div>
                       </div>
@@ -747,7 +744,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                           {modules.map((mod, idx) => {
                             const isLocked = mod.releaseType === 'locked' || mod.releaseType === 'upsell';
                             const isByPoints = mod.releaseType === 'points';
-                            const progress = getModuleProgress(idx);
+                            const progress = learning.moduleProgress(mod).percent;
                             
                             return (
                               <div
@@ -794,7 +791,8 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                                     </div>
                                   )}
 
-                                  {/* Progress Bar */}
+
+                          {/* Progress Bar */}
                                   {gamification.enabled && gamification.progressStyle === 'bar' && (
                                     <div style={{ 
                                       position: 'absolute', bottom: 0, left: 0, right: 0, 
@@ -823,6 +821,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                                 <div style={{ opacity: mod.status === 'Rascunho' ? 0.6 : 1, color: isPhoneDark ? '#ffffff' : '#111111', fontSize: '13px', fontWeight: 600, paddingLeft: '2px', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                   {mod.name}
                                 </div>
+                                <p style={{fontSize:12,margin:'6px 0 0',color:isPhoneDark?'#d1d5db':'#4b5563'}}>{t('app.learning.progress',{completed:learning.moduleProgress(mod).completed,total:learning.moduleProgress(mod).total})}</p>
                               </div>
                             );
                           })}

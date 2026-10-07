@@ -110,6 +110,7 @@ function normalizeProjectWorkspace(workspace: AppState): AppState {
     pwaConfig: {
       ...INITIAL_PWA_CONFIG,
       ...workspace.pwaConfig,
+      productId: workspace.pwaConfig?.productId || crypto.randomUUID(),
       language,
     },
   };
@@ -119,7 +120,7 @@ export function createInitialProjectWorkspace(name = 'Meu App'): AppState {
   return {
     ...initialState,
     appName: name,
-    pwaConfig: { ...INITIAL_PWA_CONFIG, appName: name },
+    pwaConfig: { ...INITIAL_PWA_CONFIG, appName: name, productId: crypto.randomUUID() },
     modules: [],
     analytics: { ...initialState.analytics },
     feedPosts: [],

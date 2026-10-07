@@ -54,6 +54,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
   if (showToast) showToast('Iniciando empacotamento do PWA...', 'loading');
   
   try {
+    if (!useAppStore.getState().pwaConfig.productId) useAppStore.getState().updatePwaConfig({productId:crypto.randomUUID()});
     const state = useAppStore.getState();
     assertPublicExport({ appName: state.appName, pwaConfig: state.pwaConfig, modules: state.modules });
     const appName = state.appName || 'Meu App';

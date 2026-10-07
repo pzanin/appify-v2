@@ -73,6 +73,11 @@
       "achievements": "Achievements",
       "badges": "Badges",
       "myCollection": "My Collection"
+    },
+    "learning": {
+      "continue": "Continue learning",
+      "review": "Review your last lesson",
+      "progress": "{{completed}} of {{total}} lessons completed"
     }
   },
   "onboarding": {

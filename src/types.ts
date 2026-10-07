@@ -62,6 +62,7 @@ export interface PwaConfig {
   splashMediaFit?: 'contain' | 'cover';
   splashMediaBackground?: string;
   engagementEnabled?: boolean;
+  productId?: string;
   analyticsEnabled?: boolean;
   analyticsProjectId?: string;
   publishedUrl?: string;

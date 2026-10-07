@@ -154,7 +154,7 @@ export class ProjectRepository {
     const copiedName = `${source.project.name} (cópia)`;
     const copiedWorkspace = cloneWorkspace(source.workspace);
     copiedWorkspace.appName = copiedName;
-    copiedWorkspace.pwaConfig = { ...copiedWorkspace.pwaConfig, appName: copiedName, analyticsEnabled: false, analyticsProjectId: undefined };
+    copiedWorkspace.pwaConfig = { ...copiedWorkspace.pwaConfig, appName: copiedName, productId: crypto.randomUUID(), analyticsEnabled: false, analyticsProjectId: undefined };
 
     const newProject = await this.create(copiedName, copiedWorkspace);
     const targetDirectory = await this.findDirectory(newProject.id);

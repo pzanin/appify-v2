@@ -73,6 +73,11 @@
       "achievements": "Réalisations",
       "badges": "Badges",
       "myCollection": "Ma Collection"
+    },
+    "learning": {
+      "continue": "Reprendre là où je me suis arrêté",
+      "review": "Revoir la dernière leçon",
+      "progress": "{{completed}} leçons terminées sur {{total}}"
     }
   },
   "onboarding": {

@@ -4,6 +4,7 @@ import { ToastType, BuilderBlock } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS, SUPPORTED_LOCALES } from '../constants';
 import { visibleProjectSteps } from '../utils/projectFeatures';
+import { AppifyDocumentation } from './AppifyDocumentation';
 import { Sidebar } from './Sidebar';
 import { PhoneMockup } from './PhoneMockup';
 import { ModulesAndContent } from './ModulesAndContent';
@@ -32,6 +33,7 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
   const setStep = useAppStore(state => state.setStep);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showHelp,setShowHelp] = useState(false);
   
   const config = useAppStore(state => state.pwaConfig);
   const steps = visibleProjectSteps(config);
@@ -57,14 +59,14 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
       )}
 
       <div className={`sidebar-backdrop ${isSidebarOpen ? 'open' : ''}`} onClick={() => setIsSidebarOpen(false)}></div>
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar onOpenHelp={()=>setShowHelp(true)} onCloseHelp={()=>setShowHelp(false)} isHelpOpen={showHelp} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
       <main className="main">
         <div className="context-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button className="mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}><Menu size={16} /></button>
             <div className="breadcrumb">
-              <span>Meu Projeto</span><span className="sep">/</span><span>{PIPELINE_STEPS.find(s => s.id === activeStep)?.label}</span>
+              <span>Meu Projeto</span><span className="sep">/</span><span>{showHelp ? 'Ajuda e documentação' : PIPELINE_STEPS.find(s => s.id === activeStep)?.label}</span>
               {activeStep === 3 && selectedModuleId && <><span className="sep">/</span><span className="crumb-active">{modules.find(m => m.id === selectedModuleId)?.name}</span></>}
             </div>
             
@@ -86,12 +88,13 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
               <span>{SUPPORTED_LOCALES.find(l => l.code === pwaLanguage)?.label}</span>
             </div>
           </div>
-          <div className="progress-bar-wrap"><span>{progressPercent}% completo</span><div className="progress-bar"><div className="progress-fill" style={{ width: `${progressPercent}%` }}></div></div></div>
+          {!showHelp && <div className="progress-bar-wrap"><span>{progressPercent}% completo</span><div className="progress-bar"><div className="progress-fill" style={{ width: `${progressPercent}%` }}></div></div></div>}
         </div>
 
         <div className="workspace">
           <div className="workspace-split">
             <div className="workspace-builder">
+              {showHelp ? <AppifyDocumentation onClose={()=>setShowHelp(false)} /> : <>
               
               {activeStep === 0 && <IdentityConfigurator showToast={showToast} />}
 
@@ -171,8 +174,9 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
                   <button onClick={() => setStep(1)} className="btn-ghost" style={{ marginTop: '20px' }}>Voltar para Módulos</button>
                 </div>
               )}
+              </>}
             </div>
-            <PhoneMockup isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />
+            {!showHelp && <PhoneMockup isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} />}
           </div>
         </div>
 
