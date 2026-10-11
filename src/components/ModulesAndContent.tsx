@@ -101,7 +101,18 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const generateId = () => 'mod_' + Math.random().toString(36).substr(2, 9);
 
 
-  const addBlock = (type: string, subtype?: string) => { const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype,storageConfig.language) }; setBlocks(current => [...current, newBlock]); setSelectedBlockId(newBlock.id); };
+  const addBlock = (type: string, subtype?: string) => {
+    const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype,storageConfig.language) };
+    setBlocks(current => {
+      if (!selectedBlockId) return [...current, newBlock];
+      const selectedIndex = current.findIndex(block => block.id === selectedBlockId);
+      if (selectedIndex < 0) return [...current, newBlock];
+      const next = [...current];
+      next.splice(selectedIndex + 1, 0, newBlock);
+      return next;
+    });
+    setSelectedBlockId(newBlock.id);
+  };
   const updateProp = <K extends keyof BuilderBlock['props']>(key: K, value: BuilderBlock['props'][K]) => { setBlocks(current => current.map(b => b.id === selectedBlockId ? { ...b, props: { ...b.props, [key]: value } } : b)); };
   const moveBlock = (id: string, dir: number) => setBlocks(current => reorderBlocks(current, id, dir));
   const duplicateBlock = (id: string) => {
@@ -217,6 +228,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <div className="vpb-lib-label">Elementos</div>
                 <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('html')}><Code className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Código / HTML</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Trecho HTML seguro</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('list')}><Check className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Lista com ícones</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Benefícios ou passos</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('card')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Card / Destaque</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Dica ou informação importante</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('accordion')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Acordeão</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Seção que abre e fecha</div></div></button>
@@ -251,7 +263,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       style={{
                         background: mod.props.bgColor, padding: `${mod.props.padding}px`, textAlign: mod.props.align as any,
                         fontFamily: `'${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: `${mod.props.fontSize}px`,
-                        lineHeight: 1.6, marginTop:`${mod.props.marginTop || 0}px`, marginBottom:`${mod.props.marginBottom || 0}px`
+                        lineHeight: 1.6, marginTop:`${mod.props.marginTop || 0}px`, marginBottom:`${mod.props.marginBottom || 0}px`,
+                        border: `${mod.props.borderWidth || 0}px solid ${mod.props.borderColor || '#e5e7eb'}`,
+                        borderRadius: `${mod.props.borderRadius || 0}px`
                       }}
                       onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
                     >
@@ -393,6 +407,14 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <>
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'html' && (
+                    <>
+                      <label className="vpb-label">HTML seguro</label>
+                      <textarea className="vpb-textarea" rows={10} spellCheck={false} style={{ fontFamily: 'monospace', fontSize: '12px' }} value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                      <p className="vpb-html-help">Scripts, eventos inline e conteúdo inseguro são removidos. Para JavaScript, use o modo Código HTML da aula com “Interativo isolado”.</p>
                     </>
                   )}
 
@@ -904,9 +926,19 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   <input type="range" min="0" max="120" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.padding ?? 20} onChange={e => updateProp('padding', e.target.value)} />
                       <input type="number" className="vpb-input" aria-label="Espaço interno do bloco em pixels" min="0" max="120" step="1" value={selectedBlock.props.padding ?? 20} onChange={e => { if (e.target.value !== '') updateProp('padding', String(Math.min(120, Math.max(0, Number(e.target.value))))); } } />
 
+                  <label className="vpb-label">Contorno do bloco (px)</label>
+                  <input type="number" className="vpb-input" min="0" max="12" value={selectedBlock.props.borderWidth ?? 0} onChange={e => updateProp('borderWidth', e.target.value)} />
+                  <label className="vpb-label">Cor do contorno</label>
+                  <div className="vpb-color-row">
+                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.borderColor || '#e5e7eb'} onChange={e => updateProp('borderColor', e.target.value)} />
+                    <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.borderColor || '#e5e7eb'} onChange={e => updateProp('borderColor', e.target.value)} />
+                  </div>
+                  <label className="vpb-label">Arredondamento externo (px)</label>
+                  <input type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props.borderRadius ?? 0} onChange={e => updateProp('borderRadius', e.target.value)} />
+
                   <label className="vpb-label">Alinhamento</label>
                   <div style={{ display: 'flex', gap: '4px', background: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '12px' }}>
-                    {(['left', 'center', 'right'] as const).map(a => (
+                    {(['left', 'center', 'right', 'justify'] as const).map(a => (
                       <button
                         key={a}
                         type="button"
@@ -918,7 +950,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                           cursor: 'pointer', fontWeight: 600, fontSize: '11px', transition: 'all 0.2s'
                         }}
                       >
-                        {a === 'left' ? '◀ Esq' : a === 'center' ? '● Centro' : 'Dir ▶'}
+                        {a === 'left' ? '◀ Esq' : a === 'center' ? '● Centro' : a === 'right' ? 'Dir ▶' : '☰ Just.'}
                       </button>
                     ))}
                   </div>

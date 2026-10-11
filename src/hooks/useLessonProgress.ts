@@ -25,6 +25,11 @@ export function useLessonProgress(config:PwaConfig,modules:Module[],projectId:nu
       const id=lessonKey(moduleId,lessonId);
       if(latest.current.value.completed.includes(id))return false;
       save({...latest.current.value,completed:[...latest.current.value.completed,id]});return true;
+    },
+    uncomplete:(moduleId:number,lessonId:number)=>{
+      const id=lessonKey(moduleId,lessonId);
+      if(!latest.current.value.completed.includes(id))return false;
+      save({...latest.current.value,completed:latest.current.value.completed.filter(item=>item!==id)});return true;
     }
   };
 }

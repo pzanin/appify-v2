@@ -109,6 +109,8 @@ export interface BuilderBlock {
     align?: string;
     fontFamily?: string;
     color?: string;
+    borderWidth?: string | number;
+    borderColor?: string;
     fontSize?: string | number;
     fontWeight?: number | string;
     fontStyle?: string;

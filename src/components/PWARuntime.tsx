@@ -174,7 +174,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
 
   const handleSimulateCompletion = () => {
-    if (canCompleteLesson && !isCurrentLessonCompleted && selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null && learning.complete(selectedMockupModuleId,selectedMockupSubmoduleId)) {
+    if (isCurrentLessonCompleted && selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null) {
+      learning.uncomplete(selectedMockupModuleId,selectedMockupSubmoduleId);
+      setCanCompleteLesson(true);
+      return;
+    }
+    if (canCompleteLesson && selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null && learning.complete(selectedMockupModuleId,selectedMockupSubmoduleId)) {
       void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
       if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
         setIsCelebrating(true);
@@ -582,12 +587,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                                 </button>
                               )
                             ) : (
-                              <div className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10">
+                              <button type="button" onClick={handleSimulateCompletion} className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10" style={{ border: 'none', cursor: 'pointer' }} title="Marcar como não concluída">
                                 <div style={{ background: '#22c55e', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                                   <Check size={12} strokeWidth={4} />
                                 </div>
                                 <span>{t('app.modules.completed_status')}</span>
-                              </div>
+                              </button>
                             )}
                           </div>
                         )}

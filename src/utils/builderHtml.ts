@@ -23,10 +23,11 @@ export function builderDownloadUrl(value?: string): string {
 }
 
 const baseDefaultProps = (type: string, subtype?: string) => {
-    const base = { bgColor: '#ffffff', padding: '20', align: 'left', fontFamily: 'DM Sans', fontSize: '16', color: '#333333', gap: '16', borderRadius: '8' };
+    const base = { bgColor: '#ffffff', padding: '20', align: 'left', fontFamily: 'DM Sans', fontSize: '16', color: '#333333', gap: '16', borderRadius: '8', borderWidth: '0', borderColor: '#e5e7eb' };
     switch(type) {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', align: 'center', padding: '40', titleFontFamily: 'Syne', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
+      case 'html': return { ...base, content: '<div style="padding:16px;background:#f8fafc;border-radius:12px;">Seu HTML seguro aqui</div>', align: 'left' };
       case 'list': return { ...base, content: 'Primeiro benefício\nSegundo benefício\nTerceiro benefício', listIcon: 'check' as const, listIconColor: '#6b8af0', gap: '12' };
       case 'card': return { ...base, bgColor: 'transparent', padding: '0', title: 'Dica importante', content: 'Destaque aqui uma orientação, benefício ou informação importante.', cardIcon: 'none' as const, cardBgColor: '#f3f4f6', cardPadding: '20', borderRadius: '12', titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'accordion': return { ...base, bgColor: 'transparent', padding: '0', title: 'Clique para ver mais', content: 'Escreva aqui a explicação ou resposta desta seção.', accordionOpen: false, cardBgColor: '#f3f4f6', cardPadding: '16', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
@@ -60,7 +61,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined,language), ...block.props };
   const ranges: Record<string, [number, number]> = {
     fontSize: [10,72], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
-    maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
+    maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], borderWidth: [0,12], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
     imgBorderRadius: [0,999], imageBorderRadius: [0,999], height: [0,200], thickness: [1,8],
     columnPadding: [0,48], cardPadding: [0,48], quoteSize: [10,72],
   };
@@ -78,10 +79,10 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   for (const key of ['fontFamily', 'titleFontFamily']) {
     if (values[key] && !GOOGLE_FONTS.includes(String(values[key]))) values[key] = 'DM Sans';
   }
-  for (const key of ['bgColor','color','titleColor','subtitleColor','buttonColor','buttonTextColor','dividerColor','cardBgColor','columnBgColor','quoteColor']) {
+  for (const key of ['bgColor','color','titleColor','subtitleColor','buttonColor','buttonTextColor','dividerColor','cardBgColor','columnBgColor','quoteColor','borderColor']) {
     if (values[key] && !/^(#[a-f0-9]{3,8}|transparent)$/i.test(String(values[key]))) values[key] = defaults[key] || '#333333';
   }
-  if (!['left','center','right'].includes(p.align || '')) p.align = 'left';
+  if (!['left','center','right','justify'].includes(p.align || '')) p.align = 'left';
   if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
   if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
   if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
@@ -132,6 +133,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
       case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
+      case 'html': return sanitizeImportedHtml(String(p.content || ''));
       case 'download': {
         const url = builderDownloadUrl(p.url);
         const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
@@ -216,7 +218,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
 export function generateBuilderHtml(blocks: BuilderBlock[],language='pt-BR'): string {
   const sections = blocks.map(block => {
     const p = normalizedBlockProps(block,language);
-    const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;margin-top:${p.marginTop || 0}px;margin-bottom:${p.marginBottom || 0}px;`;
+    const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;margin-top:${p.marginTop || 0}px;margin-bottom:${p.marginBottom || 0}px;border:${p.borderWidth || 0}px solid ${p.borderColor || '#e5e7eb'};border-radius:${p.borderRadius || 0}px;`;
     return `<section class="appify-builder-block" style="${escapeHtml(style)}"><div class="appify-builder-content" style="${p.maxWidth && Number(p.maxWidth)>0 ? `max-width:${p.maxWidth}px;margin-left:auto;margin-right:auto;` : ''}">${sanitizeImportedHtml(getBlockInnerHtml(block,language))}</div></section>`;
   }).join('\n');
   return `${builderFontLinks(blocks)}<style>${BUILDER_CSS}</style><div class="appify-builder-document">${sections}</div>`;
