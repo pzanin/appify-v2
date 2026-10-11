@@ -129,6 +129,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     switch(type) {
       case 'header': return { ...base, title: 'Título Principal', subtitle: 'Subtítulo da página', fontSize: '32', align: 'center', padding: '40', titleFontSize: '32', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
+      case 'html': return { ...base, content: '<div style="padding:16px;border-radius:12px;background:#f8fafc;">Seu HTML seguro aqui</div>', align: 'left' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
       case 'link': return { ...base, text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', align: 'center' };
       case 'spacer': return { ...base, height: '40', bgColor: 'transparent', align: 'left' };
@@ -183,6 +184,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     switch(mod.type) {
       case 'header': return `<h1 style="font-size:${tfs}px;font-weight:${tfw};margin:0 0 ${tmb}px;">${p.title}</h1><p style="font-size:${parseInt(String(tfs))*0.5}px;opacity:0.7;margin:0;">${p.subtitle}</p>`;
       case 'text': return `<p style="margin:0;">${p.content}</p>`;
+      case 'html': return sanitizeHtml(String(p.content || ''));
       case 'image': return p.src ? `<img src="${p.src}" alt="${p.alt}" style="max-width:${p.width}%;${imgH}${imgR}${imgF}display:${p.align==='center'?'block':'inline-block'};margin:${p.align==='center'?'0 auto':p.align==='right'?'0 0 0 auto':'0'};">` : `<div style="border:2px dashed #ccc;padding:40px;text-align:center;color:#999;border-radius:8px;">Clique para adicionar imagem</div>`;
       case 'link': return p.style === 'button' ? `<a href="#" style="display:inline-block;background:${p.buttonColor};color:${p.buttonTextColor};padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:${p.fontSize}px;">${p.text}</a>` : `<a href="#" style="color:${p.buttonColor};text-decoration:underline;font-size:${p.fontSize}px;">${p.text}</a>`;
       case 'spacer': return `<div style="height:${p.height}px;"></div>`;
@@ -285,6 +287,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <div className="vpb-lib-label">Elementos</div>
                 <button className="vpb-module-btn" onClick={() => addBlock('header')}><Type className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Cabeçalho</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Título e Subtítulo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('html')}><Code className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Código / HTML</div><div style={{fontSize:'10px',color:'var(--muted)'}}>HTML seguro sem JavaScript</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('spacer')}><Minus className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Espaçador</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Espaço invisível</div></div></button>
@@ -423,6 +426,22 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <>
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'html' && (
+                    <>
+                      <label className="vpb-label">Código HTML Seguro</label>
+                      <textarea
+                        className="vpb-textarea"
+                        style={{ minHeight: '220px', fontFamily: 'monospace', fontSize: '12px' }}
+                        value={selectedBlock.props.content || ''}
+                        onChange={e => updateProp('content', e.target.value)}
+                        placeholder="<div style='padding:16px'>Seu HTML aqui...</div>"
+                      />
+                      <p style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: 1.5, marginTop: '-4px', marginBottom: '12px' }}>
+                        Scripts, eventos JavaScript e recursos inseguros são removidos automaticamente. CSS inline é permitido.
+                      </p>
                     </>
                   )}
 

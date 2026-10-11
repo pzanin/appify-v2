@@ -142,7 +142,13 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
   };
 
   const handleSimulateCompletion = () => {
-    if (canCompleteLesson && !isCurrentLessonCompleted) {
+    if (isCurrentLessonCompleted) {
+      setIsCurrentLessonCompleted(false);
+      setMockProgressPercentage(0);
+      return;
+    }
+
+    if (canCompleteLesson) {
       setIsCurrentLessonCompleted(true);
       setMockProgressPercentage(100);
       if (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true) {
@@ -555,12 +561,18 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark }: PWARuntimeProps) {
                                 </button>
                               )
                             ) : (
-                              <div className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10">
+                              <button
+                                type="button"
+                                onClick={handleSimulateCompletion}
+                                aria-pressed="true"
+                                className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10"
+                                style={{ border: 'none', cursor: 'pointer' }}
+                              >
                                 <div style={{ background: '#22c55e', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                                   <Check size={12} strokeWidth={4} />
                                 </div>
                                 <span>{t('app.modules.completed_status', 'Concluída')}</span>
-                              </div>
+                              </button>
                             )}
                           </div>
                         )}
