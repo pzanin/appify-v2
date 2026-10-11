@@ -28,7 +28,19 @@ builder = builder.replace(
 );
 
 const oldTwo = "          case 'twoColumn': return `<div class=\"appify-builder-grid\" style=\"display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};\"><div style=\"background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;\"><h3 style=\"${titleStyle}margin:0 0 ${tmb}px;\">${escapeHtml(p.leftTitle)}</h3><p style=\"white-space:pre-wrap;margin:0;line-height:1.6;\">${escapeHtml(p.leftText)}</p></div><div style=\"background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;\"><h3 style=\"${titleStyle}margin:0 0 ${tmb}px;\">${escapeHtml(p.rightTitle)}</h3><p style=\"white-space:pre-wrap;margin:0;line-height:1.6;\">${escapeHtml(p.rightText)}</p></div></div>`;";
-const newTwo = `          case 'twoColumn': {\n            const ratios: Record<string,string> = { '50-50':'1fr 1fr', '60-40':'3fr 2fr', '40-60':'2fr 3fr', '70-30':'7fr 3fr', '30-70':'3fr 7fr' };\n            const columns = [\n              { title:p.leftTitle, text:p.leftText },\n              { title:p.rightTitle, text:p.rightText }\n            ];\n            if (p.reverseColumns) columns.reverse();\n            const mobileClass = p.mobileOrder === 'reverse' ? ' appify-mobile-reverse' : '';\n            const html = columns.map(column => \\`<div style="background:\${p.columnBgColor};padding:\${p.columnPadding}px;border-radius:\${p.borderRadius}px;"><h3 style="\${titleStyle}margin:0 0 \${tmb}px;">\${escapeHtml(column.title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">\${escapeHtml(column.text)}</p></div>\\`).join('');\n            return \\`<div class="appify-builder-grid\${mobileClass}" style="display:grid;grid-template-columns:\${ratios[p.columnRatio || '50-50'] || ratios['50-50']};gap:\${p.gap}px;align-items:\${p.columnAlign};">\${html}</div>\\`;\n          }`;
+const newTwo = [
+  "          case 'twoColumn': {",
+  "            const ratios: Record<string,string> = { '50-50':'1fr 1fr', '60-40':'3fr 2fr', '40-60':'2fr 3fr', '70-30':'7fr 3fr', '30-70':'3fr 7fr' };",
+  "            const columns = [",
+  "              { title:p.leftTitle, text:p.leftText },",
+  "              { title:p.rightTitle, text:p.rightText }",
+  "            ];",
+  "            if (p.reverseColumns) columns.reverse();",
+  "            const mobileClass = p.mobileOrder === 'reverse' ? ' appify-mobile-reverse' : '';",
+  "            const html = columns.map(column => `<div style=\"background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;\"><h3 style=\"${titleStyle}margin:0 0 ${tmb}px;\">${escapeHtml(column.title)}</h3><p style=\"white-space:pre-wrap;margin:0;line-height:1.6;\">${escapeHtml(column.text)}</p></div>`).join('');",
+  "            return `<div class=\"appify-builder-grid${mobileClass}\" style=\"display:grid;grid-template-columns:${ratios[p.columnRatio || '50-50'] || ratios['50-50']};gap:${p.gap}px;align-items:${p.columnAlign};\">${html}</div>`;",
+  "          }"
+].join('\n');
 if (!builder.includes(oldTwo)) throw new Error('twoColumn renderer anchor not found');
 builder = builder.replace(oldTwo, newTwo);
 fs.writeFileSync(builderPath, builder);
