@@ -27,7 +27,7 @@ test('runtime and phone preview preserve resume, access rules and progress acros
   for (const Component of [PWARuntime,PhoneMockup]) {
     for (const language of ['pt-BR','en-US','es','fr'] as const) {
       localStorage.clear();
-      const config={...INITIAL_PWA_CONFIG,productId:'cx-test',appName:'Course',language,customSplash:false,welcomeEnabled:false,banners:[],engagementEnabled:true,supportConfig:{type:'email' as const,contact:'help@example.com'},gamification:{...INITIAL_PWA_CONFIG.gamification,enabled:true,progressStyle:'bar' as const}};
+      const config={...INITIAL_PWA_CONFIG,customerLayout:'comfortable' as const,productId:'cx-test',appName:'Course',language,customSplash:false,welcomeEnabled:false,banners:[],engagementEnabled:true,supportConfig:{type:'email' as const,contact:'help@example.com'},gamification:{...INITIAL_PWA_CONFIG.gamification,enabled:true,progressStyle:'bar' as const}};
       const storage=progressStorageKey(config,true,1);
       const saved=JSON.stringify({completed:['1:1'],last:{moduleId:1,lessonId:2}});
       localStorage.setItem(storage,saved);
@@ -59,6 +59,13 @@ test('runtime and phone preview preserve resume, access rules and progress acros
       await act(async()=>[...document.querySelectorAll('button')].find(button=>button.textContent?.includes(t('app.modules.back')))!.click());
       await settle();
       assert.equal(document.querySelectorAll('.cx-lesson-card').length,4);
+      const progressBeforeSwitch=localStorage.getItem(storage);
+      await act(async()=>useAppStore.setState({pwaConfig:{...config,customerLayout:'standard'}}));
+      assert.ok(document.querySelector('[data-customer-layout="standard"] .cx-lesson-list'));
+      assert.equal(document.querySelectorAll('.cx-lesson-card').length,4);
+      assert.equal(localStorage.getItem(storage),progressBeforeSwitch);
+      await act(async()=>useAppStore.setState({pwaConfig:config}));
+      assert.ok(document.querySelector('[data-customer-layout="comfortable"] .cx-lesson-list'));
       assert.equal(document.querySelectorAll('.cx-lesson-completed').length,1);
       assert.equal(document.querySelectorAll('[role="progressbar"]').length,1);
       assert.equal(document.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow'),'1');
@@ -81,6 +88,7 @@ test('new projects have no resume placeholder and disabled engagement leaves onl
   await act(async()=>root.render(React.createElement(PWARuntime,{isPhoneDark:true,setIsPhoneDark:()=>{}})));
   await settle();
   assert.equal(document.querySelector('.cx-continue'),null);
+  assert.ok(document.querySelector('[data-customer-layout="standard"]'));
   assert.deepEqual([...document.querySelectorAll('.cx-bottom-nav button')].map(button=>button.textContent),['Home','Profile']);
   await act(async()=>document.querySelector<HTMLButtonElement>('.cx-module-card')!.click());
   await settle();

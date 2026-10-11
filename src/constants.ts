@@ -51,6 +51,7 @@ export const INITIAL_PWA_CONFIG: PwaConfig = {
   splashDurationMs: 2500,
   splashAnimation: 'fade',
   customerAccessMode: 'open',
+  customerLayout: 'standard',
   startUrl: '/',
   version: '1.0.0',
   changelogNotes: '',

@@ -43,6 +43,15 @@ export function AppConfigurator() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '32px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>
+            <h3 style={{fontSize:16,fontWeight:700,marginBottom:12}}>Experiência do cliente</h3>
+            <label className="vpb-label" htmlFor="customer-layout">Modelo de apresentação</label>
+            <select id="customer-layout" className="vpb-input" value={pwaConfig.customerLayout === 'comfortable' ? 'comfortable' : 'standard'} onChange={e=>updateConfig({customerLayout:e.target.value as 'standard'|'comfortable'})}>
+              <option value="standard">Padrão — modelo anterior, mais compacto</option>
+              <option value="comfortable">Espaços maiores — leitura e toque confortáveis</option>
+            </select>
+            <p style={{fontSize:13,color:'var(--muted)'}}>Escolha por produto. O modelo padrão mantém módulos e aulas em grade; espaços maiores usa títulos maiores e aulas em lista. A escolha aparece na prévia e acompanha o PWA exportado.</p>
+          </div></div>
           
           <div className="eng-card"><div className="eng-card-body" style={{padding:24}}>
             <h3 style={{fontSize:16,fontWeight:700,marginBottom:12}}>Abertura e acesso do cliente</h3>

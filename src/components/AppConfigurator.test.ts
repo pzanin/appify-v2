@@ -4,16 +4,41 @@ import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { INITIAL_PWA_CONFIG } from '../constants';
 import { TEST_SPLASH_MP4 } from '../utils/fixtures/splashMedia';
+import {projectService} from '../services/projectService';
+import {publicFeatureConfig} from '../utils/projectFeatures';
 const dom=new JSDOM('<div id="root"></div>',{url:'https://appify.test'});
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true});
 const {createRoot}=await import('react-dom/client');
 const {AppConfigurator}=await import('./AppConfigurator');
-const {useAppStore}=await import('../store/useAppStore');
+const {useAppStore,createInitialProjectWorkspace,getProjectWorkspaceSnapshot}=await import('../store/useAppStore');
 function change(id:string,value:string) {
   const input=document.querySelector(id) as HTMLSelectElement;
   Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype,'value')!.set!.call(input,value);
   input.dispatchEvent(new dom.window.Event('change',{bubbles:true}));
 }
+
+test('customer layout defaults to standard and remains isolated, saved and exportable per project',async t=>{
+  let nextId=100; t.mock.method(Date,'now',()=>nextId++);
+  localStorage.clear();
+  const workspace=createInitialProjectWorkspace('Layout A');
+  delete workspace.pwaConfig.customerLayout;
+  useAppStore.setState({...workspace,currentProjectId:null});
+  const root=createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(AppConfigurator)));
+  assert.equal(document.querySelector<HTMLSelectElement>('#customer-layout')!.value,'standard');
+  await act(async()=>change('#customer-layout','comfortable'));
+  assert.equal(useAppStore.getState().pwaConfig.customerLayout,'comfortable');
+  const a=await projectService.createProject('Layout A',getProjectWorkspaceSnapshot(useAppStore.getState()));
+  const b=await projectService.createProject('Layout B',createInitialProjectWorkspace('Layout B'));
+  assert.equal((await projectService.openProject(a.id)).workspace.pwaConfig.customerLayout,'comfortable');
+  assert.equal((await projectService.openProject(b.id)).workspace.pwaConfig.customerLayout,'standard');
+  assert.equal(publicFeatureConfig(useAppStore.getState().pwaConfig).customerLayout,'comfortable');
+  await act(async()=>change('#customer-layout','standard'));
+  await projectService.saveProject(a.id,getProjectWorkspaceSnapshot(useAppStore.getState()));
+  assert.equal((await projectService.openProject(a.id)).workspace.pwaConfig.customerLayout,'standard');
+  assert.deepEqual(useAppStore.getState().modules,workspace.modules);
+  await act(async()=>root.unmount());
+});
 
 test('opening settings accept MP4, preserve the previous asset on failed replacement, switch back to brand and remove the upload',async()=>{
   useAppStore.setState({currentProjectId:null,pwaConfig:{...INITIAL_PWA_CONFIG}});

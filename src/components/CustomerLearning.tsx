@@ -57,7 +57,7 @@ export function CustomerLessonList({ module, completed, onOpen, t, themeColor, d
   module: Module; completed: (moduleId: number, lessonId: number) => boolean; onOpen: (id: number) => void;
   t: TFunction; themeColor: string; dark: boolean;
 }) {
-  return <div className="cx-lesson-list" style={learningColors(dark)}>
+  return <div className="cx-lesson-list" data-lesson-count={module.subs.length} style={learningColors(dark)}>
     {module.subs.map((lesson, index) => <button type="button" key={lesson.id} className="cx-lesson-card" onClick={() => onOpen(lesson.id)}>
       <span className="cx-lesson-cover">
         {lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" loading="lazy" /> : <span>{index + 1}</span>}

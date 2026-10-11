@@ -253,6 +253,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   return (
     <div lang={pwaLanguage} style={{ width: '100vw', height: '100dvh', background: '#000000', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
       <div 
+        data-customer-layout={pwaConfig.customerLayout === 'comfortable' ? 'comfortable' : 'standard'}
         className={`w-full h-full flex flex-col overflow-hidden relative ${isPhoneDark ? 'bg-[#091218] text-white' : 'bg-[#f6f8fa] text-[#1f2328]'}`}
         style={{ 
           fontFamily: pwaConfig?.fontFamily ? `${pwaConfig.fontFamily}, Arial, sans-serif` : 'Arial, sans-serif',

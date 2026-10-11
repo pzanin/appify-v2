@@ -70,6 +70,7 @@ export interface PwaConfig {
   exportHistory?: Array<{ version: string; date: string; notes: string }>;
   deploymentProvider?: 'netlify' | 'cloudflare';
   welcomeEnabled?: boolean;
+  customerLayout?: 'standard' | 'comfortable';
   customerAccessMode?: 'open' | 'demo';
   startUrl: string;
   version: string;

@@ -251,7 +251,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
 
-      <div lang={pwaLanguage} className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily ? `${pwaConfig.fontFamily}, Arial, sans-serif` : 'Arial, sans-serif', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
+      <div lang={pwaLanguage} data-customer-layout={pwaConfig.customerLayout === 'comfortable' ? 'comfortable' : 'standard'} className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily ? `${pwaConfig.fontFamily}, Arial, sans-serif` : 'Arial, sans-serif', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
         
         {/* Hardware UI Elements */}
         <div className="phone-hw-buttons">
