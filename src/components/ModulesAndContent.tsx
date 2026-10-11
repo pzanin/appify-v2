@@ -8,7 +8,7 @@ import {
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
 import { useAppStore } from '../store/useAppStore';
-import { interactiveWarnings, normalizeHtmlPaste } from '../utils/interactiveHtml';
+import { analyzeHtmlImport, interactiveWarnings, normalizeHtmlPaste } from '../utils/interactiveHtml';
 import { HtmlFrame } from './HtmlFrame';
 import { sanitizeImportedHtml } from '../utils/htmlSecurity';
 import { BUILDER_CSS, builderDownloadUrl, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
@@ -191,12 +191,16 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     const reader = new FileReader();
     reader.onload = () => {
       const importedHtml = typeof reader.result === 'string' ? reader.result : '';
-      const hasRelativeAssets = /(?:src|href)=["'](?!https?:|data:|#|mailto:|tel:|\/)[^"']+/i.test(importedHtml);
-      setContentHtml(normalizeHtmlPaste(importedHtml));
+      const normalized = normalizeHtmlPaste(importedHtml);
+      const analysis = analyzeHtmlImport(normalized);
+      setContentHtml(normalized);
       setHasCustomHtml(true);
-      setHtmlImportStatus(hasRelativeAssets
-        ? `${file.name} importado. Atenção: arquivos locais referenciados por caminho relativo não foram incorporados.`
-        : `${file.name} importado. Confira o preview antes de salvar.`);
+      setHtmlInteractive(analysis.recommendedMode === 'interactive');
+      const detected = analysis.features.length ? ` Detectado: ${analysis.features.join(", ")} .` : '';
+      const recommendation = analysis.recommendedMode === 'interactive'
+        ? ' O Appify ativou Interativo isolado para preservar JavaScript/Tailwind com segurança.'
+        : ' O Appify manteve o modo Estático.';
+      setHtmlImportStatus(`${file.name} importado.${detected}${recommendation} Confira o preview antes de salvar.`);
       setViewMode('code');
     };
     reader.onerror = () => setHtmlImportStatus('Não foi possível ler o arquivo HTML.');
@@ -352,6 +356,13 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     <option value="interactive">Interativo isolado — timers, exercícios e quizzes locais</option>
                   </select>
                   <p className="vpb-html-help">{htmlInteractive?'Executa JavaScript inline na atividade, sem acesso aos projetos, rede ou cookies. O histórico via localStorage fica separado por atividade e salvo neste aparelho. Tailwind padrão e cores/fontes de theme.extend são convertidos em CSS local. Outras bibliotecas externas não são executadas.':'Scripts e controles interativos são removidos. Para exercícios com JavaScript, selecione Interativo isolado.'}</p>
+                  {contentHtml.trim() && (() => { const analysis = analyzeHtmlImport(contentHtml); return <div style={{ marginBottom: '10px', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--surface2)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginBottom: '6px' }}>Diagnóstico da importação</div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: analysis.features.length ? '6px' : 0 }}>
+                      {(analysis.features.length ? analysis.features : ['HTML/CSS simples']).map(item => <span key={item} style={{ fontSize: '10px', padding: '3px 7px', borderRadius: '999px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}>{item}</span>)}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Modo recomendado: <strong style={{ color: 'var(--text)' }}>{analysis.recommendedMode === 'interactive' ? 'Interativo isolado' : 'Estático'}</strong></div>
+                  </div>; })()}
                   {htmlInteractive && interactiveWarnings(contentHtml).map(warning=><p key={warning} className="vpb-html-import-status">{warning}</p>)}
                   <button type="button" className="btn-ghost" onClick={()=>setContentHtml(normalizeHtmlPaste(contentHtml))}>Limpar formatação de código copiado</button>
                   {htmlImportStatus && <div className="vpb-html-import-status">{htmlImportStatus}</div>}

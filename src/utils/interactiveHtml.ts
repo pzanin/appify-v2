@@ -17,11 +17,52 @@ export function normalizeHtmlPaste(source: string) {
     .replace(/\\(?=[*])/g,'');
 }
 
-export function interactiveWarnings(source: string): string[] {
+export type HtmlImportAnalysis = {
+  hasInlineScript: boolean;
+  hasTailwindCdn: boolean;
+  hasExternalStylesheet: boolean;
+  hasGoogleFonts: boolean;
+  hasExternalImages: boolean;
+  hasRelativeAssets: boolean;
+  hasInlineStyle: boolean;
+  hasNetworkApis: boolean;
+  recommendedMode: 'static' | 'interactive';
+  features: string[];
+  warnings: string[];
+};
+
+export function analyzeHtmlImport(source: string): HtmlImportAnalysis {
+  const html = normalizeHtmlPaste(source || '');
+  const hasInlineScript = /<script\b(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/i.test(html);
+  const hasTailwindCdn = /<script\b[^>]*\bsrc=["'][^"']*(?:cdn\.tailwindcss\.com|cdn\.jsdelivr\.net[^"']*tailwind)[^"']*["']/i.test(html);
+  const hasExternalStylesheet = /<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']https?:\/\/(?!fonts\.googleapis\.com)[^"']+["']/i.test(html) || /<link\b[^>]*\bhref=["']https?:\/\/(?!fonts\.googleapis\.com)[^"']+["'][^>]*\brel=["']stylesheet["']/i.test(html);
+  const hasGoogleFonts = /fonts\.googleapis\.com|fonts\.gstatic\.com/i.test(html);
+  const hasExternalImages = /<(?:img|source)\b[^>]*\b(?:src|srcset)=["']https?:\/\//i.test(html) || /url\(\s*["']?https?:\/\//i.test(html);
+  const hasRelativeAssets = /\b(?:src|href|poster)\s*=\s*["'](?!https?:|data:|#|mailto:|tel:|\/\/)[^"']+/i.test(html);
+  const hasInlineStyle = /<style\b|\sstyle\s*=/i.test(html);
+  const hasNetworkApis = /\b(?:fetch\s*\(|XMLHttpRequest|WebSocket|sessionStorage|document\.cookie|\bimport\s)/.test(html);
+  const recommendedMode: 'static' | 'interactive' = hasInlineScript || hasTailwindCdn ? 'interactive' : 'static';
+  const features: string[] = [];
   const warnings: string[] = [];
-  if (/\b(?:src|href)\s*=\s*["'](?:https?:|\/|\.\/)/i.test(source)) warnings.push('Recursos externos/arquivos relativos ficam bloqueados. O Tailwind reconhecido será convertido em CSS local; use imagens embutidas e fontes locais.');
-  if (/\b(?:fetch\s*\(|XMLHttpRequest|WebSocket|sessionStorage|document\.cookie|\bimport\s)/.test(source)) warnings.push('Rede, sessionStorage, cookies e módulos externos não estão disponíveis neste modo.');
-  return warnings;
+  if (hasTailwindCdn) features.push('Tailwind CDN');
+  if (hasInlineScript) features.push('JavaScript');
+  if (hasInlineStyle) features.push('CSS embutido');
+  if (hasGoogleFonts) features.push('Google Fonts');
+  if (hasExternalImages) features.push('imagens externas');
+  if (hasExternalStylesheet) features.push('CSS externo');
+  if (hasRelativeAssets) features.push('arquivos relativos');
+  if (hasTailwindCdn) warnings.push('Tailwind detectado: no modo Interativo isolado, o Appify converte as classes reconhecidas para CSS local.');
+  if (hasExternalStylesheet) warnings.push('CSS externo de terceiros não é incorporado automaticamente e pode não aparecer no PWA. Prefira CSS dentro do próprio HTML.');
+  if (hasRelativeAssets) warnings.push('Há caminhos relativos para arquivos locais. Eles precisam ser incorporados ao projeto para funcionar fora da pasta original.');
+  if (hasNetworkApis) warnings.push('O HTML usa recursos de rede/armazenamento que ficam bloqueados no modo isolado.');
+  return { hasInlineScript, hasTailwindCdn, hasExternalStylesheet, hasGoogleFonts, hasExternalImages, hasRelativeAssets, hasInlineStyle, hasNetworkApis, recommendedMode, features, warnings };
+}
+
+export function interactiveWarnings(source: string): string[] {
+  const analysis = analyzeHtmlImport(source);
+  const warnings = [...analysis.warnings];
+  if (/\b(?:src|href)\s*=\s*["'](?:https?:|\/|\.\/)/i.test(source) && !analysis.hasTailwindCdn) warnings.push('Recursos externos ou arquivos relativos podem ser bloqueados no modo isolado. Use recursos embutidos quando possível.');
+  return [...new Set(warnings)];
 }
 
 function colorTheme(value: unknown, prefix: string[] = []): string {
