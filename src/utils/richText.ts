@@ -32,7 +32,7 @@ export function sanitizeRichTextHtml(source: string): string {
     if (element.tagName === 'SPAN') {
       const color = element.style.color;
       element.removeAttribute('style');
-      if (color && /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/i.test(color)) {
+      if (color && /^(#[0-9a-f]{3,8}|rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))$/i.test(color)) {
         element.style.color = color;
       }
     } else {

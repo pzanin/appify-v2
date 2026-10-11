@@ -47,7 +47,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const htmlFileInputRef = useRef<HTMLInputElement>(null);
   const richTextEditorRef = useRef<HTMLDivElement>(null);
   const richTextSelectionRef = useRef<Range | null>(null);
-  const [richTextColor, setRichTextColor] = useState('#333333');
+  const richTextColorRef = useRef('#333333');
 
   // Gamification local state
   const [timeGateSeconds, setTimeGateSeconds] = useState(submodule.gamificationConfig?.timeGateSeconds || 0);
@@ -463,11 +463,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <button type="button" className="btn-ghost" style={{ fontStyle: 'italic', minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('italic'); }} title="Itálico">I</button>
                         <button type="button" className="btn-ghost" style={{ textDecoration: 'underline', minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('underline'); }} title="Sublinhado">U</button>
                         <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--muted)' }}>Cor
-                          <input type="color" aria-label="Escolher cor do texto" value={richTextColor} onMouseDown={rememberRichTextSelection} onChange={e => setRichTextColor(e.target.value)} />
+                          <input type="color" aria-label="Escolher cor do texto" defaultValue="#333333" onMouseDown={rememberRichTextSelection} onInput={e => { richTextColorRef.current = e.currentTarget.value; }} onChange={e => { richTextColorRef.current = e.currentTarget.value; }} />
                         </label>
-                        <button type="button" className="btn-ghost" style={{ minWidth: '72px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('foreColor', richTextColor); }} title="Aplicar a cor escolhida ao trecho selecionado">Aplicar cor</button>
+                        <button type="button" className="btn-ghost" style={{ minWidth: '72px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('foreColor', richTextColorRef.current); }} title="Aplicar a cor escolhida ao trecho selecionado">Aplicar cor</button>
                       </div>
-                      <style>{`.appify-rich-editor p{margin:0 0 ${Number(selectedBlock.props.paragraphSpacing ?? 12)}px;line-height:inherit}.appify-rich-editor p:last-child{margin-bottom:0}`}</style>
+                      <style>{`.appify-rich-editor>p,.appify-rich-editor>div{margin:0 0 ${Number(selectedBlock.props.paragraphSpacing ?? 12)}px;line-height:inherit}.appify-rich-editor>p:last-child,.appify-rich-editor>div:last-child{margin-bottom:0}`}</style>
                       <div
                         key={selectedBlock.id}
                         ref={richTextEditorRef}
