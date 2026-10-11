@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 
 const builderPath = 'src/components/ModulesAndContent.tsx';
+const runtimePath = 'src/components/PWARuntime.tsx';
 const typesPath = 'src/types.ts';
 
 let builder = fs.readFileSync(builderPath, 'utf8');
+let runtime = fs.readFileSync(runtimePath, 'utf8');
 let types = fs.readFileSync(typesPath, 'utf8');
 
 function replaceOnce(source, oldText, newText, label) {
@@ -27,6 +29,14 @@ builder = replaceOnce(
 
 builder = replaceOnce(
   builder,
+  "      case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };",
+  `      case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
+      case 'html': return { ...base, content: '<div style="padding:16px;border-radius:12px;background:#f8fafc;">Seu HTML seguro aqui</div>', align: 'left' };`,
+  'safe html block defaults'
+);
+
+builder = replaceOnce(
+  builder,
   "  const addBlock = (type: string, subtype?: string) => { const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype) }; setBlocks([...blocks, newBlock]); setSelectedBlockId(newBlock.id); };",
   `  const addBlock = (type: string, subtype?: string) => {
     const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype) };
@@ -41,6 +51,14 @@ builder = replaceOnce(
     setSelectedBlockId(newBlock.id);
   };`,
   'insert new block below selected block'
+);
+
+builder = replaceOnce(
+  builder,
+  "      case 'text': return `<p style=\"margin:0;\">${p.content}</p>`;",
+  `      case 'text': return \`<p style="margin:0;">\${p.content}</p>\`;
+      case 'html': return sanitizeHtml(String(p.content || ''));`,
+  'safe html block rendering'
 );
 
 builder = replaceOnce(
@@ -69,6 +87,47 @@ builder = replaceOnce(
   "                        {a === 'left' ? '◀ Esq' : a === 'center' ? '● Centro' : 'Dir ▶'}",
   "                        {a === 'left' ? '◀ Esq' : a === 'center' ? '● Centro' : a === 'right' ? 'Dir ▶' : '☰ Just.'}",
   'justify alignment label'
+);
+
+builder = replaceOnce(
+  builder,
+  `                <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>`,
+  `                <button className="vpb-module-btn" onClick={() => addBlock('text')}><AlignLeft className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Texto</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Parágrafo longo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('html')}><Code className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Código / HTML</div><div style={{fontSize:'10px',color:'var(--muted)'}}>HTML seguro sem JavaScript</div></div></button>`,
+  'safe html element button'
+);
+
+builder = replaceOnce(
+  builder,
+  `                  {selectedBlock.type === 'text' && (
+                    <>
+                      <label className="vpb-label">Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}`,
+  `                  {selectedBlock.type === 'text' && (
+                    <>
+                      <label className="vpb-label">Texto</label>
+                      <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'html' && (
+                    <>
+                      <label className="vpb-label">Código HTML Seguro</label>
+                      <textarea
+                        className="vpb-textarea"
+                        style={{ minHeight: '220px', fontFamily: 'monospace', fontSize: '12px' }}
+                        value={selectedBlock.props.content || ''}
+                        onChange={e => updateProp('content', e.target.value)}
+                        placeholder="<div style='padding:16px'>Seu HTML aqui...</div>"
+                      />
+                      <p style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: 1.5, marginTop: '-4px', marginBottom: '12px' }}>
+                        Scripts, eventos JavaScript e recursos inseguros são removidos automaticamente. CSS inline é permitido.
+                      </p>
+                    </>
+                  )}`,
+  'safe html block editor'
 );
 
 builder = replaceOnce(
@@ -103,6 +162,61 @@ types = replaceOnce(
   'builder border types'
 );
 
+runtime = replaceOnce(
+  runtime,
+  `  const handleSimulateCompletion = () => {
+    if (canCompleteLesson && !isCurrentLessonCompleted) {
+      setIsCurrentLessonCompleted(true);
+      setMockProgressPercentage(100);
+      if (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true) {
+        setIsCelebrating(true);
+        setTimeout(() => setIsCelebrating(false), 3500);
+      }
+    }
+  };`,
+  `  const handleSimulateCompletion = () => {
+    if (isCurrentLessonCompleted) {
+      setIsCurrentLessonCompleted(false);
+      setMockProgressPercentage(0);
+      return;
+    }
+
+    if (canCompleteLesson) {
+      setIsCurrentLessonCompleted(true);
+      setMockProgressPercentage(100);
+      if (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true) {
+        setIsCelebrating(true);
+        setTimeout(() => setIsCelebrating(false), 3500);
+      }
+    }
+  };`,
+  'reversible lesson completion state'
+);
+
+runtime = replaceOnce(
+  runtime,
+  `                              <div className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10">
+                                <div style={{ background: '#22c55e', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                  <Check size={12} strokeWidth={4} />
+                                </div>
+                                <span>{t('app.modules.completed_status', 'Concluída')}</span>
+                              </div>`,
+  `                              <button
+                                type="button"
+                                onClick={handleSimulateCompletion}
+                                aria-pressed="true"
+                                className="flex items-center gap-1.5 text-[12px] font-bold px-2.5 py-1 rounded-full transition-all text-green-500 bg-green-500/10"
+                                style={{ border: 'none', cursor: 'pointer' }}
+                              >
+                                <div style={{ background: '#22c55e', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                  <Check size={12} strokeWidth={4} />
+                                </div>
+                                <span>{t('app.modules.completed_status', 'Concluída')}</span>
+                              </button>`,
+  'completed pill can be unchecked'
+);
+
 fs.writeFileSync(builderPath, builder);
+fs.writeFileSync(runtimePath, runtime);
 fs.writeFileSync(typesPath, types);
 console.log('Visual Builder productivity patch complete.');
