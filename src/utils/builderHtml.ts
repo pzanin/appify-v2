@@ -43,7 +43,7 @@ const baseDefaultProps = (type: string, subtype?: string) => {
         switch(subtype) {
           case 'hero': return { ...base, bgColor: '#6b8af0', padding: '60', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', titleFontFamily: 'Syne', titleFontSize: '42', titleFontWeight: '700', titleMarginBottom: '16' };
           case 'oneColumn': return { ...base, title:'Título da seção', text:'Escreva o conteúdo desta seção.', columnBgColor:'#f3f4f6', columnPadding:'20', titleFontFamily:'Syne', titleFontSize:'24', titleFontWeight:'700', titleMarginBottom:'12' };
-          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', columnRatio: '50-50' as const, reverseColumns: false, mobileOrder: 'normal' as const, titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'threeColumn': return { ...base, gap: '14', bgColor: '#ffffff', padding: '20', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '18', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'imageText': return { ...base, gap: '24', bgColor: '#ffffff', padding: '24', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'testimonial': return { ...base, bgColor: '#f9fafb', padding: '40', quote: '"Este é um depoimento incrível sobre nosso produto ou serviço."', author: 'Nome do Cliente', role: 'Cargo/Empresa', quoteColor: '#6b8af0', quoteSize: '18' };
@@ -85,6 +85,8 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   }
   if (!['left','center','right','justify'].includes(p.align || '')) p.align = 'left';
   if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
+  if (!['50-50','60-40','40-60','70-30','30-70'].includes(p.columnRatio || '50-50')) p.columnRatio = '50-50';
+  if (!['normal','reverse'].includes(p.mobileOrder || 'normal')) p.mobileOrder = 'normal';
   if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
   if (!['center','top','bottom','left','right'].includes(p.imgObjectPosition || 'center')) p.imgObjectPosition = 'center';
   if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
@@ -109,6 +111,8 @@ export const BUILDER_CSS = `
 .appify-rich-text p:last-child { margin-bottom:0; }
 @container appify-blocks (max-width:600px) {
   .appify-builder-content .appify-builder-grid { grid-template-columns:minmax(0,1fr) !important; }
+  .appify-builder-content .appify-builder-grid.appify-mobile-reverse > :first-child { order:2; }
+  .appify-builder-content .appify-builder-grid.appify-mobile-reverse > :last-child { order:1; }
 }
 `;
 
@@ -210,7 +214,17 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
         switch(mod.subtype) {
           case 'oneColumn': return `<div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h2 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h2><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.text)}</p></div>`;
           case 'hero': return `<h1 style="${titleStyle}color:${p.titleColor};margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;color:${p.subtitleColor};margin:0;">${escapeHtml(p.subtitle)}</p>`;
-          case 'twoColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.leftTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.leftText)}</p></div><div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.rightTitle)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.rightText)}</p></div></div>`;
+          case 'twoColumn': {
+            const ratios: Record<string,string> = { '50-50':'1fr 1fr', '60-40':'3fr 2fr', '40-60':'2fr 3fr', '70-30':'7fr 3fr', '30-70':'3fr 7fr' };
+            const columns = [
+              { title:p.leftTitle, text:p.leftText },
+              { title:p.rightTitle, text:p.rightText }
+            ];
+            if (p.reverseColumns) columns.reverse();
+            const mobileClass = p.mobileOrder === 'reverse' ? ' appify-mobile-reverse' : '';
+            const html = columns.map(column => `<div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(column.title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(column.text)}</p></div>`).join('');
+            return `<div class="appify-builder-grid${mobileClass}" style="display:grid;grid-template-columns:${ratios[p.columnRatio || '50-50'] || ratios['50-50']};gap:${p.gap}px;align-items:${p.columnAlign};">${html}</div>`;
+          }
           case 'threeColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col1Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col1Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col2Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col2Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col3Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col3Text)}</p></div></div>`;
           case 'imageText': {
             const imgHtml = p.imageSrc ? `<img class="appify-sized-image" src="${escapeHtml(p.imageSrc)}" alt="${escapeHtml(p.imageAlt)}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:${p.borderRadius}px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">${escapeHtml(copy('Clique para adicionar imagem'))}</div>`;

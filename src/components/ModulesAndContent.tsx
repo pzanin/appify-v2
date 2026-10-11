@@ -840,6 +840,25 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <label className="vpb-label">Espaço Interno das Colunas ({selectedBlock.props.columnPadding ?? 20}px)</label>
                       <input type="range" min="8" max="48" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.columnPadding ?? 20} onChange={e => updateProp('columnPadding', e.target.value)} />
                       <input type="number" className="vpb-input" aria-label="Espaço interno das colunas em pixels" min="8" max="48" step="1" value={selectedBlock.props.columnPadding ?? 20} onChange={e => { if (e.target.value !== '') updateProp('columnPadding', String(Math.min(48, Math.max(8, Number(e.target.value))))); } } />
+                      <label className="vpb-label">Proporção das colunas</label>
+                      <select className="vpb-input" value={selectedBlock.props.columnRatio || '50-50'} onChange={e => updateProp('columnRatio', e.target.value as BuilderBlock['props']['columnRatio'])}>
+                        <option value="50-50">50 / 50</option>
+                        <option value="60-40">60 / 40</option>
+                        <option value="40-60">40 / 60</option>
+                        <option value="70-30">70 / 30</option>
+                        <option value="30-70">30 / 70</option>
+                      </select>
+                      <label className="vpb-label">Posição no desktop</label>
+                      <select className="vpb-input" value={selectedBlock.props.reverseColumns ? 'reverse' : 'normal'} onChange={e => updateProp('reverseColumns', e.target.value === 'reverse')}>
+                        <option value="normal">Esquerda → Direita</option>
+                        <option value="reverse">Inverter colunas</option>
+                      </select>
+                      <label className="vpb-label">Ordem no celular</label>
+                      <select className="vpb-input" value={selectedBlock.props.mobileOrder || 'normal'} onChange={e => updateProp('mobileOrder', e.target.value as BuilderBlock['props']['mobileOrder'])}>
+                        <option value="normal">Manter ordem visual</option>
+                        <option value="reverse">Inverter ao empilhar</option>
+                      </select>
+                      <p className="vpb-html-help">No celular as duas colunas continuam empilhadas. Você pode escolher qual conteúdo aparece primeiro.</p>
                     </>
                   )}
 
@@ -988,6 +1007,16 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   <span className="vpb-lib-label">Layout da seção</span>
                   <label className="vpb-label">Largura máxima do conteúdo (px) — 0 = toda a largura</label>
                   <input aria-label="Largura máxima do conteúdo" type="number" className="vpb-input" min="0" max="1600" value={selectedBlock.props.maxWidth ?? 0} onChange={e=>updateProp('maxWidth',e.target.value)}/>
+                  {selectedBlock.subtype === 'oneColumn' && <>
+                    <label className="vpb-label">Presets de largura</label>
+                    <select className="vpb-input" value={['0','900','700','500'].includes(String(selectedBlock.props.maxWidth ?? 0)) ? String(selectedBlock.props.maxWidth ?? 0) : 'custom'} onChange={e => { if (e.target.value !== 'custom') updateProp('maxWidth', e.target.value); }}>
+                      <option value="0">Toda a largura</option>
+                      <option value="900">900 px — conteúdo amplo</option>
+                      <option value="700">700 px — leitura confortável</option>
+                      <option value="500">500 px — conteúdo estreito</option>
+                      <option value="custom" disabled>Personalizado</option>
+                    </select>
+                  </>}
                   {(['marginTop','marginBottom'] as const).map((prop,index)=><React.Fragment key={prop}><label className="vpb-label">{index===0?'Margem acima':'Margem abaixo'} (px)</label><input aria-label={index===0?'Margem acima':'Margem abaixo'} type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props[prop] ?? 0} onChange={e=>updateProp(prop,e.target.value)}/></React.Fragment>)}
                   {['twoColumn','threeColumn'].includes(selectedBlock.subtype || '') && <><label className="vpb-label">Alinhamento vertical dos cards</label><select className="vpb-input" value={selectedBlock.props.columnAlign || 'start'} onChange={e=>updateProp('columnAlign',e.target.value)}><option value="start">Topo</option><option value="center">Centro</option><option value="end">Base</option><option value="stretch">Mesma altura</option></select></>}
                 </div>}

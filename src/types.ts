@@ -128,6 +128,9 @@ export interface BuilderBlock {
     columns?: number;
     maxWidth?: string | number;
     columnAlign?: 'start' | 'center' | 'end' | 'stretch';
+    columnRatio?: '50-50' | '60-40' | '40-60' | '70-30' | '30-70';
+    reverseColumns?: boolean;
+    mobileOrder?: 'normal' | 'reverse';
     title?: string;
     subtitle?: string;
     content?: string;
