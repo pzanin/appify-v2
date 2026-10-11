@@ -3,6 +3,7 @@ import { feedTimestamp, productName } from '../utils/productCopy';
 import { activityStorageKey } from '../utils/activityStorage';
 import { useLessonProgress } from '../hooks/useLessonProgress';
 import { ContinueLearning } from './ContinueLearning';
+import { CustomerModuleCards, CustomerLessonList, LearningProgress, CustomerBottomNavigation, learningColors } from './CustomerLearning';
 import { CustomerEntry } from './CustomerEntry';
 import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
@@ -100,7 +101,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const selectedMockupSubmodule = selectedMockupModule?.subs?.find(s => s.id === selectedMockupSubmoduleId) || null;
   const learning = useLessonProgress(pwaConfig,modules,currentProjectId,true);
   const isCurrentLessonCompleted = selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null && learning.completed(selectedMockupModuleId,selectedMockupSubmoduleId);
-  const mockProgressPercentage = selectedMockupModule ? learning.moduleProgress(selectedMockupModule).percent : 0;
   const learningScope = `${pwaConfig.productId || ''}:${currentProjectId}`;
   const previousLearningScope = useRef(learningScope);
   useEffect(()=>{
@@ -251,7 +251,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         .no-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
       `}</style>
 
-      <div lang={pwaLanguage} className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily || 'inherit', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
+      <div lang={pwaLanguage} className={`phone-mockup ${isPhoneDark ? '' : 'light'}`} style={{ '--dynamic-theme': themeColor, fontFamily: pwaConfig.fontFamily ? `${pwaConfig.fontFamily}, Arial, sans-serif` : 'Arial, sans-serif', opacity: isTransitioning ? 0 : 1, transition: 'all 0.4s ease' } as any}>
         
         {/* Hardware UI Elements */}
         <div className="phone-hw-buttons">
@@ -547,7 +547,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         </div>
 
         <div className="phone-body" style={{
-          fontFamily: pwaConfig.fontFamily || 'inherit',
+          fontFamily: pwaConfig.fontFamily ? `${pwaConfig.fontFamily}, Arial, sans-serif` : 'Arial, sans-serif',
           display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative'
         }}>
           <AnimatePresence mode="wait">
@@ -726,7 +726,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
               <motion.div key="inicio" initial={{ x: '-30%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '-30%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className="absolute inset-0 flex flex-col">
                 <AnimatePresence mode="wait" initial={false}>
                   {selectedMockupModule ? (
-                    <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmodule ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`} style={{ padding: selectedMockupSubmodule ? '0' : '20px 20px 80px 20px' }}>
+                    <motion.div key={`mod-${selectedMockupModule.id}`} initial={{ x: '100%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '100%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className={`absolute inset-0 flex flex-col ${selectedMockupSubmodule ? 'overflow-hidden' : 'overflow-y-auto no-scrollbar'}`} style={{ padding: selectedMockupSubmodule ? '0' : '20px 20px 24px 20px' }}>
                       <div style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
@@ -813,68 +813,30 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                         </motion.div>
                       ) : (
                         <>
-                          <div style={{ fontWeight: 700, fontSize: '18px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '4px', flexShrink: 0 }}>{selectedMockupModule.name}</div>
-                          <div style={{ fontSize: '12px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '16px', flexShrink: 0 }}>{selectedMockupModule.subs?.length || 0} {selectedMockupModule.subs?.length === 1 ? t('app.modules.lessonSingle') : t('app.modules.lessonPlural')}</div>
-
-                          {/* Progress Bar Refinement */}
-                          <p style={{fontSize:13,margin:'0 0 12px',color:isPhoneDark?'#d1d5db':'#4b5563'}}>{t('app.learning.progress',{completed:learning.moduleProgress(selectedMockupModule).completed,total:learning.moduleProgress(selectedMockupModule).total})}</p>
-                          {gamification.enabled && gamification.progressStyle !== 'none' && (() => {
-                            return (
-                              <div style={{ marginBottom: '16px', flexShrink: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: 700, color: themeColor }}>
-                                    {mockProgressPercentage}% {t('app.modules.completed')}
-                                  </span>
-                                </div>
-                                <div style={{ 
-                                  width: '100%', 
-                                  height: '6px', 
-                                  background: isPhoneDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', 
-                                  borderRadius: '99px',
-                                  overflow: 'hidden'
-                                }}>
-                                  <motion.div 
-                                    initial={false}
-                                    animate={{ width: `${mockProgressPercentage}%` }}
-                                    transition={{ duration: 0.5, ease: "easeOut" }}
-                                    style={{ 
-                                      height: '100%', 
-                                      background: themeColor,
-                                      borderRadius: '99px'
-                                    }} 
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })()}
-
+                          <div className="cx-module-heading" style={learningColors(isPhoneDark)}>
+                            <h2>{selectedMockupModule.name}</h2>
+                            <LearningProgress progress={learning.moduleProgress(selectedMockupModule)} t={t} themeColor={themeColor} showBar={gamification.enabled && gamification.progressStyle !== 'none'} />
+                          </div>
                           {(selectedMockupModule.subs?.length || 0) === 0 ? (
                             <EmptyState icon={PackageOpen} text={t('app.modules.noLessons')} />
                           ) : (
-                            <div className={selectedMockupModule.subs.length === 1 ? 'grid grid-cols-1 w-[66%] mx-auto gap-4' : selectedMockupModule.subs.length === 2 ? 'grid grid-cols-2 gap-4' : 'grid grid-cols-3 gap-3'}>
-                              {selectedMockupModule.subs.map((sub, index) => (
-                                <div key={sub.id} onClick={() => setSelectedMockupSubmoduleId(sub.id)} style={{ display: 'flex', flexDirection: 'column', gap: '6px', cursor: 'pointer' }}>
-                                  {sub.coverImageUrl ? <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', backgroundImage: `url(${sub.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)', boxShadow: isPhoneDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }} /> : <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '16px', background: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '22px', fontWeight: 700, border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)', boxShadow: isPhoneDark ? 'none' : '0 2px 8px rgba(0,0,0,0.04)' }}>{index + 1}</div>}
-                                  <div style={{ width: '100%', paddingLeft: '4px' }}>{learning.completed(selectedMockupModule.id,sub.id) && <span style={{display:'block',fontSize:12,color:themeColor,fontWeight:700,marginBottom:4}}>✓ {t('app.modules.completed_status')}</span>}<div style={{ fontSize: '12px', fontWeight: 600, color: isPhoneDark ? '#ffffff' : '#111111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.name}</div></div>
-                                </div>
-                              ))}
-                            </div>
+                            <CustomerLessonList module={selectedMockupModule} completed={learning.completed} onOpen={setSelectedMockupSubmoduleId} t={t} themeColor={themeColor} dark={isPhoneDark} />
                           )}
                         </>
                       )}
                     </motion.div>
                   ) : (
-                    <motion.div key="home" initial={{ x: '-30%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '-30%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '20px 20px 80px 20px' }}>
+                    <motion.div key="home" initial={{ x: '-30%', opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: '-30%', opacity: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }} className="absolute inset-0 flex flex-col overflow-y-auto no-scrollbar" style={{ padding: '20px 20px 24px 20px' }}>
 
                       {activeTab === 'inicio' && (() => {
                         const banners = (pwaConfig.banners || []).filter(b => b.imageUrl);
-                        if (banners.length === 0) return <div className="phone-hero" style={{ minHeight: '80px', flexShrink: 0, marginBottom: '16px' }}></div>;
+                        if (banners.length === 0) return null;
 
                         const safeIndex = carouselIndex % banners.length;
                         const currentBanner = banners[safeIndex];
 
                         return (
-                          <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 1', overflow: 'hidden', flexShrink: 0, borderRadius: '12px', marginBottom: '16px', boxShadow: isPhoneDark ? 'none' : '0 4px 12px rgba(0,0,0,0.06)' }}>
+                          <div className="cx-home-banner" style={{ position: 'relative', width: '100%', aspectRatio: '3 / 1', overflow: 'hidden', flexShrink: 0, borderRadius: '12px', marginBottom: '16px', boxShadow: isPhoneDark ? 'none' : '0 4px 12px rgba(0,0,0,0.06)' }}>
                             <AnimatePresence mode="wait">
                               <motion.div
                                 key={`${currentBanner.id}-${safeIndex}`}
@@ -908,101 +870,20 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                         );
                       })()}
 
-                      <ContinueLearning location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');setSelectedMockupModuleId(location.moduleId);setSelectedMockupSubmoduleId(location.lessonId);}} />
+                      <ContinueLearning title={t('app.learning.resumeTitle')} location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');setSelectedMockupModuleId(location.moduleId);setSelectedMockupSubmoduleId(location.lessonId);}} />
 
                       <div className="phone-modules-header" style={{ flexShrink: 0 }}>
-                        <div className="text-lg font-semibold" style={{ color: isPhoneDark ? '#FFFFFF' : '#111111' }}>{t('app.modules.title')}</div>
+                        <h2 className="cx-home-heading" style={{ color: isPhoneDark ? '#FFFFFF' : '#1f2937' }}>{t('app.modules.title')}</h2>
                       </div>
 
                       {modules.length === 0 ? (
                         <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState')} />
                       ) : (
-                        <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
-                          {modules.map((mod, idx) => {
-                            const isLocked = mod.releaseType === 'locked' || mod.releaseType === 'upsell';
-                            const isByPoints = mod.releaseType === 'points';
-                            const progress = learning.moduleProgress(mod).percent;
-                            
-                            return (
-                              <div
-                                key={mod.id}
-                                className="phone-module-wrapper"
-                                onClick={() => {
-                                  if (mod.status === 'Rascunho') return;
-                                  if (isLocked || isByPoints) {
-                                    setLockedModuleClick(mod);
-                                  } else {
-                                    setSelectedMockupModuleId(mod.id);
-                                  }
-                                }}
-                                style={{ cursor: mod.status !== 'Rascunho' ? 'pointer' : 'default', display: 'flex', flexDirection: 'column', height: 'auto' }}
-                              >
-                                <div style={{
-                                  position: 'relative', width: '100%', aspectRatio: '1/1',
-                                  borderRadius: '16px', backgroundColor: isPhoneDark ? '#1f2937' : '#ffffff',
-                                  boxShadow: isPhoneDark ? '0 4px 0 rgba(255,255,255,0.06)' : '0 4px 12px rgba(0,0,0,0.06)',
-                                  border: isPhoneDark ? 'none' : '1px solid #f3f4f6',
-                                  marginBottom: '6px', flexShrink: 0,
-                                  overflow: 'hidden'
-                                }}>
-                                  <div style={{ position: 'absolute', inset: 0, background: mod.coverImageUrl ? `url(${mod.coverImageUrl}) center/cover no-repeat` : 'var(--p-card-empty)', borderRadius: '16px', overflow: 'hidden' }}>
-                                    {!mod.coverImageUrl && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--p-card-icon)', opacity: mod.status === 'Rascunho' ? 0.4 : 1 }}><RenderDynamicIcon name={mod.iconName} size={48} /></div>}
-                                    {(isLocked || isByPoints) && (
-                                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-                                          <Lock size={20} color="#111111" />
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Ring Progress Badge */}
-                                  {gamification.enabled && gamification.progressStyle === 'ring' && (
-                                    <div style={{ 
-                                      position: 'absolute', top: '8px', left: '8px', 
-                                      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', 
-                                      color: 'white', padding: '4px 8px', borderRadius: '8px', 
-                                      fontSize: '10px', fontWeight: 800, zIndex: 2 
-                                    }}>
-                                      {progress}%
-                                    </div>
-                                  )}
-
-
-                          {/* Progress Bar */}
-                                  {gamification.enabled && gamification.progressStyle === 'bar' && (
-                                    <div style={{ 
-                                      position: 'absolute', bottom: 0, left: 0, right: 0, 
-                                      height: '4px', background: isPhoneDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', 
-                                      zIndex: 3 
-                                    }}>
-                                      <div style={{ 
-                                        height: '100%', width: `${progress}%`, 
-                                        background: themeColor, transition: 'width 0.6s ease' 
-                                      }} />
-                                    </div>
-                                  )}
-
-                                  {mod.status === 'Rascunho' && (<div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1, borderRadius: '16px' }} />)}
-                                  {isByPoints && (
-                                    <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 800, zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                      <Lock size={12} /> {mod.requiredPoints || 0} pts
-                                    </div>
-                                  )}
-                                  {!isLocked && !isByPoints && (
-                                    <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, zIndex: 2 }}>
-                                      {mod.subs?.length || 0} {t('app.modules.lessonPlural')}
-                                    </div>
-                                  )}
-                                </div>
-                                <div style={{ opacity: mod.status === 'Rascunho' ? 0.6 : 1, color: isPhoneDark ? '#ffffff' : '#111111', fontSize: '13px', fontWeight: 600, paddingLeft: '2px', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                  {mod.name}
-                                </div>
-                                <p style={{fontSize:12,margin:'6px 0 0',color:isPhoneDark?'#d1d5db':'#4b5563'}}>{t('app.learning.progress',{completed:learning.moduleProgress(mod).completed,total:learning.moduleProgress(mod).total})}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <CustomerModuleCards modules={modules} moduleProgress={learning.moduleProgress} list={viewMode === 'list'} t={t} themeColor={themeColor} dark={isPhoneDark} onOpen={mod => {
+                          if (mod.status === 'Rascunho') return;
+                          if (mod.releaseType === 'locked' || mod.releaseType === 'upsell' || mod.releaseType === 'points') setLockedModuleClick(mod);
+                          else setSelectedMockupModuleId(mod.id);
+                        }} />
                       )}
                     </motion.div>
                   )}
@@ -1012,43 +893,19 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
           </AnimatePresence>
         </div>
 
-        <div className="phone-bottom-nav">
-          <div className={`phone-nav-item ${activeTab === 'inicio' ? 'active' : ''}`} onClick={() => { setActiveTab('inicio'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Home size={20} /><span>{t('nav.home')}</span></div>
-          {engagementEnabled && <>
-          <div className={`phone-nav-item ${activeTab === 'conteudo' ? 'active' : ''}`} onClick={() => { setActiveTab('conteudo'); setSelectedMockupModuleId(null); setSelectedMockupSubmoduleId(null); }}><Rss size={20} /><span>{t('nav.content')}</span></div>
-          <div 
-            className={`phone-nav-item ${activeTab === 'comunidade' ? 'active' : ''}`} 
-            onClick={() => { 
-              setActiveTab('comunidade'); 
-              localStorage.setItem('last_viewed_announcement', String(Date.now()));
-              setHasNewAnnouncement(false);
-            }}
-          >
-            <div style={{ position: 'relative', display: 'inline-flex' }}>
-              <Users size={20} />
-              {hasNewAnnouncement && (
-                <span 
-                  style={{ 
-                    position: 'absolute', 
-                    top: '-2px', 
-                    right: '-2px', 
-                    width: '8px', 
-                    height: '8px', 
-                    backgroundColor: '#ef4444', 
-                    borderRadius: '50%', 
-                    border: isPhoneDark ? '1px solid #1a1a24' : '1px solid #ffffff' 
-                  }} 
-                />
-              )}
-            </div>
-            <span>{t('nav.community')}</span>
-          </div>
-          </>}
-          <div className={`phone-nav-item ${activeTab === 'perfil' ? 'active' : ''}`} onClick={() => setActiveTab('perfil')}><User size={20} /><span>{t('nav.profile')}</span></div>
-          {pwaConfig.supportConfig?.type !== 'none' && (
-            <div className={`phone-nav-item ${activeTab === 'suporte' ? 'active' : ''}`} onClick={() => setActiveTab('suporte')}><Headset size={20} /><span>{t('nav.support')}</span></div>
-          )}
-        </div>
+        <CustomerBottomNavigation items={[
+          {id:'inicio',icon:Home,label:t('nav.home')},
+          ...(engagementEnabled ? [{id:'conteudo',icon:Rss,label:t('nav.content')},{id:'comunidade',icon:Users,label:t('nav.community')}] : []),
+          {id:'perfil',icon:User,label:t('nav.profile')},
+          ...(pwaConfig.supportConfig?.type && pwaConfig.supportConfig.type !== 'none' ? [{id:'suporte',icon:Headset,label:t('nav.support')}] : [])
+        ]} activeTab={activeTab} dark={isPhoneDark} hasAnnouncement={hasNewAnnouncement} label={t('app.learning.navigation')} onSelect={id => {
+          setActiveTab(id);
+          if (['inicio','conteudo'].includes(id)) {setSelectedMockupModuleId(null);setSelectedMockupSubmoduleId(null);}
+          if (id === 'comunidade') {
+            localStorage.setItem('last_viewed_announcement', String(Date.now()));
+            setHasNewAnnouncement(false);
+          }
+        }} />
       </div>
     </div>
   );

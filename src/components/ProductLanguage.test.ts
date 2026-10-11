@@ -50,7 +50,7 @@ test('English runtime stays in English while the Builder is Portuguese, includin
  await act(async()=>button('Community').click());await settle();assert.match(document.body.textContent || '',/Just now/);noPortuguese();
  await act(async()=>button('Profile').click());await settle();assert.equal(document.querySelector('input[type="text"]')?.getAttribute('placeholder'),'Full Name');noPortuguese();
  await act(async()=>button('Home').click());await settle();await act(async()=>document.querySelector<HTMLElement>('.phone-module-wrapper')!.click());await settle();
- await act(async()=>[...document.querySelectorAll<HTMLElement>('div')].find(el=>el.textContent==='First lesson' && el.style.fontSize==='12px')!.parentElement!.parentElement!.click());
+ await act(async()=>document.querySelector<HTMLButtonElement>('.cx-lesson-card')!.click());
  await settle();assert.ok(button('Mark as complete'));assert.equal(document.querySelector('iframe')?.title,'Lesson content');noPortuguese();
  await act(async()=>button('Mark as complete').click());assert.match(document.body.textContent || '',/Completed/);noPortuguese();
  await act(async()=>root.unmount());

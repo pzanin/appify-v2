@@ -79,9 +79,11 @@
       "myCollection": "My Collection"
     },
     "learning": {
-      "continue": "Continue learning",
-      "review": "Review your last lesson",
-      "progress": "{{completed}} of {{total}} lessons completed"
+      "continue": "Continue",
+      "review": "Review lesson",
+      "progress": "{{completed}} of {{total}} lessons completed",
+      "resumeTitle": "Pick up where you left off",
+      "navigation": "Main navigation"
     },
     "media": {
       "video": "Video",

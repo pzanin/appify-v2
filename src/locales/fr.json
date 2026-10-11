@@ -79,9 +79,11 @@
       "myCollection": "Ma Collection"
     },
     "learning": {
-      "continue": "Reprendre là où je me suis arrêté",
-      "review": "Revoir la dernière leçon",
-      "progress": "{{completed}} leçons terminées sur {{total}}"
+      "continue": "Continuer",
+      "review": "Revoir la leçon",
+      "progress": "{{completed}} leçons terminées sur {{total}}",
+      "resumeTitle": "Reprenez là où vous en étiez",
+      "navigation": "Navigation principale"
     },
     "media": {
       "video": "Vidéo",
