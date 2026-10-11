@@ -28,6 +28,8 @@ No project schema, progress storage, buyer validation, Supabase integration, edi
 
 Results: TypeScript passed; 94 tests passed; desktop/PWA builds and all credential scans passed; dependency audit reported zero vulnerabilities. Headless Chromium checks passed in 24 scenarios (320/390/430px, four languages, light/dark): navigation targets were at least 44px, labels did not overflow, all four lesson titles were readable, and the last lesson remained above navigation. Screenshots of Home and lesson lists were inspected. Missing external fonts use a sans-serif fallback.
 
+Development follow-up: restrict dependency discovery to `index.html`, and prebundle the React development JSX and `motion/react` entry points. This excludes generated PWA/backup bundles from the dev scanner. A regression test runs the actual optimizer with intentionally invalid imports in generated/backup HTML. The updated suite has 95 passing tests; browser development smoke checks open the dashboard and a project without React runtime errors. If an old dev cache remains on a machine, stop the server and restart with `npm run dev -- --force`.
+
 Before accepting the visual direction, review a real product with and without banners, long module/lesson titles, 1 and 4+ lessons, light/dark themes, and a locked offer on a phone. Native iOS/Windows acceptance remains a device check.
 
 ## Rollback

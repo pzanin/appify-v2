@@ -38,13 +38,18 @@ export default defineConfig({
   },
 
   optimizeDeps: {
+    // Only scan the editor entry. Generated PWAs and local backup HTML contain
+    // their own bundled React and optional imports; they are not dev entries.
+    entries: ['index.html'],
     include: [
       'react',
       'react-dom',
       'react/jsx-runtime',
+      'react/jsx-dev-runtime',
       'jszip',
       'lucide-react',
       'motion',
+      'motion/react',
     ],
   },
 
