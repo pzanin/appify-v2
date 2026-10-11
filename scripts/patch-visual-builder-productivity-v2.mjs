@@ -77,18 +77,19 @@ builder = replaceOnce(
   'safe HTML block editor'
 );
 
-builder = replaceOnce(
-  builder,
-  `                        fontFamily: '\${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: \`\${mod.props.fontSize}px\`,
-                        lineHeight: 1.6, marginTop:\`\${mod.props.marginTop || 0}px\`, marginBottom:\`\${mod.props.marginBottom || 0}px\`
-                      }}`,
-  `                        fontFamily: '\${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: \`\${mod.props.fontSize}px\`,
-                        lineHeight: 1.6, marginTop:\`\${mod.props.marginTop || 0}px\`, marginBottom:\`\${mod.props.marginBottom || 0}px\`,
-                        border: \`\${mod.props.borderWidth || 0}px solid \${mod.props.borderColor || '#e5e7eb'}\`,
-                        borderRadius: \`\${mod.props.borderRadius || 0}px\`
-                      }}`,
-  'preview block border'
-);
+const previewBefore = [
+  "                        fontFamily: `'${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: `${mod.props.fontSize}px`,",
+  "                        lineHeight: 1.6, marginTop:`${mod.props.marginTop || 0}px`, marginBottom:`${mod.props.marginBottom || 0}px`",
+  "                      }}"
+].join('\n');
+const previewAfter = [
+  "                        fontFamily: `'${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: `${mod.props.fontSize}px`,",
+  "                        lineHeight: 1.6, marginTop:`${mod.props.marginTop || 0}px`, marginBottom:`${mod.props.marginBottom || 0}px`,",
+  "                        border: `${mod.props.borderWidth || 0}px solid ${mod.props.borderColor || '#e5e7eb'}`,",
+  "                        borderRadius: `${mod.props.borderRadius || 0}px`",
+  "                      }}"
+].join('\n');
+builder = replaceOnce(builder, previewBefore, previewAfter, 'preview block border');
 
 builder = replaceOnce(
   builder,
@@ -225,5 +226,6 @@ runtime = replaceOnce(
   'completed status button'
 );
 
-for (const [key, path] of Object.entries(files)) fs.writeFileSync(path, { builder, html, types, progress, runtime }[key]);
+const updated = { builder, html, types, progress, runtime };
+for (const [key, path] of Object.entries(files)) fs.writeFileSync(path, updated[key]);
 console.log('Visual Builder productivity v2 patch complete.');
