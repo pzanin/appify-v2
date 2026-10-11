@@ -30,6 +30,17 @@ export function useLessonProgress(config:PwaConfig,modules:Module[],projectId:nu
       const id=lessonKey(moduleId,lessonId);
       if(!latest.current.value.completed.includes(id))return false;
       save({...latest.current.value,completed:latest.current.value.completed.filter(item=>item!==id)});return true;
+    },
+    toggle:(moduleId:number,lessonId:number,allowComplete=true):'completed'|'uncompleted'|'blocked'=>{
+      const id=lessonKey(moduleId,lessonId);
+      const value=latest.current.value;
+      if(value.completed.includes(id)) {
+        save({...value,completed:value.completed.filter(item=>item!==id)});
+        return 'uncompleted';
+      }
+      if(!allowComplete) return 'blocked';
+      save({...value,completed:[...value.completed,id]});
+      return 'completed';
     }
   };
 }

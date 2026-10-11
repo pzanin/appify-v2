@@ -174,17 +174,17 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
 
   const handleSimulateCompletion = () => {
-    if (isCurrentLessonCompleted && selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null) {
-      learning.uncomplete(selectedMockupModuleId,selectedMockupSubmoduleId);
+    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
+    const result = learning.toggle(selectedMockupModuleId, selectedMockupSubmoduleId, canCompleteLesson);
+    if (result === 'uncompleted') {
       setCanCompleteLesson(true);
       return;
     }
-    if (canCompleteLesson && selectedMockupModuleId !== null && selectedMockupSubmoduleId !== null && learning.complete(selectedMockupModuleId,selectedMockupSubmoduleId)) {
-      void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
-      if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
-        setIsCelebrating(true);
-        setTimeout(() => setIsCelebrating(false), 3500);
-      }
+    if (result !== 'completed') return;
+    void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
+    if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
+      setIsCelebrating(true);
+      setTimeout(() => setIsCelebrating(false), 3500);
     }
   };
 
