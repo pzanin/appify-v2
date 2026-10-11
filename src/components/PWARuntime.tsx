@@ -173,19 +173,20 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   }
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
 
-  const handleSimulateCompletion = () => {
-    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
-    const result = learning.toggle(selectedMockupModuleId, selectedMockupSubmoduleId, canCompleteLesson);
-    if (result === 'uncompleted') {
-      setCanCompleteLesson(true);
-      return;
-    }
-    if (result !== 'completed') return;
+  const markCurrentLessonComplete = () => {
+    if (!canCompleteLesson || selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
+    if (!learning.complete(selectedMockupModuleId, selectedMockupSubmoduleId)) return;
     void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
     if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
       setIsCelebrating(true);
       setTimeout(() => setIsCelebrating(false), 3500);
     }
+  };
+
+  const markCurrentLessonIncomplete = () => {
+    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
+    learning.uncomplete(selectedMockupModuleId, selectedMockupSubmoduleId);
+    setCanCompleteLesson(true);
   };
 
 
@@ -388,12 +389,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                     <Clock size={14} /><span>{lessonCompletionTimer}s</span>
                   </div>
                 ) : (
-                  <button type="button" aria-pressed={false} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleSimulateCompletion(); }} style={{ display:'flex', alignItems:'center', gap:6, minHeight:36, padding:'8px 12px', borderRadius:999, border:'none', cursor:'pointer', pointerEvents:'auto', color:themeColor, background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
+                  <button type="button" aria-pressed={false} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonComplete(); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonComplete(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); markCurrentLessonComplete(); } }} style={{ display:'flex', alignItems:'center', gap:6, minHeight:40, padding:'9px 14px', borderRadius:999, border:'none', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:themeColor, background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
                     <CheckCircle size={18} /><span>{t('app.modules.complete')}</span>
                   </button>
                 )
               ) : (
-                <button type="button" aria-pressed={true} aria-label={t('app.modules.completed_status')} title="Marcar como não concluída" onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleSimulateCompletion(); }} style={{ display:'flex', alignItems:'center', gap:7, minHeight:36, padding:'8px 12px', borderRadius:999, border:'1px solid rgba(34,197,94,.35)', cursor:'pointer', pointerEvents:'auto', color:'#15803d', background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
+                <button type="button" aria-pressed={true} aria-label={t('app.modules.completed_status')} title="Marcar como não concluída" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonIncomplete(); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonIncomplete(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); markCurrentLessonIncomplete(); } }} style={{ display:'flex', alignItems:'center', gap:7, minHeight:40, padding:'9px 14px', borderRadius:999, border:'1px solid rgba(34,197,94,.35)', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:'#15803d', background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
                   <span style={{ background:'#22c55e', borderRadius:'50%', width:18, height:18, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}><Check size={12} strokeWidth={4}/></span>
                   <span>{t('app.modules.completed_status')}</span>
                 </button>
