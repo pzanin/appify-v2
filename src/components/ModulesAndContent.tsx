@@ -142,16 +142,35 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
   const applyRichTextCommand = (command: 'bold' | 'italic' | 'underline' | 'foreColor', value?: string) => {
     const editor = richTextEditorRef.current;
-    const range = richTextSelectionRef.current;
-    if (!editor || !range) return;
-    editor.focus();
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-    document.execCommand('styleWithCSS', false, 'true');
-    document.execCommand(command, false, value);
-    rememberRichTextSelection();
-    syncRichTextEditor();
+    const savedRange = richTextSelectionRef.current;
+    if (!editor || !savedRange || savedRange.collapsed || !editor.contains(savedRange.commonAncestorContainer)) return;
+
+    const range = savedRange.cloneRange();
+    const wrapper = command === 'bold'
+      ? document.createElement('strong')
+      : command === 'italic'
+        ? document.createElement('em')
+        : command === 'underline'
+          ? document.createElement('u')
+          : document.createElement('span');
+    if (command === 'foreColor') {
+      const color = value && /^#[0-9a-f]{6}$/i.test(value) ? value : '#333333';
+      wrapper.style.color = color;
+    }
+
+    try {
+      wrapper.appendChild(range.extractContents());
+      range.insertNode(wrapper);
+      const selection = window.getSelection();
+      const nextRange = document.createRange();
+      nextRange.selectNodeContents(wrapper);
+      selection?.removeAllRanges();
+      selection?.addRange(nextRange);
+      richTextSelectionRef.current = nextRange.cloneRange();
+      syncRichTextEditor();
+    } catch {
+      richTextSelectionRef.current = null;
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, propKey: any) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { updateProp(propKey, ev.target?.result); }; reader.readAsDataURL(file); };
@@ -446,10 +465,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                           <input type="color" aria-label="Cor do texto selecionado" defaultValue="#333333" onMouseDown={rememberRichTextSelection} onChange={e => applyRichTextCommand('foreColor', e.target.value)} />
                         </label>
                       </div>
+                      <style>{`.appify-rich-editor p{margin:0;line-height:inherit}.appify-rich-editor p+p{margin-top:${Number(selectedBlock.props.paragraphSpacing ?? 12)}px}`}</style>
                       <div
                         key={selectedBlock.id}
                         ref={richTextEditorRef}
-                        className="vpb-textarea"
+                        className="vpb-textarea appify-rich-editor"
                         contentEditable
                         suppressContentEditableWarning
                         role="textbox"
@@ -457,10 +477,21 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         onMouseUp={rememberRichTextSelection}
                         onKeyUp={rememberRichTextSelection}
                         onBlur={syncRichTextEditor}
-                        style={{ minHeight: '120px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                        onInput={syncRichTextEditor}
+                        style={{ minHeight: '120px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', lineHeight: Number(selectedBlock.props.lineHeight ?? 1.6) }}
                         dangerouslySetInnerHTML={{ __html: selectedBlock.props.richContent?.trim() ? sanitizeRichTextHtml(selectedBlock.props.richContent) : plainTextToRichHtml(selectedBlock.props.content || '') }}
                       />
-                      <p className="vpb-html-help">Selecione uma palavra ou trecho no campo acima e aplique negrito, itálico, sublinhado ou cor. A formatação é sanitizada antes de salvar.</p>
+                      <label className="vpb-label" htmlFor="text-line-height">Altura entre linhas</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input id="text-line-height" type="range" min="1" max="3" step="0.1" style={{ flex: 1, accentColor: 'var(--accent)' }} value={selectedBlock.props.lineHeight ?? 1.6} onChange={e => updateProp('lineHeight', e.target.value)} />
+                        <input type="number" className="vpb-input" style={{ width: '72px', marginBottom: 0 }} min="1" max="3" step="0.1" value={selectedBlock.props.lineHeight ?? 1.6} onChange={e => updateProp('lineHeight', e.target.value)} />
+                      </div>
+                      <label className="vpb-label" htmlFor="text-paragraph-spacing" style={{ marginTop: '12px' }}>Espaço entre parágrafos (px)</label>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input id="text-paragraph-spacing" type="range" min="0" max="64" step="1" style={{ flex: 1, accentColor: 'var(--accent)' }} value={selectedBlock.props.paragraphSpacing ?? 12} onChange={e => updateProp('paragraphSpacing', e.target.value)} />
+                        <input type="number" className="vpb-input" style={{ width: '72px', marginBottom: 0 }} min="0" max="64" step="1" value={selectedBlock.props.paragraphSpacing ?? 12} onChange={e => updateProp('paragraphSpacing', e.target.value)} />
+                      </div>
+                      <p className="vpb-html-help">Selecione uma palavra ou trecho no campo acima e aplique negrito, itálico, sublinhado ou cor. Enter cria um novo parágrafo; o espaço entre parágrafos e a altura entre linhas podem ser ajustados separadamente.</p>
                     </>
                   )}
 

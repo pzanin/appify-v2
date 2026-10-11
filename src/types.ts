@@ -115,6 +115,7 @@ export interface BuilderBlock {
     fontWeight?: number | string;
     fontStyle?: string;
     lineHeight?: number | string;
+    paragraphSpacing?: number | string;
     letterSpacing?: number | string;
     marginTop?: number | string;
     marginBottom?: number | string;

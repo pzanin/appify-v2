@@ -7,19 +7,26 @@ export function escapeRichText(value: unknown): string {
 }
 
 export function plainTextToRichHtml(value: unknown): string {
-  return escapeRichText(value).replace(/\r?\n/g, '<br>');
+  const lines = String(value ?? '').replace(/\r\n/g, '\n').split('\n');
+  return lines.map(line => `<p>${escapeRichText(line) || '<br>'}</p>`).join('');
 }
 
 export function sanitizeRichTextHtml(source: string): string {
   const purifier = typeof DOMPurify.sanitize === 'function' ? DOMPurify : DOMPurify(window);
   const clean = purifier.sanitize(source || '', {
-    ALLOWED_TAGS: ['strong', 'b', 'em', 'i', 'u', 'span', 'br'],
+    ALLOWED_TAGS: ['strong', 'b', 'em', 'i', 'u', 'span', 'br', 'p', 'div'],
     ALLOWED_ATTR: ['style'],
   });
 
   const doc = new DOMParser().parseFromString(`<div>${clean}</div>`, 'text/html');
   const root = doc.body.firstElementChild as HTMLElement | null;
   if (!root) return '';
+
+  root.querySelectorAll<HTMLElement>('div').forEach(element => {
+    const paragraph = doc.createElement('p');
+    while (element.firstChild) paragraph.appendChild(element.firstChild);
+    element.replaceWith(paragraph);
+  });
 
   root.querySelectorAll<HTMLElement>('*').forEach(element => {
     if (element.tagName === 'SPAN') {
