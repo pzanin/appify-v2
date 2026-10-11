@@ -45,7 +45,7 @@ const baseDefaultProps = (type: string, subtype?: string) => {
           case 'oneColumn': return { ...base, title:'Título da seção', text:'Escreva o conteúdo desta seção.', columnBgColor:'#f3f4f6', columnPadding:'20', contentWidth:'100', titleFontFamily:'Syne', titleFontSize:'24', titleFontWeight:'700', titleMarginBottom:'12' };
           case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', columnRatio: '50-50' as const, reverseColumns: false, mobileOrder: 'normal' as const, mobileColumns: 'stack' as const, titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'threeColumn': return { ...base, gap: '14', bgColor: '#ffffff', padding: '20', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col1BgColor: '#f3f4f6', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col2BgColor: '#f3f4f6', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', col3BgColor: '#f3f4f6', cardBgColor: '#f3f4f6', cardPadding: '18', cardBorderWidth: '0', cardBorderColor: '#e5e7eb', cardShadow: 'soft' as const, titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
-          case 'imageText': return { ...base, gap: '24', bgColor: '#ffffff', padding: '24', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'imageText': return { ...base, gap: '24', bgColor: '#ffffff', padding: '24', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, imageObjectPosition: 'center' as const, imageTextRatio: '50-50' as const, imageTextMobileOrder: 'image-first' as const, imageTextTextBgColor: 'transparent', imageTextTextPadding: '0', imageTextTextRadius: '8', imageTextCardStyle: 'plain' as const, imageTextCardBgColor: '#ffffff', imageTextCardBorderColor: '#e5e7eb', imageTextCardShadow: 'soft' as const, titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'testimonial': return { ...base, bgColor: '#f9fafb', padding: '40', quote: '"Este é um depoimento incrível sobre nosso produto ou serviço."', author: 'Nome do Cliente', role: 'Cargo/Empresa', quoteColor: '#6b8af0', quoteSize: '18' };
           case 'cta': return { ...base, borderRadius: '6', bgColor: '#111118', padding: '48', align: 'center', title: 'Pronto para começar?', subtitle: 'Faça uma ação agora mesmo', titleColor: '#ffffff', subtitleColor: '#d1d5db', buttonText: 'Clique aqui', url: 'https://', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '36', titleFontWeight: '700', titleMarginBottom: '12' };
         }
@@ -64,7 +64,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
     fontSize: [10,72], lineHeight: [1,3], paragraphSpacing: [0,64], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
     maxWidth: [0,1600], contentWidth: [50,100], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], borderWidth: [0,12], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
     imgBorderRadius: [0,999], imageBorderRadius: [0,999], height: [0,200], thickness: [1,8],
-    columnPadding: [0,48], cardPadding: [0,48], cardBorderWidth: [0,12], cardAccentWidth: [0,16], quoteSize: [10,72],
+    columnPadding: [0,48], cardPadding: [0,48], imageTextTextPadding: [0,64], imageTextTextRadius: [0,200], cardBorderWidth: [0,12], cardAccentWidth: [0,16], quoteSize: [10,72],
   };
   const values = p as Record<string, unknown>;
   const defaults = getDefaultProps(block.type, block.subtype || undefined,language) as Record<string, unknown>;
@@ -80,7 +80,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   for (const key of ['fontFamily', 'titleFontFamily']) {
     if (values[key] && !GOOGLE_FONTS.includes(String(values[key]))) values[key] = 'DM Sans';
   }
-  for (const key of ['bgColor','color','titleColor','subtitleColor','buttonColor','buttonTextColor','dividerColor','cardBgColor','columnBgColor','col1BgColor','col2BgColor','col3BgColor','quoteColor','borderColor','cardBorderColor','cardAccentColor']) {
+  for (const key of ['bgColor','color','titleColor','subtitleColor','buttonColor','buttonTextColor','dividerColor','cardBgColor','columnBgColor','col1BgColor','col2BgColor','col3BgColor','imageTextTextBgColor','imageTextCardBgColor','imageTextCardBorderColor','quoteColor','borderColor','cardBorderColor','cardAccentColor']) {
     if (values[key] && !/^(#[a-f0-9]{3,8}|transparent)$/i.test(String(values[key]))) values[key] = defaults[key] || '#333333';
   }
   if (!['left','center','right','justify'].includes(p.align || '')) p.align = 'left';
@@ -90,6 +90,11 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   if (!['stack','keep'].includes(p.mobileColumns || 'stack')) p.mobileColumns = 'stack';
   if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
   if (!['center','top','bottom','left','right'].includes(p.imgObjectPosition || 'center')) p.imgObjectPosition = 'center';
+  if (!['center','top','bottom','left','right'].includes(p.imageObjectPosition || 'center')) p.imageObjectPosition = 'center';
+  if (!['50-50','40-60','60-40'].includes(p.imageTextRatio || '50-50')) p.imageTextRatio = '50-50';
+  if (!['image-first','text-first'].includes(p.imageTextMobileOrder || 'image-first')) p.imageTextMobileOrder = 'image-first';
+  if (!['plain','card'].includes(p.imageTextCardStyle || 'plain')) p.imageTextCardStyle = 'plain';
+  if (!['none','soft','medium','strong'].includes(p.imageTextCardShadow || 'soft')) p.imageTextCardShadow = 'soft';
   if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
   if (!['auto','full'].includes(p.buttonWidth || 'auto')) p.buttonWidth = 'auto';
   if (!['small','medium','large'].includes(p.buttonSize || 'medium')) p.buttonSize = 'medium';
@@ -139,7 +144,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
     const itImgW = p.imageWidth ? `width:${p.imageWidth}%;` : 'max-width:100%;';
     const itImgH = p.imageHeight && p.imageHeight !== 'auto' ? `height:${p.imageHeight}px;` : 'height:auto;';
     const itImgR = `border-radius:${p.imageBorderRadius ?? 8}px;`;
-    const itImgF = `object-fit:${p.imageObjectFit || 'cover'};`;
+    const itImgF = `object-fit:${p.imageObjectFit || 'cover'};object-position:${p.imageObjectPosition || 'center'};`;
 
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
@@ -233,9 +238,18 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
             return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="${cardStyle(p.col1BgColor || p.cardBgColor || '#f3f4f6')}"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col1Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col1Text)}</p></div><div style="${cardStyle(p.col2BgColor || p.cardBgColor || '#f3f4f6')}"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col2Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col2Text)}</p></div><div style="${cardStyle(p.col3BgColor || p.cardBgColor || '#f3f4f6')}"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col3Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col3Text)}</p></div></div>`;
           }
           case 'imageText': {
-            const imgHtml = p.imageSrc ? `<img class="appify-sized-image" src="${escapeHtml(p.imageSrc)}" alt="${escapeHtml(p.imageAlt)}" style="${itImgW}${itImgH}${itImgR}${itImgF}">` : `<div style="background:#e5e7eb;height:300px;border-radius:${p.borderRadius}px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">${escapeHtml(copy('Clique para adicionar imagem'))}</div>`;
+            const ratios: Record<string,string> = { '50-50':'1fr 1fr', '40-60':'2fr 3fr', '60-40':'3fr 2fr' };
+            const imgHtml = p.imageSrc ? `<img class="appify-sized-image" src="${escapeHtml(p.imageSrc)}" alt="${escapeHtml(p.imageAlt)}" style="${itImgW}${itImgH}${itImgR}${itImgF};display:block;max-width:100%;">` : `<div style="background:#e5e7eb;height:300px;border-radius:${p.imageBorderRadius || p.borderRadius}px;display:flex;align-items:center;justify-content:center;color:#9ca3af;">${escapeHtml(copy('Clique para adicionar imagem'))}</div>`;
             const titleH = `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>`;
-            return p.imagePosition === 'left' ? `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:center;"><div>${imgHtml}</div><div>${titleH}<p style="white-space:pre-wrap;margin:0;line-height:1.8;">${escapeHtml(p.text)}</p></div></div>` : `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${p.gap}px;align-items:center;"><div>${titleH}<p style="white-space:pre-wrap;margin:0;line-height:1.8;">${escapeHtml(p.text)}</p></div><div>${imgHtml}</div></div>`;
+            const textHtml = `<div style="background:${p.imageTextTextBgColor || 'transparent'};padding:${p.imageTextTextPadding || 0}px;border-radius:${p.imageTextTextRadius || 0}px;">${titleH}<p style="white-space:pre-wrap;margin:0;line-height:1.8;">${escapeHtml(p.text)}</p></div>`;
+            const imageFirst = p.imagePosition !== 'right';
+            const imageCell = `<div class="appify-image-text-image">${imgHtml}</div>`;
+            const textCell = `<div class="appify-image-text-copy">${textHtml}</div>`;
+            const children = imageFirst ? imageCell + textCell : textCell + imageCell;
+            const mobileClass = p.imageTextMobileOrder === 'text-first' ? ' appify-image-text-mobile-text-first' : ' appify-image-text-mobile-image-first';
+            const shadow = p.imageTextCardShadow === 'none' ? 'none' : p.imageTextCardShadow === 'medium' ? '0 8px 24px rgba(15,23,42,.14)' : p.imageTextCardShadow === 'strong' ? '0 14px 36px rgba(15,23,42,.20)' : '0 4px 14px rgba(15,23,42,.10)';
+            const cardStyle = p.imageTextCardStyle === 'card' ? `background:${p.imageTextCardBgColor || '#ffffff'};padding:${p.cardPadding || 20}px;border:1px solid ${p.imageTextCardBorderColor || '#e5e7eb'};border-radius:${p.borderRadius || 12}px;box-shadow:${shadow};` : '';
+            return `<div class="appify-builder-grid appify-image-text-grid${mobileClass}" style="display:grid;grid-template-columns:${ratios[p.imageTextRatio || '50-50'] || ratios['50-50']};gap:${p.gap}px;align-items:center;${cardStyle}">${children}</div>`;
           }
           case 'testimonial': return `<div style="padding-left:20px;border-left:4px solid ${p.quoteColor};"><p style="white-space:pre-wrap;font-size:${p.quoteSize}px;font-style:italic;margin:0 0 16px;line-height:1.8;color:${p.color};">${escapeHtml(p.quote)}</p><p style="white-space:pre-wrap;margin:0 0 4px;font-weight:700;color:${p.color};">${escapeHtml(p.author)}</p><p style="white-space:pre-wrap;margin:0;font-size:14px;color:#6b7280;">${escapeHtml(p.role)}</p></div>`;
           case 'cta': {

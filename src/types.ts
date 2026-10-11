@@ -210,6 +210,16 @@ export interface BuilderBlock {
     imageHeight?: string | number;
     imageBorderRadius?: string | number;
     imageObjectFit?: 'cover' | 'contain' | 'fill';
+    imageObjectPosition?: 'center' | 'top' | 'bottom' | 'left' | 'right';
+    imageTextRatio?: '50-50' | '40-60' | '60-40';
+    imageTextMobileOrder?: 'image-first' | 'text-first';
+    imageTextTextBgColor?: string;
+    imageTextTextPadding?: string | number;
+    imageTextTextRadius?: string | number;
+    imageTextCardStyle?: 'plain' | 'card';
+    imageTextCardBgColor?: string;
+    imageTextCardBorderColor?: string;
+    imageTextCardShadow?: 'none' | 'soft' | 'medium' | 'strong';
   };
 }
 

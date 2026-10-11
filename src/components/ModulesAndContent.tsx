@@ -919,7 +919,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'imageSrc')} />
                       {selectedBlock.props.imageSrc && (
                         <div style={{ marginBottom: '12px', borderRadius: String(selectedBlock.props.imageBorderRadius ?? 8) + 'px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                          <img src={selectedBlock.props.imageSrc as string} alt="preview" style={{ width: '100%', maxHeight: '100px', objectFit: (selectedBlock.props.imageObjectFit || 'cover') as any }} />
+                          <img src={selectedBlock.props.imageSrc as string} alt="preview" style={{ width: '100%', maxHeight: '100px', objectFit: (selectedBlock.props.imageObjectFit || 'cover') as any, objectPosition: (selectedBlock.props.imageObjectPosition || 'center') as any }} />
                         </div>
                       )}
                       <label className="vpb-label">Largura da Imagem ({selectedBlock.props.imageWidth ?? 100}%)</label>
@@ -949,11 +949,51 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <option value="left">Esquerda</option>
                         <option value="right">Direita</option>
                       </select>
+                      <label className="vpb-label">Proporção imagem / texto</label>
+                      <select className="vpb-input" value={selectedBlock.props.imageTextRatio || '50-50'} onChange={e => updateProp('imageTextRatio', e.target.value as BuilderBlock['props']['imageTextRatio'])}>
+                        <option value="50-50">50 / 50</option>
+                        <option value="40-60">40 / 60 — mais texto</option>
+                        <option value="60-40">60 / 40 — mais imagem</option>
+                      </select>
+                      <label className="vpb-label">Primeiro conteúdo no celular</label>
+                      <select className="vpb-input" value={selectedBlock.props.imageTextMobileOrder || 'image-first'} onChange={e => updateProp('imageTextMobileOrder', e.target.value as BuilderBlock['props']['imageTextMobileOrder'])}>
+                        <option value="image-first">Imagem primeiro</option>
+                        <option value="text-first">Texto primeiro</option>
+                      </select>
                       <div style={{ height: '1px', background: 'var(--border)', margin: '12px 0' }} />
                       <label className="vpb-label">Título</label>
                       <input className="vpb-input" value={selectedBlock.props.title || ''} onChange={e => updateProp('title', e.target.value)} />
                       <label className="vpb-label">Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.text || ''} onChange={e => updateProp('text', e.target.value)} />
+                      <div style={{ height: '1px', background: 'var(--border)', margin: '12px 0' }} />
+                      <label className="vpb-label">Fundo do painel de texto</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.imageTextTextBgColor === 'transparent' ? '#ffffff' : selectedBlock.props.imageTextTextBgColor || '#ffffff'} onChange={e => updateProp('imageTextTextBgColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.imageTextTextBgColor || 'transparent'} onChange={e => updateProp('imageTextTextBgColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Padding do painel de texto (px)</label>
+                      <input type="number" className="vpb-input" min="0" max="64" value={selectedBlock.props.imageTextTextPadding ?? 0} onChange={e => updateProp('imageTextTextPadding', e.target.value)} />
+                      <label className="vpb-label">Arredondamento do painel de texto (px)</label>
+                      <input type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props.imageTextTextRadius ?? 8} onChange={e => updateProp('imageTextTextRadius', e.target.value)} />
+                      <label className="vpb-label">Estilo do conjunto</label>
+                      <select className="vpb-input" value={selectedBlock.props.imageTextCardStyle || 'plain'} onChange={e => updateProp('imageTextCardStyle', e.target.value as BuilderBlock['props']['imageTextCardStyle'])}>
+                        <option value="plain">Simples</option>
+                        <option value="card">Card</option>
+                      </select>
+                      {selectedBlock.props.imageTextCardStyle === 'card' && <>
+                        <label className="vpb-label">Fundo do Card</label>
+                        <input type="color" className="vpb-color-input" value={selectedBlock.props.imageTextCardBgColor || '#ffffff'} onChange={e => updateProp('imageTextCardBgColor', e.target.value)} />
+                        <label className="vpb-label">Cor da borda do Card</label>
+                        <input type="color" className="vpb-color-input" value={selectedBlock.props.imageTextCardBorderColor || '#e5e7eb'} onChange={e => updateProp('imageTextCardBorderColor', e.target.value)} />
+                        <label className="vpb-label">Sombra do Card</label>
+                        <select className="vpb-input" value={selectedBlock.props.imageTextCardShadow || 'soft'} onChange={e => updateProp('imageTextCardShadow', e.target.value as BuilderBlock['props']['imageTextCardShadow'])}>
+                          <option value="none">Sem sombra</option>
+                          <option value="soft">Suave</option>
+                          <option value="medium">Média</option>
+                          <option value="strong">Forte</option>
+                        </select>
+                      </>}
+                      <p className="vpb-html-help">No celular, imagem e texto continuam empilhados. Você escolhe qual deles aparece primeiro.</p>
                     </>
                   )}
 
