@@ -264,8 +264,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         background: mod.props.bgColor, padding: `${mod.props.padding}px`, textAlign: mod.props.align as any,
                         fontFamily: `'${mod.props.fontFamily}', sans-serif`, color: mod.props.color, fontSize: `${mod.props.fontSize}px`,
                         lineHeight: 1.6, marginTop:`${mod.props.marginTop || 0}px`, marginBottom:`${mod.props.marginBottom || 0}px`,
-                        border: `${mod.props.borderWidth || 0}px solid ${mod.props.borderColor || '#e5e7eb'}`,
-                        borderRadius: `${mod.props.borderRadius || 0}px`
+                        border: `${mod.type === 'card' ? 0 : (mod.props.borderWidth || 0)}px solid ${mod.props.borderColor || '#e5e7eb'}`,
+                        borderRadius: `${mod.type === 'card' ? 0 : (mod.props.borderRadius || 0)}px`
                       }}
                       onClick={(e) => { e.stopPropagation(); setSelectedBlockId(mod.id); }}
                     >
@@ -510,6 +510,38 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input id="card-padding" type="number" className="vpb-input" min="0" max="48" step="1" value={selectedBlock.props.cardPadding ?? 20} onChange={e => { if (e.target.value !== '') updateProp('cardPadding', String(Math.min(48, Math.max(0, Number(e.target.value))))); }} />
                       <label className="vpb-label" htmlFor="card-radius">Bordas arredondadas (px)</label>
                       <input id="card-radius" type="number" className="vpb-input" min="0" max="200" step="1" value={selectedBlock.props.borderRadius ?? 12} onChange={e => { if (e.target.value !== '') updateProp('borderRadius', String(Math.min(200, Math.max(0, Number(e.target.value))))); }} />
+                      <label className="vpb-label" htmlFor="card-border-width">Borda do card (px)</label>
+                      <input id="card-border-width" type="number" className="vpb-input" min="0" max="12" step="1" value={selectedBlock.props.cardBorderWidth ?? 0} onChange={e => updateProp('cardBorderWidth', e.target.value)} />
+                      <label className="vpb-label" htmlFor="card-border-color">Cor da borda</label>
+                      <div className="vpb-color-row">
+                        <input id="card-border-color" type="color" className="vpb-color-picker" value={selectedBlock.props.cardBorderColor || '#e5e7eb'} onChange={e => updateProp('cardBorderColor', e.target.value)} />
+                        <input className="vpb-input" aria-label="Código da cor da borda do card" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBorderColor || '#e5e7eb'} onChange={e => updateProp('cardBorderColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label" htmlFor="card-shadow">Sombra</label>
+                      <select id="card-shadow" className="vpb-input" value={selectedBlock.props.cardShadow || 'soft'} onChange={e => updateProp('cardShadow', e.target.value as BuilderBlock['props']['cardShadow'])}>
+                        <option value="none">Sem sombra</option>
+                        <option value="soft">Suave</option>
+                        <option value="medium">Média</option>
+                        <option value="strong">Forte</option>
+                      </select>
+                      <label className="vpb-label" htmlFor="card-accent-side">Faixa de destaque</label>
+                      <select id="card-accent-side" className="vpb-input" value={selectedBlock.props.cardAccentSide || 'none'} onChange={e => updateProp('cardAccentSide', e.target.value as BuilderBlock['props']['cardAccentSide'])}>
+                        <option value="none">Sem destaque</option>
+                        <option value="left">Esquerda</option>
+                        <option value="right">Direita</option>
+                        <option value="top">Topo</option>
+                        <option value="bottom">Base</option>
+                      </select>
+                      {selectedBlock.props.cardAccentSide !== 'none' && <>
+                        <label className="vpb-label" htmlFor="card-accent-width">Espessura do destaque (px)</label>
+                        <input id="card-accent-width" type="number" className="vpb-input" min="1" max="16" step="1" value={selectedBlock.props.cardAccentWidth ?? 4} onChange={e => updateProp('cardAccentWidth', e.target.value)} />
+                        <label className="vpb-label" htmlFor="card-accent-color">Cor do destaque</label>
+                        <div className="vpb-color-row">
+                          <input id="card-accent-color" type="color" className="vpb-color-picker" value={selectedBlock.props.cardAccentColor || '#6b8af0'} onChange={e => updateProp('cardAccentColor', e.target.value)} />
+                          <input className="vpb-input" aria-label="Código da cor do destaque do card" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardAccentColor || '#6b8af0'} onChange={e => updateProp('cardAccentColor', e.target.value)} />
+                        </div>
+                      </>}
+                      <p className="vpb-html-help">Borda, sombra e faixa são aplicadas à caixa interna do Card/Destaque, não ao bloco externo.</p>
                     </>
                   )}
 
@@ -926,15 +958,17 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   <input type="range" min="0" max="120" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.padding ?? 20} onChange={e => updateProp('padding', e.target.value)} />
                       <input type="number" className="vpb-input" aria-label="Espaço interno do bloco em pixels" min="0" max="120" step="1" value={selectedBlock.props.padding ?? 20} onChange={e => { if (e.target.value !== '') updateProp('padding', String(Math.min(120, Math.max(0, Number(e.target.value))))); } } />
 
-                  <label className="vpb-label">Contorno do bloco (px)</label>
-                  <input type="number" className="vpb-input" min="0" max="12" value={selectedBlock.props.borderWidth ?? 0} onChange={e => updateProp('borderWidth', e.target.value)} />
-                  <label className="vpb-label">Cor do contorno</label>
-                  <div className="vpb-color-row">
-                    <input type="color" className="vpb-color-picker" value={selectedBlock.props.borderColor || '#e5e7eb'} onChange={e => updateProp('borderColor', e.target.value)} />
-                    <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.borderColor || '#e5e7eb'} onChange={e => updateProp('borderColor', e.target.value)} />
-                  </div>
-                  <label className="vpb-label">Arredondamento externo (px)</label>
-                  <input type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props.borderRadius ?? 0} onChange={e => updateProp('borderRadius', e.target.value)} />
+                  {selectedBlock.type !== 'card' && <>
+                    <label className="vpb-label">Contorno do bloco (px)</label>
+                    <input type="number" className="vpb-input" min="0" max="12" value={selectedBlock.props.borderWidth ?? 0} onChange={e => updateProp('borderWidth', e.target.value)} />
+                    <label className="vpb-label">Cor do contorno</label>
+                    <div className="vpb-color-row">
+                      <input type="color" className="vpb-color-picker" value={selectedBlock.props.borderColor || '#e5e7eb'} onChange={e => updateProp('borderColor', e.target.value)} />
+                      <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.borderColor || '#e5e7eb'} onChange={e => updateProp('borderColor', e.target.value)} />
+                    </div>
+                    <label className="vpb-label">Arredondamento externo (px)</label>
+                    <input type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props.borderRadius ?? 0} onChange={e => updateProp('borderRadius', e.target.value)} />
+                  </>}
 
                   <label className="vpb-label">Alinhamento</label>
                   <div style={{ display: 'flex', gap: '4px', background: 'var(--surface)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '12px' }}>

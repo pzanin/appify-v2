@@ -166,6 +166,12 @@ export interface BuilderBlock {
     col3Text?: string;
     cardBgColor?: string;
     cardPadding?: string | number;
+    cardBorderWidth?: string | number;
+    cardBorderColor?: string;
+    cardShadow?: 'none' | 'soft' | 'medium' | 'strong';
+    cardAccentSide?: 'none' | 'left' | 'right' | 'top' | 'bottom';
+    cardAccentColor?: string;
+    cardAccentWidth?: string | number;
     leftTitle?: string;
     leftText?: string;
     rightTitle?: string;

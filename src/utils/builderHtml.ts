@@ -29,7 +29,7 @@ const baseDefaultProps = (type: string, subtype?: string) => {
       case 'text': return { ...base, content: 'Digite seu texto aqui. Este é um parágrafo de exemplo que pode ser editado.', align: 'left' };
       case 'html': return { ...base, content: '<div style="padding:16px;background:#f8fafc;border-radius:12px;">Seu HTML seguro aqui</div>', align: 'left' };
       case 'list': return { ...base, content: 'Primeiro benefício\nSegundo benefício\nTerceiro benefício', listIcon: 'check' as const, listIconColor: '#6b8af0', gap: '12' };
-      case 'card': return { ...base, bgColor: 'transparent', padding: '0', title: 'Dica importante', content: 'Destaque aqui uma orientação, benefício ou informação importante.', cardIcon: 'none' as const, cardBgColor: '#f3f4f6', cardPadding: '20', borderRadius: '12', titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '8' };
+      case 'card': return { ...base, bgColor: 'transparent', padding: '0', title: 'Dica importante', content: 'Destaque aqui uma orientação, benefício ou informação importante.', cardIcon: 'none' as const, cardBgColor: '#f3f4f6', cardPadding: '20', borderRadius: '12', cardBorderWidth: '0', cardBorderColor: '#e5e7eb', cardShadow: 'soft' as const, cardAccentSide: 'none' as const, cardAccentColor: '#6b8af0', cardAccentWidth: '4', titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '8' };
       case 'accordion': return { ...base, bgColor: 'transparent', padding: '0', title: 'Clique para ver mais', content: 'Escreva aqui a explicação ou resposta desta seção.', accordionOpen: false, cardBgColor: '#f3f4f6', cardPadding: '16', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'audio': return { ...base, title: 'Áudio', audioMode: 'file' as const, audioData: '', audioFileName: '', url: '', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'download': return { ...base, title: 'Material de apoio', content: '', url: '', buttonText: 'Baixar material', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
@@ -63,7 +63,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
     fontSize: [10,72], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
     maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], borderWidth: [0,12], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
     imgBorderRadius: [0,999], imageBorderRadius: [0,999], height: [0,200], thickness: [1,8],
-    columnPadding: [0,48], cardPadding: [0,48], quoteSize: [10,72],
+    columnPadding: [0,48], cardPadding: [0,48], cardBorderWidth: [0,12], cardAccentWidth: [0,16], quoteSize: [10,72],
   };
   const values = p as Record<string, unknown>;
   const defaults = getDefaultProps(block.type, block.subtype || undefined,language) as Record<string, unknown>;
@@ -79,7 +79,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   for (const key of ['fontFamily', 'titleFontFamily']) {
     if (values[key] && !GOOGLE_FONTS.includes(String(values[key]))) values[key] = 'DM Sans';
   }
-  for (const key of ['bgColor','color','titleColor','subtitleColor','buttonColor','buttonTextColor','dividerColor','cardBgColor','columnBgColor','quoteColor','borderColor']) {
+  for (const key of ['bgColor','color','titleColor','subtitleColor','buttonColor','buttonTextColor','dividerColor','cardBgColor','columnBgColor','quoteColor','borderColor','cardBorderColor','cardAccentColor']) {
     if (values[key] && !/^(#[a-f0-9]{3,8}|transparent)$/i.test(String(values[key]))) values[key] = defaults[key] || '#333333';
   }
   if (!['left','center','right','justify'].includes(p.align || '')) p.align = 'left';
@@ -93,6 +93,8 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
     if (!/^(#[a-f0-9]{3,8}|transparent)$/i.test(p.listIconColor || '')) p.listIconColor = '#6b8af0';
   }
   if (block.type === 'card' && !['none','check','star','arrow','dot'].includes(p.cardIcon || '')) p.cardIcon = 'none';
+  if (block.type === 'card' && !['none','soft','medium','strong'].includes(p.cardShadow || '')) p.cardShadow = 'soft';
+  if (block.type === 'card' && !['none','left','right','top','bottom'].includes(p.cardAccentSide || '')) p.cardAccentSide = 'none';
   return p;
 }
 
@@ -152,7 +154,9 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
         const icon = { none: '', check: '✓', star: '★', arrow: '→', dot: '•' }[p.cardIcon || 'none'];
         const iconHtml = icon ? `<span aria-hidden="true" style="display:inline-block;font-size:24px;line-height:1;margin-bottom:12px;">${icon}</span>` : '';
         const headingHtml = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;overflow-wrap:anywhere;">${escapeHtml(p.title)}</h3>` : '';
-        return `<div class="appify-builder-card" style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;max-width:100%;">${iconHtml}${headingHtml}<p style="white-space:pre-wrap;margin:0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></div>`;
+        const shadow = p.cardShadow === 'none' ? 'none' : p.cardShadow === 'medium' ? '0 8px 24px rgba(15,23,42,.14)' : p.cardShadow === 'strong' ? '0 14px 36px rgba(15,23,42,.20)' : '0 4px 14px rgba(15,23,42,.10)';
+        const accentSide = p.cardAccentSide && p.cardAccentSide !== 'none' ? `border-${p.cardAccentSide}:${p.cardAccentWidth || 4}px solid ${p.cardAccentColor || '#6b8af0'};` : '';
+        return `<div class="appify-builder-card" style="background:${p.cardBgColor};padding:${p.cardPadding}px;border:${p.cardBorderWidth || 0}px solid ${p.cardBorderColor || '#e5e7eb'};${accentSide}border-radius:${p.borderRadius}px;box-shadow:${shadow};max-width:100%;">${iconHtml}${headingHtml}<p style="white-space:pre-wrap;margin:0;overflow-wrap:anywhere;">${escapeHtml(p.content)}</p></div>`;
       }
       case 'list': {
         const icon = { check: '✓', star: '★', arrow: '→', dot: '•' }[p.listIcon || 'check'];
@@ -218,7 +222,8 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
 export function generateBuilderHtml(blocks: BuilderBlock[],language='pt-BR'): string {
   const sections = blocks.map(block => {
     const p = normalizedBlockProps(block,language);
-    const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;margin-top:${p.marginTop || 0}px;margin-bottom:${p.marginBottom || 0}px;border:${p.borderWidth || 0}px solid ${p.borderColor || '#e5e7eb'};border-radius:${p.borderRadius || 0}px;`;
+    const outerBorderWidth = block.type === 'card' ? 0 : (p.borderWidth || 0);
+    const style = `background:${p.bgColor};padding:${p.padding}px;text-align:${p.align};font-family:'${p.fontFamily}',sans-serif;color:${p.color};font-size:${p.fontSize}px;line-height:1.6;margin-top:${p.marginTop || 0}px;margin-bottom:${p.marginBottom || 0}px;border:${outerBorderWidth}px solid ${p.borderColor || '#e5e7eb'};border-radius:${block.type === 'card' ? 0 : (p.borderRadius || 0)}px;`;
     return `<section class="appify-builder-block" style="${escapeHtml(style)}"><div class="appify-builder-content" style="${p.maxWidth && Number(p.maxWidth)>0 ? `max-width:${p.maxWidth}px;margin-left:auto;margin-right:auto;` : ''}">${sanitizeImportedHtml(getBlockInnerHtml(block,language))}</div></section>`;
   }).join('\n');
   return `${builderFontLinks(blocks)}<style>${BUILDER_CSS}</style><div class="appify-builder-document">${sections}</div>`;
