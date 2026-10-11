@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+
+const path = 'src/components/PWARuntime.tsx';
+let source = fs.readFileSync(path, 'utf8');
+
+const oldHandler = `  const handleSimulateCompletion = () => {\n    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;\n    const result = learning.toggle(selectedMockupModuleId, selectedMockupSubmoduleId, canCompleteLesson);\n    if (result === 'uncompleted') {\n      setCanCompleteLesson(true);\n      return;\n    }\n    if (result !== 'completed') return;\n    void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});\n    if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {\n      setIsCelebrating(true);\n      setTimeout(() => setIsCelebrating(false), 3500);\n    }\n  };`;
+
+const newHandler = `  const markCurrentLessonComplete = () => {\n    if (!canCompleteLesson || selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;\n    if (!learning.complete(selectedMockupModuleId, selectedMockupSubmoduleId)) return;\n    void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});\n    if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {\n      setIsCelebrating(true);\n      setTimeout(() => setIsCelebrating(false), 3500);\n    }\n  };\n\n  const markCurrentLessonIncomplete = () => {\n    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;\n    learning.uncomplete(selectedMockupModuleId, selectedMockupSubmoduleId);\n    setCanCompleteLesson(true);\n  };`;
+
+if (!source.includes(oldHandler)) throw new Error('old completion handler not found');
+source = source.replace(oldHandler, newHandler);
+
+const oldComplete = `<button type="button" aria-pressed={false} onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleSimulateCompletion(); }} style={{ display:'flex', alignItems:'center', gap:6, minHeight:36, padding:'8px 12px', borderRadius:999, border:'none', cursor:'pointer', pointerEvents:'auto', color:themeColor, background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>`;
+const newComplete = `<button type="button" aria-pressed={false} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonComplete(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); markCurrentLessonComplete(); } }} style={{ display:'flex', alignItems:'center', gap:6, minHeight:40, padding:'9px 14px', borderRadius:999, border:'none', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:themeColor, background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>`;
+if (!source.includes(oldComplete)) throw new Error('complete button not found');
+source = source.replace(oldComplete, newComplete);
+
+const oldCompleted = `<button type="button" aria-pressed={true} aria-label={t('app.modules.completed_status')} title="Marcar como não concluída" onClick={(event) => { event.preventDefault(); event.stopPropagation(); handleSimulateCompletion(); }} style={{ display:'flex', alignItems:'center', gap:7, minHeight:36, padding:'8px 12px', borderRadius:999, border:'1px solid rgba(34,197,94,.35)', cursor:'pointer', pointerEvents:'auto', color:'#15803d', background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>`;
+const newCompleted = `<button type="button" aria-pressed={true} aria-label={t('app.modules.completed_status')} title="Marcar como não concluída" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonIncomplete(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); markCurrentLessonIncomplete(); } }} style={{ display:'flex', alignItems:'center', gap:7, minHeight:40, padding:'9px 14px', borderRadius:999, border:'1px solid rgba(34,197,94,.35)', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:'#15803d', background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>`;
+if (!source.includes(oldCompleted)) throw new Error('completed button not found');
+source = source.replace(oldCompleted, newCompleted);
+
+fs.writeFileSync(path, source);
+console.log('Direct lesson completion pointer handlers applied.');
