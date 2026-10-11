@@ -6,6 +6,7 @@ import { sanitizeImportedHtml } from './htmlSecurity';
 import { normalizeExternalUrl } from './externalLinks';
 import { detectYouTubeAspectRatio, extractYouTubeId, getYouTubePoster } from './cleanVideo';
 import { builderAudioSource } from './builderAudio';
+import { plainTextToRichHtml, sanitizeRichTextHtml } from './richText';
 
 export function safeLinkUrl(value?: string): string {
   const raw = value?.trim() || '';
@@ -134,7 +135,10 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
 
     switch(mod.type) {
       case 'header': return `<h1 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;opacity:0.7;margin:0;">${escapeHtml(p.subtitle)}</p>`;
-      case 'text': return `<p style="white-space:pre-wrap;margin:0;">${escapeHtml(p.content)}</p>`;
+      case 'text': {
+        const rich = p.richContent?.trim() ? sanitizeRichTextHtml(p.richContent) : plainTextToRichHtml(p.content);
+        return `<p style="white-space:pre-wrap;margin:0;">${rich}</p>`;
+      }
       case 'html': return sanitizeImportedHtml(String(p.content || ''));
       case 'download': {
         const url = builderDownloadUrl(p.url);

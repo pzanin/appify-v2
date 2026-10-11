@@ -130,6 +130,7 @@ export interface BuilderBlock {
     title?: string;
     subtitle?: string;
     content?: string;
+    richContent?: string;
     listIcon?: 'check' | 'star' | 'arrow' | 'dot';
     listIconColor?: string;
     cardIcon?: 'none' | 'check' | 'star' | 'arrow' | 'dot';

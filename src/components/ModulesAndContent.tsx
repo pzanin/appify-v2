@@ -14,6 +14,7 @@ import { sanitizeImportedHtml } from '../utils/htmlSecurity';
 import { BUILDER_CSS, builderDownloadUrl, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
 import { openExternalLink } from '../utils/externalLinks';
 import { builderAudioSource, readAudioFile } from '../utils/builderAudio';
+import { plainTextToRichHtml, sanitizeRichTextHtml } from '../utils/richText';
 
 interface ModulesAndContentProps {
   submodule: SubModule;
@@ -44,6 +45,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const [hasCustomHtml, setHasCustomHtml] = useState(Boolean(submodule.customHtml || submodule.htmlMode === 'code'));
   const [htmlImportStatus, setHtmlImportStatus] = useState('');
   const htmlFileInputRef = useRef<HTMLInputElement>(null);
+  const richTextEditorRef = useRef<HTMLDivElement>(null);
+  const richTextSelectionRef = useRef<Range | null>(null);
 
   // Gamification local state
   const [timeGateSeconds, setTimeGateSeconds] = useState(submodule.gamificationConfig?.timeGateSeconds || 0);
@@ -121,6 +124,35 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     setSelectedBlockId(newId);
   };
   const deleteBlock = (id: string) => { setBlocks(current => current.filter(b => b.id !== id)); if (selectedBlockId === id) setSelectedBlockId(null); };
+
+  const rememberRichTextSelection = () => {
+    const editor = richTextEditorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) richTextSelectionRef.current = range.cloneRange();
+  };
+
+  const syncRichTextEditor = () => {
+    const editor = richTextEditorRef.current;
+    if (!editor) return;
+    updateProp('content', editor.innerText.replace(/\n{3,}/g, '\n\n'));
+    updateProp('richContent', sanitizeRichTextHtml(editor.innerHTML));
+  };
+
+  const applyRichTextCommand = (command: 'bold' | 'italic' | 'underline' | 'foreColor', value?: string) => {
+    const editor = richTextEditorRef.current;
+    const range = richTextSelectionRef.current;
+    if (!editor || !range) return;
+    editor.focus();
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    document.execCommand('styleWithCSS', false, 'true');
+    document.execCommand(command, false, value);
+    rememberRichTextSelection();
+    syncRichTextEditor();
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, propKey: any) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = (ev) => { updateProp(propKey, ev.target?.result); }; reader.readAsDataURL(file); };
 
@@ -406,7 +438,29 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   {selectedBlock.type === 'text' && (
                     <>
                       <label className="vpb-label">Texto</label>
-                      <textarea className="vpb-textarea" value={selectedBlock.props.content || ''} onChange={e => updateProp('content', e.target.value)} />
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' }}>
+                        <button type="button" className="btn-ghost" style={{ fontWeight: 800, minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('bold'); }} title="Negrito">B</button>
+                        <button type="button" className="btn-ghost" style={{ fontStyle: 'italic', minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('italic'); }} title="Itálico">I</button>
+                        <button type="button" className="btn-ghost" style={{ textDecoration: 'underline', minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('underline'); }} title="Sublinhado">U</button>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--muted)' }}>Cor
+                          <input type="color" aria-label="Cor do texto selecionado" defaultValue="#333333" onMouseDown={rememberRichTextSelection} onChange={e => applyRichTextCommand('foreColor', e.target.value)} />
+                        </label>
+                      </div>
+                      <div
+                        key={selectedBlock.id}
+                        ref={richTextEditorRef}
+                        className="vpb-textarea"
+                        contentEditable
+                        suppressContentEditableWarning
+                        role="textbox"
+                        aria-multiline="true"
+                        onMouseUp={rememberRichTextSelection}
+                        onKeyUp={rememberRichTextSelection}
+                        onBlur={syncRichTextEditor}
+                        style={{ minHeight: '120px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}
+                        dangerouslySetInnerHTML={{ __html: selectedBlock.props.richContent?.trim() ? sanitizeRichTextHtml(selectedBlock.props.richContent) : plainTextToRichHtml(selectedBlock.props.content || '') }}
+                      />
+                      <p className="vpb-html-help">Selecione uma palavra ou trecho no campo acima e aplique negrito, itálico, sublinhado ou cor. A formatação é sanitizada antes de salvar.</p>
                     </>
                   )}
 
