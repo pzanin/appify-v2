@@ -32,6 +32,8 @@ Development follow-up: restrict dependency discovery to `index.html`, and prebun
 
 Layout-choice follow-up: 96 tests pass, including per-project persistence, exportable configuration and layout switching without progress changes. The real development UI updates the phone preview immediately when the select changes. The resume card measured approximately 145px in both layouts at 390px width in the reviewed fixture, versus approximately 209px before this reduction; the action keeps a 44px touch target.
 
+Final review fixed two confirmed bugs: portrait cover images could stretch Comfortable module cards instead of staying square; community posts and notices were missing from exported `app-data.json`. Covers now fill their fixed frame without changing its dimensions. Engagement content accompanies exports only when enabled, and credential checks include it before archive preparation. The suite has 97 passing tests. Real ZIP roundtrips for both layouts confirmed published announcements, lesson HTML and resume after reload, without runtime errors. Native device installation and the deliberately parked completion-button issue remain outside this review.
+
 Before accepting the visual direction, review a real product with and without banners, long module/lesson titles, 1 and 4+ lessons, light/dark themes, and a locked offer on a phone. Native iOS/Windows acceptance remains a device check.
 
 ## Rollback

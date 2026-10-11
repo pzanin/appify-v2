@@ -5,7 +5,7 @@ import FileSaver from 'file-saver';
 import { useAppStore } from '../store/useAppStore';
 import { projectService } from '../services/projectService';
 import { assertPublicExport, assertSafeArchive, isAllowedExportPath, EXPORT_SECURITY_MESSAGE } from './exportSecurity';
-import { publicFeatureConfig } from './projectFeatures';
+import { publicFeatureConfig, engagementIsEnabled } from './projectFeatures';
 import { generateServiceWorker } from './serviceWorker';
 import { prepareInteractiveHtml, INTERACTIVE_CSP } from './interactiveHtml';
 import { IMPORTED_HTML_CSP } from './htmlSecurity';
@@ -58,7 +58,10 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
   try {
     if (!useAppStore.getState().pwaConfig.productId) useAppStore.getState().updatePwaConfig({productId:crypto.randomUUID()});
     const state = useAppStore.getState();
-    assertPublicExport({ appName: state.appName, pwaConfig: state.pwaConfig, modules: state.modules });
+    const engagementData = engagementIsEnabled(state.pwaConfig)
+      ? { feedPosts: state.feedPosts || [], pushNotifications: state.pushNotifications || [] }
+      : { feedPosts: [], pushNotifications: [] };
+    assertPublicExport({ appName: state.appName, pwaConfig: state.pwaConfig, modules: state.modules, ...engagementData });
     const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
     const appName = productName(state.appName,pwaLanguage);
     
@@ -70,6 +73,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       modules: state.modules,
       pwaConfig: cleanPwaConfig,
       activeLocale: pwaLanguage,
+      ...engagementData,
     };
 
     const zip = new JSZip();
