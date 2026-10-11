@@ -119,6 +119,10 @@ export const BUILDER_CSS = `
   .appify-builder-content .appify-builder-grid:not(.appify-keep-columns) { grid-template-columns:minmax(0,1fr) !important; }
   .appify-builder-content .appify-builder-grid.appify-mobile-reverse > :first-child { order:2; }
   .appify-builder-content .appify-builder-grid.appify-mobile-reverse > :last-child { order:1; }
+  .appify-builder-content .appify-image-text-grid.appify-image-text-mobile-image-first .appify-image-text-image { order:1; }
+  .appify-builder-content .appify-image-text-grid.appify-image-text-mobile-image-first .appify-image-text-copy { order:2; }
+  .appify-builder-content .appify-image-text-grid.appify-image-text-mobile-text-first .appify-image-text-copy { order:1; }
+  .appify-builder-content .appify-image-text-grid.appify-image-text-mobile-text-first .appify-image-text-image { order:2; }
 }
 `;
 
