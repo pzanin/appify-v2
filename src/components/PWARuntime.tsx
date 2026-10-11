@@ -132,6 +132,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const [lockedModuleClick, setLockedModuleClick] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
+  const [completionDebug, setCompletionDebug] = useState('aguardando clique');
 
   // Anti-Cheat states
   const [canCompleteLesson, setCanCompleteLesson] = useState(false);
@@ -175,8 +176,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
 
   const markCurrentLessonComplete = () => {
-    if (!canCompleteLesson || selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
-    if (!learning.complete(selectedMockupModuleId, selectedMockupSubmoduleId)) return;
+    if (!canCompleteLesson || selectedMockupModuleId === null || selectedMockupSubmoduleId === null) { setCompletionDebug('complete bloqueado antes da ação'); return; }
+    const before = learning.debugSnapshot(selectedMockupModuleId, selectedMockupSubmoduleId);
+    const changed = learning.complete(selectedMockupModuleId, selectedMockupSubmoduleId);
+    const after = learning.debugSnapshot(selectedMockupModuleId, selectedMockupSubmoduleId);
+    setCompletionDebug(`complete | changed:${changed ? 'sim' : 'não'} | mem:${before.memoryCompleted ? 1 : 0}→${after.memoryCompleted ? 1 : 0} | storage:${after.stored.includes(after.id) ? 'tem' : 'não tem'}`);
+    if (!changed) return;
     void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
     if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
       setIsCelebrating(true);
@@ -185,8 +190,11 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   };
 
   const markCurrentLessonIncomplete = () => {
-    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
-    learning.uncomplete(selectedMockupModuleId, selectedMockupSubmoduleId);
+    if (selectedMockupModuleId === null || selectedMockupSubmoduleId === null) { setCompletionDebug('uncomplete sem aula selecionada'); return; }
+    const before = learning.debugSnapshot(selectedMockupModuleId, selectedMockupSubmoduleId);
+    const changed = learning.uncomplete(selectedMockupModuleId, selectedMockupSubmoduleId);
+    const after = learning.debugSnapshot(selectedMockupModuleId, selectedMockupSubmoduleId);
+    setCompletionDebug(`uncomplete | changed:${changed ? 'sim' : 'não'} | mem:${before.memoryCompleted ? 1 : 0}→${after.memoryCompleted ? 1 : 0} | storage:${after.stored.includes(after.id) ? 'tem' : 'não tem'}`);
     setCanCompleteLesson(true);
   };
 
@@ -382,6 +390,11 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
 
         {/* CONTENT AREA */}
         <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
+          {selectedMockupSubmodule && (
+            <div style={{ position:'absolute', left:10, bottom:10, zIndex:2200, maxWidth:300, padding:'7px 9px', borderRadius:8, background:'rgba(0,0,0,.86)', color:'#86efac', fontSize:9, lineHeight:1.35, fontFamily:'monospace', pointerEvents:'none' }}>
+              DIAG: {completionDebug}
+            </div>
+          )}
           {selectedMockupSubmodule && (
             <div style={{ position:'absolute', top:10, right:14, zIndex:1200, pointerEvents:'auto' }}>
               {!isCurrentLessonCompleted ? (
