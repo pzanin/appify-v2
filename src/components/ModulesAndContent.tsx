@@ -47,6 +47,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const htmlFileInputRef = useRef<HTMLInputElement>(null);
   const richTextEditorRef = useRef<HTMLDivElement>(null);
   const richTextSelectionRef = useRef<Range | null>(null);
+  const [richTextColor, setRichTextColor] = useState('#333333');
 
   // Gamification local state
   const [timeGateSeconds, setTimeGateSeconds] = useState(submodule.gamificationConfig?.timeGateSeconds || 0);
@@ -462,10 +463,11 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <button type="button" className="btn-ghost" style={{ fontStyle: 'italic', minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('italic'); }} title="Itálico">I</button>
                         <button type="button" className="btn-ghost" style={{ textDecoration: 'underline', minWidth: '34px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('underline'); }} title="Sublinhado">U</button>
                         <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--muted)' }}>Cor
-                          <input type="color" aria-label="Cor do texto selecionado" defaultValue="#333333" onMouseDown={rememberRichTextSelection} onChange={e => applyRichTextCommand('foreColor', e.target.value)} />
+                          <input type="color" aria-label="Escolher cor do texto" value={richTextColor} onMouseDown={rememberRichTextSelection} onChange={e => setRichTextColor(e.target.value)} />
                         </label>
+                        <button type="button" className="btn-ghost" style={{ minWidth: '72px' }} onMouseDown={e => { e.preventDefault(); applyRichTextCommand('foreColor', richTextColor); }} title="Aplicar a cor escolhida ao trecho selecionado">Aplicar cor</button>
                       </div>
-                      <style>{`.appify-rich-editor p{margin:0;line-height:inherit}.appify-rich-editor p+p{margin-top:${Number(selectedBlock.props.paragraphSpacing ?? 12)}px}`}</style>
+                      <style>{`.appify-rich-editor p{margin:0 0 ${Number(selectedBlock.props.paragraphSpacing ?? 12)}px;line-height:inherit}.appify-rich-editor p:last-child{margin-bottom:0}`}</style>
                       <div
                         key={selectedBlock.id}
                         ref={richTextEditorRef}
@@ -491,7 +493,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <input id="text-paragraph-spacing" type="range" min="0" max="64" step="1" style={{ flex: 1, accentColor: 'var(--accent)' }} value={selectedBlock.props.paragraphSpacing ?? 12} onChange={e => updateProp('paragraphSpacing', e.target.value)} />
                         <input type="number" className="vpb-input" style={{ width: '72px', marginBottom: 0 }} min="0" max="64" step="1" value={selectedBlock.props.paragraphSpacing ?? 12} onChange={e => updateProp('paragraphSpacing', e.target.value)} />
                       </div>
-                      <p className="vpb-html-help">Selecione uma palavra ou trecho no campo acima e aplique negrito, itálico, sublinhado ou cor. Enter cria um novo parágrafo; o espaço entre parágrafos e a altura entre linhas podem ser ajustados separadamente.</p>
+                      <p className="vpb-html-help">Selecione uma palavra ou trecho, escolha a cor e clique em “Aplicar cor”. Enter cria um novo parágrafo; o espaço entre parágrafos e a altura entre linhas podem ser ajustados separadamente.</p>
                     </>
                   )}
 

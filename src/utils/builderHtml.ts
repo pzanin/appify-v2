@@ -104,8 +104,8 @@ export const BUILDER_CSS = `
 .appify-builder-block, .appify-builder-content, .appify-builder-content * { box-sizing:border-box; min-width:0; }
 .appify-builder-content { padding:0; overflow-wrap:anywhere; }
 .appify-builder-content img { max-width:100%; }
-.appify-rich-text p { margin:0; line-height:inherit; }
-.appify-rich-text p + p { margin-top:var(--appify-paragraph-spacing,12px); }
+.appify-rich-text p { margin:0 0 var(--appify-paragraph-spacing,12px); line-height:inherit; }
+.appify-rich-text p:last-child { margin-bottom:0; }
 @container appify-blocks (max-width:600px) {
   .appify-builder-content .appify-builder-grid { grid-template-columns:minmax(0,1fr) !important; }
 }
