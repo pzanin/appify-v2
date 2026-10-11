@@ -881,14 +881,35 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input className="vpb-input" value={selectedBlock.props.col3Title || ''} onChange={e => updateProp('col3Title', e.target.value)} />
                       <label className="vpb-label">Card 3 — Texto</label>
                       <textarea className="vpb-textarea" value={selectedBlock.props.col3Text || ''} onChange={e => updateProp('col3Text', e.target.value)} />
-                      <label className="vpb-label">Cor de Fundo dos Cards</label>
+                      <label className="vpb-label">Cor padrão dos Cards</label>
                       <div className="vpb-color-row">
                         <input type="color" className="vpb-color-picker" value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
                         <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('cardBgColor', e.target.value)} />
                       </div>
+                      <label className="vpb-label">Cor do Card 1</label>
+                      <input type="color" className="vpb-color-input" value={selectedBlock.props.col1BgColor || selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('col1BgColor', e.target.value)} />
+                      <label className="vpb-label">Cor do Card 2</label>
+                      <input type="color" className="vpb-color-input" value={selectedBlock.props.col2BgColor || selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('col2BgColor', e.target.value)} />
+                      <label className="vpb-label">Cor do Card 3</label>
+                      <input type="color" className="vpb-color-input" value={selectedBlock.props.col3BgColor || selectedBlock.props.cardBgColor || '#f3f4f6'} onChange={e => updateProp('col3BgColor', e.target.value)} />
                       <label className="vpb-label">Espaço Interno dos Cards ({selectedBlock.props.cardPadding ?? 18}px)</label>
                       <input type="range" min="8" max="48" style={{ width: '100%', accentColor: 'var(--accent)' }} value={selectedBlock.props.cardPadding ?? 18} onChange={e => updateProp('cardPadding', e.target.value)} />
                       <input type="number" className="vpb-input" aria-label="Espaço interno dos cards em pixels" min="8" max="48" step="1" value={selectedBlock.props.cardPadding ?? 18} onChange={e => { if (e.target.value !== '') updateProp('cardPadding', String(Math.min(48, Math.max(8, Number(e.target.value))))); } } />
+                      <label className="vpb-label">Borda dos Cards (px)</label>
+                      <input type="number" className="vpb-input" min="0" max="12" step="1" value={selectedBlock.props.cardBorderWidth ?? 0} onChange={e => updateProp('cardBorderWidth', e.target.value)} />
+                      <label className="vpb-label">Cor da borda dos Cards</label>
+                      <div className="vpb-color-row">
+                        <input type="color" className="vpb-color-picker" value={selectedBlock.props.cardBorderColor || '#e5e7eb'} onChange={e => updateProp('cardBorderColor', e.target.value)} />
+                        <input className="vpb-input" style={{ flex: 1, marginBottom: 0 }} value={selectedBlock.props.cardBorderColor || '#e5e7eb'} onChange={e => updateProp('cardBorderColor', e.target.value)} />
+                      </div>
+                      <label className="vpb-label">Sombra dos Cards</label>
+                      <select className="vpb-input" value={selectedBlock.props.cardShadow || 'soft'} onChange={e => updateProp('cardShadow', e.target.value as BuilderBlock['props']['cardShadow'])}>
+                        <option value="none">Sem sombra</option>
+                        <option value="soft">Suave</option>
+                        <option value="medium">Média</option>
+                        <option value="strong">Forte</option>
+                      </select>
+                      <p className="vpb-html-help">No celular, os 3 cards continuam empilhados para preservar a leitura.</p>
                     </>
                   )}
 

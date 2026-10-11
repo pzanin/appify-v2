@@ -81,7 +81,7 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
 
   const addBanner = () => {
     const banners = pwaConfig.banners || [];
-    if (banners.length >= 3) return;
+    if (banners.length >= 5) return;
     
     const newBanner = { 
       id: Date.now(), 
@@ -451,7 +451,7 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
               BANNERS
             </div>
             <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)' }}>
-              {(pwaConfig.banners || []).length} / 3
+              {(pwaConfig.banners || []).length} / 5
             </div>
           </div>
         </div>
@@ -543,11 +543,11 @@ export function IdentityConfigurator({ showToast }: IdentityConfiguratorProps) {
           <button 
             className="btn-add-dashed" 
             onClick={addBanner}
-            disabled={(pwaConfig.banners || []).length >= 3}
+            disabled={(pwaConfig.banners || []).length >= 5}
             style={{ 
               width: '100%', padding: '14px', border: '2px dashed var(--border)', borderRadius: '12px', 
-              background: 'transparent', color: 'var(--muted)', opacity: (pwaConfig.banners || []).length >= 3 ? 0.5 : 1,
-              cursor: (pwaConfig.banners || []).length >= 3 ? 'not-allowed' : 'pointer',
+              background: 'transparent', color: 'var(--muted)', opacity: (pwaConfig.banners || []).length >= 5 ? 0.5 : 1,
+              cursor: (pwaConfig.banners || []).length >= 5 ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '13px', fontWeight: 700
             }}
           >

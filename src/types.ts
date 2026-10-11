@@ -167,10 +167,13 @@ export interface BuilderBlock {
     subtitleColor?: string;
     col1Title?: string;
     col1Text?: string;
+    col1BgColor?: string;
     col2Title?: string;
     col2Text?: string;
+    col2BgColor?: string;
     col3Title?: string;
     col3Text?: string;
+    col3BgColor?: string;
     cardBgColor?: string;
     cardPadding?: string | number;
     cardBorderWidth?: string | number;
