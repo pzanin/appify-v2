@@ -10,7 +10,8 @@ fs.writeFileSync(runtimePath, runtime);
 
 const progressPath = 'src/hooks/useLessonProgress.ts';
 let progress = fs.readFileSync(progressPath, 'utf8');
-progress = progress.replace(/\n\s*debugSnapshot:\(moduleId:number,lessonId:number\)=>\{[\s\S]*?\n\s*\},(?=\n\s*toggle:)/, '');
+const debugSnapshot = `    debugSnapshot:(moduleId:number,lessonId:number)=>{\n      const id=lessonKey(moduleId,lessonId);\n      let stored = '';\n      try { stored = localStorage.getItem(key) || ''; } catch { stored = '[storage-unavailable]'; }\n      return {\n        key,\n        id,\n        memoryCompleted: latest.current.value.completed.includes(id),\n        completedCount: latest.current.value.completed.length,\n        stored\n      };\n    },\n`;
+progress = progress.replace(debugSnapshot, '');
 fs.writeFileSync(progressPath, progress);
 
 const typesPath = 'src/types.ts';
