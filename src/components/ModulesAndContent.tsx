@@ -942,6 +942,14 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <option value="contain">Conter (Contain)</option>
                         <option value="fill">Esticar (Fill)</option>
                       </select>
+                      <label className="vpb-label">Foco da imagem</label>
+                      <select className="vpb-input" value={selectedBlock.props.imageObjectPosition || 'center'} onChange={e => updateProp('imageObjectPosition', e.target.value as BuilderBlock['props']['imageObjectPosition'])}>
+                        <option value="center">Centro</option>
+                        <option value="top">Topo</option>
+                        <option value="bottom">Base</option>
+                        <option value="left">Esquerda</option>
+                        <option value="right">Direita</option>
+                      </select>
                       <label className="vpb-label">Texto Alternativo da Imagem</label>
                       <input className="vpb-input" value={selectedBlock.props.imageAlt || ''} onChange={e => updateProp('imageAlt', e.target.value)} />
                       <label className="vpb-label">Posição da Imagem</label>
