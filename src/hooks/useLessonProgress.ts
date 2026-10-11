@@ -20,18 +20,6 @@ export function useLessonProgress(config:PwaConfig,modules:Module[],projectId:nu
     completed:(moduleId:number,lessonId:number)=>current.value.completed.includes(lessonKey(moduleId,lessonId)),
     moduleProgress:(module:Module)=>moduleCompletion(module,current.value),
     resume:resumeLesson(modules,current.value),
-    debugSnapshot:(moduleId:number,lessonId:number)=>{
-      const id=lessonKey(moduleId,lessonId);
-      let stored = '';
-      try { stored = localStorage.getItem(key) || ''; } catch { stored = '[storage-unavailable]'; }
-      return {
-        key,
-        id,
-        memoryCompleted: latest.current.value.completed.includes(id),
-        completedCount: latest.current.value.completed.length,
-        stored
-      };
-    },
     visit:(moduleId:number,lessonId:number)=>save({...latest.current.value,last:{moduleId,lessonId}}),
     complete:(moduleId:number,lessonId:number)=>{
       const id=lessonKey(moduleId,lessonId);

@@ -34,7 +34,7 @@ const baseDefaultProps = (type: string, subtype?: string) => {
       case 'accordion': return { ...base, bgColor: 'transparent', padding: '0', title: 'Clique para ver mais', content: 'Escreva aqui a explicação ou resposta desta seção.', accordionOpen: false, cardBgColor: '#f3f4f6', cardPadding: '16', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'audio': return { ...base, title: 'Áudio', audioMode: 'file' as const, audioData: '', audioFileName: '', url: '', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'download': return { ...base, title: 'Material de apoio', content: '', url: '', buttonText: 'Baixar material', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
-      case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const };
+      case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const, imgObjectPosition: 'center' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
       case 'spacer': return { ...base, height: '40', bgColor: 'transparent', padding: '0', align: 'left' };
@@ -86,6 +86,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   if (!['left','center','right','justify'].includes(p.align || '')) p.align = 'left';
   if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
   if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
+  if (!['center','top','bottom','left','right'].includes(p.imgObjectPosition || 'center')) p.imgObjectPosition = 'center';
   if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
   if (!['auto','full'].includes(p.buttonWidth || 'auto')) p.buttonWidth = 'auto';
   if (!['small','medium','large'].includes(p.buttonSize || 'medium')) p.buttonSize = 'medium';
@@ -129,7 +130,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
     const titleStyle = `font-family:'${tff}',sans-serif;font-size:${tfs}px;font-weight:${tfw};`;
     const imgH = p.imgHeight && p.imgHeight !== 'auto' ? `height:${p.imgHeight}px;` : 'height:auto;';
     const imgR = `border-radius:${p.imgBorderRadius || 0}px;`;
-    const imgF = `object-fit:${p.imgObjectFit || 'cover'};`;
+    const imgF = `object-fit:${p.imgObjectFit || 'cover'};object-position:${p.imgObjectPosition || 'center'};`;
     const itImgW = p.imageWidth ? `width:${p.imageWidth}%;` : 'max-width:100%;';
     const itImgH = p.imageHeight && p.imageHeight !== 'auto' ? `height:${p.imageHeight}px;` : 'height:auto;';
     const itImgR = `border-radius:${p.imageBorderRadius ?? 8}px;`;

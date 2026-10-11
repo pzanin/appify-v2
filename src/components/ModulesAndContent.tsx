@@ -670,7 +670,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input type="file" className="vpb-input" accept="image/*" onChange={e => handleImageUpload(e, 'src')} />
                       {selectedBlock.props.src && (
                         <div style={{ marginBottom: '12px', borderRadius: String(selectedBlock.props.imgBorderRadius ?? 0) + 'px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                          <img src={selectedBlock.props.src as string} alt="preview" style={{ width: '100%', maxHeight: '120px', objectFit: (selectedBlock.props.imgObjectFit || 'cover') as any }} />
+                          <img src={selectedBlock.props.src as string} alt="preview" style={{ width: '100%', maxHeight: '120px', objectFit: (selectedBlock.props.imgObjectFit || 'cover') as any, objectPosition: selectedBlock.props.imgObjectPosition || 'center' }} />
                         </div>
                       )}
                       <label className="vpb-label">Largura ({selectedBlock.props.width ?? 100}%)</label>
@@ -692,6 +692,14 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <option value="cover">Cobrir (Cover)</option>
                         <option value="contain">Conter (Contain)</option>
                         <option value="fill">Esticar (Fill)</option>
+                      </select>
+                      <label className="vpb-label">Foco da imagem</label>
+                      <select className="vpb-input" value={selectedBlock.props.imgObjectPosition || 'center'} onChange={e => updateProp('imgObjectPosition', e.target.value as BuilderBlock['props']['imgObjectPosition'])}>
+                        <option value="center">Centro</option>
+                        <option value="top">Topo</option>
+                        <option value="bottom">Base</option>
+                        <option value="left">Esquerda</option>
+                        <option value="right">Direita</option>
                       </select>
                       <label className="vpb-label">Texto Alternativo</label>
                       <input className="vpb-input" value={selectedBlock.props.alt || ''} onChange={e => updateProp('alt', e.target.value)} />

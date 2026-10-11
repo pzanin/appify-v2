@@ -191,6 +191,7 @@ export interface BuilderBlock {
     imgHeight?: string | number;
     imgBorderRadius?: string | number;
     imgObjectFit?: 'cover' | 'contain' | 'fill';
+    imgObjectPosition?: 'center' | 'top' | 'bottom' | 'left' | 'right';
     // Advanced title controls
     titleFontFamily?: string;
     titleFontSize?: string | number;
