@@ -1,5 +1,6 @@
 name: Apply Visual Builder Productivity Patch
 
+# Revision 2: includes safe HTML block and reversible lesson completion.
 on:
   push:
     branches:
