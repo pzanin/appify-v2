@@ -138,6 +138,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const [lessonCompletionTimer, setLessonCompletionTimer] = useState(5);
 
   const carouselTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastLessonPointerActionAtRef = useRef(0);
 
   const selectedMockupModule = modules.find(m => m.id === selectedMockupModuleId) || null;
   const selectedMockupSubmodule = selectedMockupModule?.subs?.find(s => s.id === selectedMockupSubmoduleId) || null;
@@ -389,12 +390,12 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                     <Clock size={14} /><span>{lessonCompletionTimer}s</span>
                   </div>
                 ) : (
-                  <button type="button" aria-pressed={false} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonComplete(); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonComplete(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); markCurrentLessonComplete(); } }} style={{ display:'flex', alignItems:'center', gap:6, minHeight:40, padding:'9px 14px', borderRadius:999, border:'none', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:themeColor, background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
+                  <button type="button" aria-pressed={false} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); lastLessonPointerActionAtRef.current = Date.now(); markCurrentLessonComplete(); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); if (Date.now() - lastLessonPointerActionAtRef.current < 500) return; markCurrentLessonComplete(); }} style={{ display:'flex', alignItems:'center', gap:6, minHeight:40, padding:'9px 14px', borderRadius:999, border:'none', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:themeColor, background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
                     <CheckCircle size={18} /><span>{t('app.modules.complete')}</span>
                   </button>
                 )
               ) : (
-                <button type="button" aria-pressed={true} aria-label={t('app.modules.completed_status')} title="Marcar como não concluída" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonIncomplete(); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); markCurrentLessonIncomplete(); }} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); markCurrentLessonIncomplete(); } }} style={{ display:'flex', alignItems:'center', gap:7, minHeight:40, padding:'9px 14px', borderRadius:999, border:'1px solid rgba(34,197,94,.35)', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:'#15803d', background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
+                <button type="button" aria-pressed={true} aria-label={t('app.modules.completed_status')} title="Marcar como não concluída" onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); lastLessonPointerActionAtRef.current = Date.now(); markCurrentLessonIncomplete(); }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); if (Date.now() - lastLessonPointerActionAtRef.current < 500) return; markCurrentLessonIncomplete(); }} style={{ display:'flex', alignItems:'center', gap:7, minHeight:40, padding:'9px 14px', borderRadius:999, border:'1px solid rgba(34,197,94,.35)', cursor:'pointer', pointerEvents:'auto', touchAction:'manipulation', userSelect:'none', color:'#15803d', background:'#ffffff', boxShadow:'0 2px 12px rgba(0,0,0,.18)', fontWeight:800, fontSize:12 }}>
                   <span style={{ background:'#22c55e', borderRadius:'50%', width:18, height:18, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}><Check size={12} strokeWidth={4}/></span>
                   <span>{t('app.modules.completed_status')}</span>
                 </button>
