@@ -858,7 +858,12 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                         <option value="normal">Manter ordem visual</option>
                         <option value="reverse">Inverter ao empilhar</option>
                       </select>
-                      <p className="vpb-html-help">No celular as duas colunas continuam empilhadas. Você pode escolher qual conteúdo aparece primeiro.</p>
+                      <label className="vpb-label">Comportamento no celular</label>
+                      <select className="vpb-input" value={selectedBlock.props.mobileColumns || 'stack'} onChange={e => updateProp('mobileColumns', e.target.value as BuilderBlock['props']['mobileColumns'])}>
+                        <option value="stack">Empilhar — recomendado</option>
+                        <option value="keep">Manter 2 colunas</option>
+                      </select>
+                      <p className="vpb-html-help">No celular, “Empilhar” é o modo recomendado. Se escolher “Manter 2 colunas”, as proporções 50/50, 70/30 etc. continuam visíveis.</p>
                     </>
                   )}
 
@@ -1008,13 +1013,12 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   <label className="vpb-label">Largura máxima do conteúdo (px) — 0 = toda a largura</label>
                   <input aria-label="Largura máxima do conteúdo" type="number" className="vpb-input" min="0" max="1600" value={selectedBlock.props.maxWidth ?? 0} onChange={e=>updateProp('maxWidth',e.target.value)}/>
                   {selectedBlock.subtype === 'oneColumn' && <>
-                    <label className="vpb-label">Presets de largura</label>
-                    <select className="vpb-input" value={['0','900','700','500'].includes(String(selectedBlock.props.maxWidth ?? 0)) ? String(selectedBlock.props.maxWidth ?? 0) : 'custom'} onChange={e => { if (e.target.value !== 'custom') updateProp('maxWidth', e.target.value); }}>
-                      <option value="0">Toda a largura</option>
-                      <option value="900">900 px — conteúdo amplo</option>
-                      <option value="700">700 px — leitura confortável</option>
-                      <option value="500">500 px — conteúdo estreito</option>
-                      <option value="custom" disabled>Personalizado</option>
+                    <label className="vpb-label">Largura do conteúdo</label>
+                    <select className="vpb-input" value={String(selectedBlock.props.contentWidth ?? 100)} onChange={e => updateProp('contentWidth', e.target.value)}>
+                      <option value="100">100% — largura total</option>
+                      <option value="90">90%</option>
+                      <option value="80">80%</option>
+                      <option value="70">70%</option>
                     </select>
                   </>}
                   {(['marginTop','marginBottom'] as const).map((prop,index)=><React.Fragment key={prop}><label className="vpb-label">{index===0?'Margem acima':'Margem abaixo'} (px)</label><input aria-label={index===0?'Margem acima':'Margem abaixo'} type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props[prop] ?? 0} onChange={e=>updateProp(prop,e.target.value)}/></React.Fragment>)}

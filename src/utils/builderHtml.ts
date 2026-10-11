@@ -42,8 +42,8 @@ const baseDefaultProps = (type: string, subtype?: string) => {
       case 'container':
         switch(subtype) {
           case 'hero': return { ...base, bgColor: '#6b8af0', padding: '60', align: 'center', title: 'Bem-vindo ao seu site', subtitle: 'Descrição principal em destaque', titleColor: '#ffffff', subtitleColor: '#e0e7ff', titleFontFamily: 'Syne', titleFontSize: '42', titleFontWeight: '700', titleMarginBottom: '16' };
-          case 'oneColumn': return { ...base, title:'Título da seção', text:'Escreva o conteúdo desta seção.', columnBgColor:'#f3f4f6', columnPadding:'20', titleFontFamily:'Syne', titleFontSize:'24', titleFontWeight:'700', titleMarginBottom:'12' };
-          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', columnRatio: '50-50' as const, reverseColumns: false, mobileOrder: 'normal' as const, titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
+          case 'oneColumn': return { ...base, title:'Título da seção', text:'Escreva o conteúdo desta seção.', columnBgColor:'#f3f4f6', columnPadding:'20', contentWidth:'100', titleFontFamily:'Syne', titleFontSize:'24', titleFontWeight:'700', titleMarginBottom:'12' };
+          case 'twoColumn': return { ...base, bgColor: '#f3f4f6', padding: '24', leftTitle: 'Coluna Esquerda', leftText: 'Texto descritivo aqui', rightTitle: 'Coluna Direita', rightText: 'Outro texto descritivo', columnBgColor: '#ffffff', columnPadding: '20', columnRatio: '50-50' as const, reverseColumns: false, mobileOrder: 'normal' as const, mobileColumns: 'stack' as const, titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'threeColumn': return { ...base, gap: '14', bgColor: '#ffffff', padding: '20', col1Title: 'Card 1', col1Text: 'Descrição do primeiro card', col2Title: 'Card 2', col2Text: 'Descrição do segundo card', col3Title: 'Card 3', col3Text: 'Descrição do terceiro card', cardBgColor: '#f3f4f6', cardPadding: '18', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'imageText': return { ...base, gap: '24', bgColor: '#ffffff', padding: '24', imageSrc: '', imageAlt: 'Imagem', title: 'Título com imagem', text: 'Texto descritivo ao lado da imagem', imagePosition: 'left', imageWidth: '100', imageHeight: 'auto', imageBorderRadius: '8', imageObjectFit: 'cover' as const, titleFontFamily: 'Syne', titleFontSize: '24', titleFontWeight: '700', titleMarginBottom: '12' };
           case 'testimonial': return { ...base, bgColor: '#f9fafb', padding: '40', quote: '"Este é um depoimento incrível sobre nosso produto ou serviço."', author: 'Nome do Cliente', role: 'Cargo/Empresa', quoteColor: '#6b8af0', quoteSize: '18' };
@@ -62,7 +62,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   const p: BuilderBlock['props'] = { ...getDefaultProps(block.type, block.subtype || undefined,language), ...block.props };
   const ranges: Record<string, [number, number]> = {
     fontSize: [10,72], lineHeight: [1,3], paragraphSpacing: [0,64], titleFontSize: [12,96], titleFontWeight: [400,800], titleMarginBottom: [0,80],
-    maxWidth: [0,1600], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], borderWidth: [0,12], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
+    maxWidth: [0,1600], contentWidth: [50,100], marginTop: [0,200], marginBottom: [0,200], padding: [0,120], gap: [0,64], borderRadius: [0,200], borderWidth: [0,12], width: [10,100], imageWidth: [10,100], videoWidth: [10,100],
     imgBorderRadius: [0,999], imageBorderRadius: [0,999], height: [0,200], thickness: [1,8],
     columnPadding: [0,48], cardPadding: [0,48], cardBorderWidth: [0,12], cardAccentWidth: [0,16], quoteSize: [10,72],
   };
@@ -87,6 +87,7 @@ export function normalizedBlockProps(block: BuilderBlock, language='pt-BR'): Bui
   if (!['start','center','end','stretch'].includes(p.columnAlign || '')) p.columnAlign='start';
   if (!['50-50','60-40','40-60','70-30','30-70'].includes(p.columnRatio || '50-50')) p.columnRatio = '50-50';
   if (!['normal','reverse'].includes(p.mobileOrder || 'normal')) p.mobileOrder = 'normal';
+  if (!['stack','keep'].includes(p.mobileColumns || 'stack')) p.mobileColumns = 'stack';
   if (!['auto','16:9','9:16'].includes(p.videoAspectRatio || 'auto')) p.videoAspectRatio = 'auto';
   if (!['center','top','bottom','left','right'].includes(p.imgObjectPosition || 'center')) p.imgObjectPosition = 'center';
   if (!['button','outline','link'].includes(p.style || 'button')) p.style = 'button';
@@ -110,7 +111,7 @@ export const BUILDER_CSS = `
 .appify-rich-text p { margin:0 0 var(--appify-paragraph-spacing,12px); line-height:inherit; }
 .appify-rich-text p:last-child { margin-bottom:0; }
 @container appify-blocks (max-width:600px) {
-  .appify-builder-content .appify-builder-grid { grid-template-columns:minmax(0,1fr) !important; }
+  .appify-builder-content .appify-builder-grid:not(.appify-keep-columns) { grid-template-columns:minmax(0,1fr) !important; }
   .appify-builder-content .appify-builder-grid.appify-mobile-reverse > :first-child { order:2; }
   .appify-builder-content .appify-builder-grid.appify-mobile-reverse > :last-child { order:1; }
 }
@@ -212,7 +213,7 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
       case 'divider': return `<hr style="border:none;border-top:${p.thickness}px solid ${p.dividerColor};margin:0;">`;
       case 'container':
         switch(mod.subtype) {
-          case 'oneColumn': return `<div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h2 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h2><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.text)}</p></div>`;
+          case 'oneColumn': return `<div style="width:${p.contentWidth || 100}%;max-width:100%;margin-left:auto;margin-right:auto;background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h2 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h2><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.text)}</p></div>`;
           case 'hero': return `<h1 style="${titleStyle}color:${p.titleColor};margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h1><p style="white-space:pre-wrap;color:${p.subtitleColor};margin:0;">${escapeHtml(p.subtitle)}</p>`;
           case 'twoColumn': {
             const ratios: Record<string,string> = { '50-50':'1fr 1fr', '60-40':'3fr 2fr', '40-60':'2fr 3fr', '70-30':'7fr 3fr', '30-70':'3fr 7fr' };
@@ -222,8 +223,9 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
             ];
             if (p.reverseColumns) columns.reverse();
             const mobileClass = p.mobileOrder === 'reverse' ? ' appify-mobile-reverse' : '';
+            const keepClass = p.mobileColumns === 'keep' ? ' appify-keep-columns' : '';
             const html = columns.map(column => `<div style="background:${p.columnBgColor};padding:${p.columnPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(column.title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(column.text)}</p></div>`).join('');
-            return `<div class="appify-builder-grid${mobileClass}" style="display:grid;grid-template-columns:${ratios[p.columnRatio || '50-50'] || ratios['50-50']};gap:${p.gap}px;align-items:${p.columnAlign};">${html}</div>`;
+            return `<div class="appify-builder-grid${mobileClass}${keepClass}" style="display:grid;grid-template-columns:${ratios[p.columnRatio || '50-50'] || ratios['50-50']};gap:${p.gap}px;align-items:${p.columnAlign};">${html}</div>`;
           }
           case 'threeColumn': return `<div class="appify-builder-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:${p.gap}px;align-items:${p.columnAlign};"><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col1Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col1Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col2Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col2Text)}</p></div><div style="background:${p.cardBgColor};padding:${p.cardPadding}px;border-radius:${p.borderRadius}px;"><h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.col3Title)}</h3><p style="white-space:pre-wrap;margin:0;line-height:1.6;">${escapeHtml(p.col3Text)}</p></div></div>`;
           case 'imageText': {
