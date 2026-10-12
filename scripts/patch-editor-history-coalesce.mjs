@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
 const file = 'src/components/ModulesAndContent.tsx';
-let source = fs.readFileSync(file, 'utf8');
+let source = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 
 function replaceExact(before, after, label) {
   if (!source.includes(before)) throw new Error(`Patch marker not found: ${label}`);
@@ -62,7 +62,6 @@ replaceExact(
 'redo resets coalescing'
 );
 
-// addBlock is structural: explicitly clear any property coalescing before state change
 replaceExact(
 `  const addBlock = (type: string, subtype?: string) => {\n    const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype,storageConfig.language) };`,
 `  const addBlock = (type: string, subtype?: string) => {\n    pendingHistoryKeyRef.current = null;\n    const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype,storageConfig.language) };`,
