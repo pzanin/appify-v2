@@ -1,54 +1,77 @@
-# Abertura e instalação do produto — Appify 0.9 Local
+# Abertura, login e instalação do produto — Appify 0.9 Local
 
-Data: 05/10/2026. Escopo aprovado pelo usuário: teste no Android/Chrome, sem checkout por enquanto.
+Atualizado: 12/10/2026.
 
-## Experiência
+## Experiência de entrada
 
-Primeiro acesso: identidade do produto → boas-vindas → acesso de demonstração → instalação opcional → conteúdo. Retornos abrem o conteúdo após a abertura breve com a marca, sem repetir o formulário ou bloquear em instalação. O editor tem uma prévia em Configurações Técnicas (PWA), com a mesma implementação usada no produto exportado.
+O PWA suporta dois comportamentos de entrada por projeto:
 
-O modo Demonstração é explicitamente identificado e não comprova compra, autentica ou protege arquivos. O e-mail é opcional, permanece somente na memória da tela, não é enviado nem salvo, e é descartado ao entrar. O modo Acesso aberto remove esse formulário. A validação real de compradores exige um backend e integração com o checkout; não foi implementada nesta etapa de teste.
+- **Acesso aberto:** mantém o fluxo de boas-vindas/instalação opcional e abre o conteúdo sem autenticação.
+- **Login por e-mail:** disponível quando Publicação → Backend e acesso usa Supabase e a opção Exigir login por e-mail está ativada.
+
+Projetos existentes continuam em acesso aberto por padrão. Nenhum projeto antigo passa a exigir login automaticamente.
+
+## Login Supabase
+
+No primeiro acesso sem sessão válida:
+
+1. O cliente informa o e-mail associado ao acesso.
+2. O PWA solicita um OTP ao Supabase Auth.
+3. O cliente digita o código recebido por e-mail.
+4. A confirmação cria uma sessão autenticada.
+5. Enquanto a sessão permanecer válida, as próximas aberturas entram direto sem repetir o login.
+
+O Appify usa `signInWithOtp` com `shouldCreateUser: false`. Um e-mail desconhecido não deve criar conta automaticamente. O login autentica uma identidade já existente no Supabase; nesta etapa ele ainda não confirma que houve pagamento em Hotmart, Stripe ou outro checkout.
+
+Para receber um código numérico, o template de autenticação por e-mail do Supabase deve incluir o token OTP (`{{ .Token }}`). Caso o template permaneça configurado apenas como Magic Link, o fluxo de seis dígitos do Appify não corresponde ao e-mail enviado.
+
+A prévia do Appify simula e-mail e código sem fazer requisições reais e sem salvar sessão. Isso evita disparar mensagens durante a edição.
 
 ## Instalação
 
-- Listener de `beforeinstallprompt` inicializado antes de montar a interface e carregar dados. O evento disponível é mantido até o toque do usuário.
-- Botão de instalação direta aparece somente quando há evento real disponível. Convite aceito não é tratado como instalação concluída; `appinstalled` ou modo standalone/fullscreen são os sinais utilizados.
-- Sem evento: instruções do menu do Chrome no Android, compartilhamento do Safari no iOS, orientação para navegador externo em janelas embutidas e instruções de Chrome/Edge no computador.
-- Cancelamento, falha e ausência de suporte não bloqueiam o conteúdo. Não há promessa de criar atalho automaticamente; a confirmação permanece controlada pelo navegador e pelo sistema.
-- PT, EN, ES e FR completos; textos não fazem referência à cor de um botão. Layout com texto legível, controles grandes, rolagem e altura dinâmica do viewport.
+- Listener de `beforeinstallprompt` é inicializado antes de montar a interface e carregar dados.
+- Botão de instalação direta aparece somente quando há evento real disponível.
+- Aceitar o prompt não é tratado como instalação concluída; `appinstalled` ou modo standalone/fullscreen confirmam a instalação.
+- Sem prompt: são exibidas instruções apropriadas para Chrome/Android, Safari/iOS, navegadores desktop e janelas embutidas.
+- Instalação é opcional e não pode contornar o login: se a autenticação estiver ativada, concluir/pular a instalação retorna ao fluxo de acesso em vez de liberar o conteúdo.
+- PT, EN, ES e FR incluem o fluxo de login, código e instalação.
 
-## Atualizações e offline
+## Abertura personalizada
 
-Cada exportação recebe identificador de cache novo. Service worker usa rede primeiro e cache como fallback offline; somente arquivos públicos conhecidos do pacote são cacheados. Endpoints de API ficam fora da lista. `_headers` pede revalidação de HTML, dados, manifest e service worker. Isso reduz a chance de uma publicação nova continuar mostrando a interface anterior. A correção anterior de cópia do template também integra a branch local.
+A abertura pode usar marca ou mídia configurada. MP4 toca sem som, pode ser pulado e possui limite de segurança; erro ou autoplay bloqueado volta para a marca. GIF/WebP/imagens respeitam ajuste de preenchimento e fundo. A abertura não substitui autenticação.
 
-## Netlify
+Para uma sessão Supabase já válida, o PWA pode seguir direto para o conteúdo sem repetir a tela de login.
 
-O selo é injetado pelo Netlify, não pelo Appify. Desativar no projeto: Project configuration → General → Powered by Netlify badge → Off → Save. A alteração não exige novo deploy. Referência: https://docs.netlify.com/manage/projects/powered-by-netlify-badge/
+## Backend e publicação
+
+Publicação agora inclui uma etapa **Backend e acesso** antes da exportação. O projeto pode ficar sem backend ou usar Supabase com Project URL + Publishable Key. Há um botão Testar conexão. Chaves secretas e `service_role` não podem ser usadas no PWA.
+
+O ZIP leva a configuração pública somente quando Supabase está habilitado. A autenticação depende de internet; o restante do comportamento offline continua limitado aos recursos empacotados/cacheados.
+
+## Relação com compra
+
+Login e compra são responsabilidades diferentes. A autenticação atual prova que o usuário controla um e-mail cadastrado no Supabase. A liberação comercial confiável exigirá entitlement por produto e integração de checkout via webhook/API. A arquitetura não fica presa à Hotmart: Stripe ou outro provedor poderá alimentar o mesmo modelo de entitlement.
+
+O conteúdo estático incluído no ZIP não deve ser considerado protegido por DRM apenas por haver uma tela de login. Conteúdo sensível deverá futuramente ser servido pelo backend depois da validação de sessão + entitlement.
+
+## Regras de acesso relacionadas
+
+Immediate, Drip e Upsell estão aplicados em módulos e aulas, tanto no preview quanto no runtime. Continuar de onde parei respeita esses bloqueios. O Drip desta versão conta dias a partir do primeiro acesso registrado no navegador/dispositivo; a data de compra real só poderá ser usada quando vier de um backend confiável.
 
 ## Verificação
 
-`npm test`, `npm run lint`, `npm run build`, `npm run check:secrets` e `npm run check:secrets -- --build`.
+Executar:
 
-Testes simulam evento capturado antes de montar a UI, consumo único, aceitação sem falso sucesso, cancelamento, falha, ausência do evento, orientação por plataforma, navegação entre telas, acesso sem instalação, retorno ao conteúdo, não persistência do e-mail, traduções, rede/cache e preservação dos testes anteriores de editor e segurança.
+```sh
+npm ci
+npm run check:secrets
+npm audit --audit-level=low
+npm run lint
+npm test
+npm run build:pwa
+npm run build
+```
 
-Ainda é necessário validar no Android/Chrome real e no instalador Windows. Sem o URL do produto não foi possível inspecionar o manifest, os ícones e o service worker do deploy atual.
+Teste manual recomendado: acesso aberto; login ativado; usuário existente; e-mail desconhecido; código correto/incorreto; reabertura com sessão; instalação antes/depois do login; PT/EN/ES/FR; Drip em módulo e aula; exportação sem credenciais privadas.
 
-## Roteiro do teste final
-
-1. Atualizar o Appify e gerar/instalar o novo instalador.
-2. No projeto, selecionar o modo Demonstração em Configurações Técnicas (PWA), conferir logotipo e nome em Identidade e testar a abertura na prévia.
-3. Exportar ZIP novo e publicar no mesmo projeto Netlify.
-4. No Chrome Android, testar boas-vindas, acesso, instalação e abrir pelo ícone. Se a interface antiga persistir, limpar os dados desse site no navegador antes de testar novamente; isso também remove o progresso local existente.
-5. Testar continuar no navegador, cancelar instalação e retornar ao conteúdo.
-6. Abrir pelo ícone e verificar que a ajuda de instalação não reaparece.
-
-## Publicação e recursos opcionais por projeto
-
-Publicação → Deploy & Domínio oferece Netlify por padrão e Cloudflare Pages como alternativa. No Netlify, extraia o ZIP e publique a pasta que contém `index.html` na raiz. Para atualizar, use Deploys do mesmo projeto. O domínio personalizado é opcional e configurar o endereço no editor não altera DNS no provedor.
-
-Configurações Técnicas (PWA) → Recursos opcionais do projeto tem interruptores de Engajamento e Gamificação. As escolhas são persistidas na configuração de cada projeto. Desligar oculta as abas do editor, sem apagar ajustes, avisos ou conteúdo. Reativar recupera os ajustes. Projetos anteriores mantêm Engajamento ligado até uma escolha explícita do proprietário.
-
-Engajamento desligado remove comunidade, avisos, sino e banners de notificação da prévia e do runtime exportado; os módulos de aulas continuam no Início. Gamificação desligada remove pontos, streaks, celebrações, barras e anéis de progresso e o tempo de espera de conclusão. A exportação também desativa os sinalizadores filhos e remove a lista de prêmios do JSON público, sem alterar o projeto salvo.
-
-A gamificação existente ainda contém números de demonstração. Esta etapa permite desligá-la; não implementa um motor real de conquistas nem serviço real de push.
-
-Testes de interface verificam interruptores, restauração de ajustes, troca de configuração de projetos, navegação da prévia/runtime e seleção de provedor de publicação. Fontes das instruções: https://docs.netlify.com/deploy/create-deploys/ e https://docs.netlify.com/manage/projects/powered-by-netlify-badge/.
+Para detalhes de arquitetura e próximos passos, consulte `docs/backend-access-auth-0.9.md`.
