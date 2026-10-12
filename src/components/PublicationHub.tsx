@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Download, ExternalLink, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Download, ExternalLink, Copy, CheckCircle2, AlertCircle, Database, Loader2 } from 'lucide-react';
 import { DeployInstructions } from './DeployInstructions';
 import { useAppStore } from '../store/useAppStore';
 import { ToastType } from '../types';
 import { handleExportZIP } from '../utils/exportPWA';
 import { openExternalLink } from '../utils/externalLinks';
 import { normalizePublishedUrl } from '../utils/publication';
+import { normalizeSupabaseProjectUrl, testSupabasePublicConnection, validateSupabasePublicConfig, SupabaseConnectionState } from '../utils/supabaseConfig';
 
 interface PublicationHubProps { showToast: (msg: string, type?: ToastType) => void; }
 
@@ -17,15 +18,55 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
   const setStep = useAppStore(state => state.setStep);
   const [exporting, setExporting] = useState(false);
   const [showMobileTools, setShowMobileTools] = useState(false);
+  const [connectionState, setConnectionState] = useState<SupabaseConnectionState>('idle');
+  const [connectionMessage, setConnectionMessage] = useState('');
+
+  const backendProvider = config.backendProvider || 'none';
+  const supabaseKey = config.supabasePublishableKey || config.supabaseAnonKey || '';
+  const supabaseValidationError = backendProvider === 'supabase'
+    ? validateSupabasePublicConfig(config.supabaseUrl || '', supabaseKey)
+    : null;
+  const backendReady = backendProvider !== 'supabase' || !supabaseValidationError;
+
   const requirements = [
     { label: 'Nome do aplicativo definido', ok: !!config.appName.trim() && config.appName !== 'Meu App', step: 0 },
     { label: 'Ao menos um módulo ativo com aula', ok: modules.some(m => m.status === 'Ativo' && m.subs.length > 0), step: 1 },
+    ...(backendProvider === 'supabase' ? [{ label: 'Backend Supabase configurado', ok: backendReady, step: 5 }] : []),
   ];
   const ready = requirements.every(item => item.ok);
   const publishedUrl = normalizePublishedUrl(config.publishedUrl ?? config.domain ?? '');
   const qrUrl = publishedUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(publishedUrl)}` : '';
   const history = config.exportHistory || [];
   const cardStyle = { padding: 24 };
+
+  const resetConnectionStatus = () => {
+    setConnectionState('idle');
+    setConnectionMessage('');
+  };
+
+  const testBackendConnection = async () => {
+    if (connectionState === 'testing') return;
+    setConnectionState('testing');
+    setConnectionMessage('Verificando conexão…');
+    const result = await testSupabasePublicConnection(config.supabaseUrl || '', supabaseKey);
+    if (result.ok) {
+      const normalizedUrl = normalizeSupabaseProjectUrl(config.supabaseUrl || '') || config.supabaseUrl;
+      updateConfig({
+        backendProvider: 'supabase',
+        supabaseUrl: normalizedUrl,
+        supabasePublishableKey: supabaseKey.trim(),
+        supabaseAnonKey: '',
+      });
+      setConnectionState('success');
+      setConnectionMessage(result.message);
+      showToast('Supabase conectado com sucesso.', 'success');
+    } else {
+      setConnectionState('error');
+      setConnectionMessage(result.message);
+      showToast(result.message, 'error');
+    }
+  };
+
   const exportZip = async () => {
     if (exporting || !ready) return;
     const snapshot = { projectId, version: config.version || '1.0.0', notes: config.changelogNotes || 'Sem notas.' };
@@ -48,7 +89,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
   return <div className="publication-hub" style={{ paddingBottom: 80 }}>
     <div className="section-header" style={{ marginBottom: 24 }}><div>
       <h2 className="section-title">Publicação</h2>
-      <p className="section-sub">Confira o projeto, exporte e teste seu aplicativo no celular.</p>
+      <p className="section-sub">Confira o projeto, configure o backend opcional, exporte e teste seu aplicativo no celular.</p>
     </div></div>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <section className="eng-card" style={cardStyle}>
@@ -64,10 +105,87 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
           {ready ? 'Projeto pronto para exportar. Confira o conteúdo antes de entregar aos clientes.' : 'Complete os itens acima para exportar.'}
         </p>
         {(!config.iconBase64 && !config.logoBase64) && <p style={{ color: 'var(--muted)', fontSize: 13 }}>Recomendado: envie um ícone em Identidade. Sem ele, será gerado um ícone com a inicial do aplicativo.</p>}
-        <p style={{ color: 'var(--muted)', fontSize: 13 }}>Domínio próprio e Supabase são opcionais. O PWA atual oferece acesso aberto; a validação de compradores ainda não está implementada.</p>
       </section>
+
       <section className="eng-card" style={cardStyle}>
-        <h3>2. Exportar o PWA</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Database size={20} />
+          <h3 style={{ margin: 0 }}>2. Backend e acesso</h3>
+        </div>
+        <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 10 }}>
+          O backend é opcional. Ative o Supabase quando o produto precisar de login, perfil persistente ou validação de compradores.
+        </p>
+
+        <label className="vpb-label" htmlFor="backend-provider">Backend</label>
+        <select
+          id="backend-provider"
+          className="vpb-input"
+          value={backendProvider}
+          onChange={e => {
+            updateConfig({ backendProvider: e.target.value as 'none' | 'supabase' });
+            resetConnectionStatus();
+          }}
+        >
+          <option value="none">Sem backend</option>
+          <option value="supabase">Supabase</option>
+        </select>
+
+        {backendProvider === 'supabase' && <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
+          <div>
+            <label className="vpb-label" htmlFor="supabase-project-url">Project URL</label>
+            <input
+              id="supabase-project-url"
+              className="vpb-input"
+              type="url"
+              autoComplete="off"
+              placeholder="https://seu-projeto.supabase.co"
+              value={config.supabaseUrl || ''}
+              onChange={e => { updateConfig({ supabaseUrl: e.target.value }); resetConnectionStatus(); }}
+            />
+          </div>
+          <div>
+            <label className="vpb-label" htmlFor="supabase-publishable-key">Publishable Key</label>
+            <input
+              id="supabase-publishable-key"
+              className="vpb-input"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="sb_publishable_..."
+              value={supabaseKey}
+              onChange={e => {
+                updateConfig({ supabasePublishableKey: e.target.value, supabaseAnonKey: '' });
+                resetConnectionStatus();
+              }}
+            />
+            <p style={{ color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>
+              Use somente a Publishable Key. Nunca cole Secret Key, service_role, senha do banco ou outro segredo aqui.
+            </p>
+          </div>
+
+          {supabaseValidationError && (config.supabaseUrl || supabaseKey) && connectionState !== 'success' &&
+            <p role="alert" style={{ color: 'var(--accent2)', fontSize: 13, margin: 0 }}>{supabaseValidationError}</p>}
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+            <button className="btn-ghost" disabled={connectionState === 'testing'} onClick={testBackendConnection}>
+              {connectionState === 'testing' ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+              {connectionState === 'testing' ? 'Testando…' : 'Testar conexão'}
+            </button>
+            {connectionState === 'success' && <span style={{ color: 'var(--accent3)', fontSize: 13 }}>✓ {connectionMessage}</span>}
+            {connectionState === 'error' && <span role="alert" style={{ color: 'var(--accent2)', fontSize: 13 }}>{connectionMessage}</span>}
+          </div>
+          <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>
+            Nesta fase, o Appify apenas prepara e valida a conexão pública. Login, sessão e perfil persistente serão ativados na próxima etapa.
+          </p>
+        </div>}
+
+        {backendProvider === 'none' && <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 14 }}>
+          O PWA será exportado sem configuração de backend e continuará funcionando como hoje.
+        </p>}
+      </section>
+
+      <section className="eng-card" style={cardStyle}>
+        <h3>3. Exportar o PWA</h3>
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>O ZIP inclui index.html, app-data.json, manifest.json, sw.js, ícones, assets, pages e arquivos de configuração da hospedagem.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, margin: '16px 0' }}>
           <div style={{ flex: '1 1 120px' }}><label className="vpb-label" htmlFor="export-version">Versão</label>
@@ -81,7 +199,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>Exportar gera os arquivos no computador. Para disponibilizar o app, publique-os no provedor abaixo.</p>
       </section>
       <section className="eng-card" style={cardStyle}>
-        <h3>3. Hospedar o aplicativo</h3>
+        <h3>4. Hospedar o aplicativo</h3>
         <DeployInstructions />
         <button className="btn-ghost" style={{ alignSelf: 'flex-start', marginTop: 20 }} aria-expanded={showMobileTools} aria-controls="publication-mobile-tools" onClick={() => setShowMobileTools(value => !value)}>
           {showMobileTools ? 'Ocultar teste no celular' : 'Testar no celular — opcional'}
