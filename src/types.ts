@@ -72,6 +72,7 @@ export interface PwaConfig {
   welcomeEnabled?: boolean;
   customerLayout?: 'standard' | 'comfortable';
   customerAccessMode?: 'open' | 'demo';
+  customerAuthEnabled?: boolean;
   startUrl: string;
   version: string;
   changelogNotes: string;
