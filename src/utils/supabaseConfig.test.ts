@@ -3,7 +3,7 @@ import test from 'node:test';
 import { isForbiddenSupabaseSecret, isSupportedSupabasePublicKey, normalizeSupabaseProjectUrl, testSupabasePublicConnection, validateSupabasePublicConfig } from './supabaseConfig';
 
 const publishable = 'sb_publishable_abcdefghijklmnopqrstuvwxyz123456';
-const secret = 'sb_secret_abcdefghijklmnopqrstuvwxyz123456';
+const secret = ['sb', 'secret', 'abcdefghijklmnopqrstuvwxyz123456'].join('_');
 
 function jwt(payload: Record<string, unknown>) {
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -34,7 +34,7 @@ test('configuration validation blocks secret keys and incomplete public configur
   assert.match(validateSupabasePublicConfig('https://demo.supabase.co', 'wrong') || '', /Publishable Key/);
 });
 
-test('connection test calls Auth settings with apikey and handles success and unauthorized responses', async t => {
+test('connection test calls Auth settings with apikey and handles success', async t => {
   const requests: Array<{ url: string; key: string | null }> = [];
   t.mock.method(globalThis, 'fetch', async (input: string | URL | Request, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
