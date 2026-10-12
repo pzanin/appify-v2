@@ -330,7 +330,7 @@ export interface SubModule {
   coverImageUrl?: string;
   externalLink?: string;
   gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean };
-  releaseType?: 'immediate' | 'drip' | 'locked';
+  releaseType?: 'immediate' | 'drip' | 'locked' | 'upsell';
   dripDays?: number;
   checkoutUrl?: string;
 }

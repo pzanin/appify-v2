@@ -27,14 +27,14 @@ export function LearningProgress({ progress, t, themeColor, showBar = false }: {
   </div>;
 }
 
-export function CustomerModuleCards({ modules, moduleProgress, onOpen, t, themeColor, dark, list = false }: {
+export function CustomerModuleCards({ modules, moduleProgress, onOpen, isLocked, t, themeColor, dark, list = false }: {
   modules: Module[]; moduleProgress: (module: Module) => Progress; onOpen: (module: Module) => void;
-  t: TFunction; themeColor: string; dark: boolean; list?: boolean;
+  isLocked?: (module: Module) => boolean; t: TFunction; themeColor: string; dark: boolean; list?: boolean;
 }) {
   return <div className="cx-module-library" style={learningColors(dark)}>
     <div className={`cx-module-grid${list ? ' cx-module-list' : ''}`}>
       {modules.map(module => {
-        const locked = ['locked', 'upsell', 'points'].includes(module.releaseType || '');
+        const locked = isLocked ? isLocked(module) : ['locked', 'upsell', 'points'].includes(module.releaseType || '');
         const draft = module.status === 'Rascunho';
         const count = module.subs?.length || 0;
         return <button type="button" key={module.id} className="phone-module-wrapper cx-module-card" disabled={draft} onClick={() => onOpen(module)}>
@@ -53,21 +53,24 @@ export function CustomerModuleCards({ modules, moduleProgress, onOpen, t, themeC
   </div>;
 }
 
-export function CustomerLessonList({ module, completed, onOpen, t, themeColor, dark }: {
+export function CustomerLessonList({ module, completed, onOpen, isLocked, t, themeColor, dark }: {
   module: Module; completed: (moduleId: number, lessonId: number) => boolean; onOpen: (id: number) => void;
-  t: TFunction; themeColor: string; dark: boolean;
+  isLocked?: (lesson: Module['subs'][number]) => boolean; t: TFunction; themeColor: string; dark: boolean;
 }) {
   return <div className="cx-lesson-list" data-lesson-count={module.subs.length} style={learningColors(dark)}>
-    {module.subs.map((lesson, index) => <button type="button" key={lesson.id} className="cx-lesson-card" onClick={() => onOpen(lesson.id)}>
-      <span className="cx-lesson-cover">
-        {lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" loading="lazy" /> : <span>{index + 1}</span>}
-      </span>
-      <span className="cx-lesson-copy">
-        <span className="cx-lesson-title">{lesson.name}</span>
-        {completed(module.id, lesson.id) && <span className="cx-lesson-completed"><CheckCircle size={15} aria-hidden="true" />{t('app.modules.completed_status')}</span>}
-      </span>
-      <ChevronRight size={18} aria-hidden="true" className="cx-lesson-arrow" />
-    </button>)}
+    {module.subs.map((lesson, index) => {
+      const locked = isLocked ? isLocked(lesson) : ['locked', 'upsell'].includes(lesson.releaseType || '');
+      return <button type="button" key={lesson.id} className="cx-lesson-card" onClick={() => onOpen(lesson.id)} aria-label={locked ? `${lesson.name} — ${t('app.upsell.lockedTitle')}` : lesson.name}>
+        <span className="cx-lesson-cover">
+          {lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" loading="lazy" /> : <span>{index + 1}</span>}
+        </span>
+        <span className="cx-lesson-copy">
+          <span className="cx-lesson-title">{lesson.name}</span>
+          {completed(module.id, lesson.id) && !locked && <span className="cx-lesson-completed"><CheckCircle size={15} aria-hidden="true" />{t('app.modules.completed_status')}</span>}
+        </span>
+        {locked ? <Lock size={18} aria-hidden="true" className="cx-lesson-arrow" /> : <ChevronRight size={18} aria-hidden="true" className="cx-lesson-arrow" />}
+      </button>;
+    })}
   </div>;
 }
 

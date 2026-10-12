@@ -67,7 +67,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
 
   // Sub-module access rules state
   const [subAccessEditId, setSubAccessEditId] = useState<number | null>(null);
-  const [subReleaseType, setSubReleaseType] = useState<'immediate' | 'drip' | 'locked'>('immediate');
+  const [subReleaseType, setSubReleaseType] = useState<'immediate' | 'drip' | 'locked' | 'upsell'>('immediate');
   const [subDripDays, setSubDripDays] = useState(0);
   const [subCheckoutUrl, setSubCheckoutUrl] = useState('');
 
@@ -348,7 +348,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
 
                   {releaseType === 'drip' && (
                     <div className="mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Dias após a compra</label>
+                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Dias após o primeiro acesso</label>
                       <input 
                         type="number"
                         min="0"
@@ -641,7 +641,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                                 style={{ ...dropdownItemStyle, justifyContent: 'space-between' }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSubReleaseType(sub.releaseType || 'immediate');
+                                  setSubReleaseType(sub.releaseType === 'locked' ? 'upsell' : (sub.releaseType || 'immediate'));
                                   setSubDripDays(sub.dripDays || 0);
                                   setSubCheckoutUrl(sub.checkoutUrl || '');
                                   setSubAccessEditId(subAccessEditId === sub.id ? null : sub.id);
@@ -676,7 +676,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                                     {[
                                       { id: 'immediate', label: 'Imediato' },
                                       { id: 'drip', label: 'Drip' },
-                                      { id: 'locked', label: 'Upsell' }
+                                      { id: 'upsell', label: 'Upsell' }
                                     ].map(opt => (
                                       <button
                                         key={opt.id}
@@ -695,7 +695,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
 
                                   {subReleaseType === 'drip' && (
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Dias após a compra</label>
+                                      <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Dias após o primeiro acesso</label>
                                       <input 
                                         type="number"
                                         min="0"
@@ -708,7 +708,7 @@ export function ModuleDetail({ handleDeleteModule, handleDeleteSubmodule, handle
                                     </div>
                                   )}
 
-                                  {subReleaseType === 'locked' && (
+                                  {(subReleaseType === 'locked' || subReleaseType === 'upsell') && (
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                                       <label className="block text-[10px] font-bold text-[var(--muted)] uppercase mb-1">Link / Checkout</label>
                                       <input 

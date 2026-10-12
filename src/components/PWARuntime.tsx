@@ -10,6 +10,7 @@ import { safeEmbedUrl } from '../utils/htmlSecurity';
 import { openExternalLink, normalizeExternalUrl } from '../utils/externalLinks';
 import { engagementIsEnabled } from '../utils/projectFeatures';
 import { shouldCelebrateLesson } from '../utils/lessonCelebration';
+import { AccessDecision, evaluateAccessRule, getOrCreateAccessStartedAt } from '../utils/accessRules';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -131,7 +132,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
   const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
 
-  const [lockedModuleClick, setLockedModuleClick] = useState<any>(null);
+  const [lockedContentClick, setLockedContentClick] = useState<{ item: any; kind: 'module' | 'lesson'; decision: AccessDecision; moduleId: number; lessonId?: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
 
@@ -162,6 +163,39 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
   const themeColor = pwaConfig?.themeColor || '#7c6fff';
   const displayAppName = productName(pwaConfig?.appName || appName,pwaLanguage);
   const gamification = pwaConfig?.gamification || { enabled: false, progressStyle: 'none', enableStreaks: false, streakIcon: '🔥', enableCelebration: false };
+  const accessStartedAt = React.useMemo(() => getOrCreateAccessStartedAt(pwaConfig.productId, currentProjectId), [pwaConfig.productId, currentProjectId]);
+  const moduleAccess = (mod: any) => evaluateAccessRule(mod, accessStartedAt);
+  const lessonAccess = (lesson: any) => evaluateAccessRule(lesson, accessStartedAt);
+  const openModuleWithAccess = (mod: any) => {
+    if (mod.status === 'Rascunho') return;
+    const decision = moduleAccess(mod);
+    if (!decision.allowed) {
+      setLockedContentClick({ item: mod, kind: 'module', decision, moduleId: mod.id });
+      return;
+    }
+    setSelectedMockupModuleId(mod.id);
+  };
+  const openLessonWithAccess = (mod: any, lessonId: number) => {
+    const lesson = mod?.subs?.find((entry: any) => entry.id === lessonId);
+    if (!lesson) return;
+    const decision = lessonAccess(lesson);
+    if (!decision.allowed) {
+      setLockedContentClick({ item: lesson, kind: 'lesson', decision, moduleId: mod.id, lessonId });
+      return;
+    }
+    setSelectedMockupSubmoduleId(lessonId);
+  };
+  const openLearningLocationWithAccess = (location: { moduleId: number; lessonId: number }) => {
+    const mod = modules.find(entry => entry.id === location.moduleId);
+    if (!mod) return;
+    const moduleDecision = moduleAccess(mod);
+    if (!moduleDecision.allowed) {
+      setLockedContentClick({ item: mod, kind: 'module', decision: moduleDecision, moduleId: mod.id });
+      return;
+    }
+    setSelectedMockupModuleId(mod.id);
+    openLessonWithAccess(mod, location.lessonId);
+  };
 
   const navItems = [
     { id: 'inicio', icon: Home, label: t('nav.home') },
@@ -650,7 +684,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                           {(selectedMockupModule.subs?.length || 0) === 0 ? (
                             <EmptyState icon={PackageOpen} text={t('app.modules.noLessons')} />
                           ) : (
-                            <CustomerLessonList module={selectedMockupModule} completed={learning.completed} onOpen={setSelectedMockupSubmoduleId} t={t} themeColor={themeColor} dark={isPhoneDark} />
+                            <CustomerLessonList module={selectedMockupModule} completed={learning.completed} isLocked={lesson => !lessonAccess(lesson).allowed} onOpen={id => openLessonWithAccess(selectedMockupModule, id)} t={t} themeColor={themeColor} dark={isPhoneDark} />
                           )}
                         </>
                       )}
@@ -700,7 +734,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                         );
                       })()}
 
-                      <ContinueLearning title={t('app.learning.resumeTitle')} location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');setSelectedMockupModuleId(location.moduleId);setSelectedMockupSubmoduleId(location.lessonId);}} />
+                      <ContinueLearning title={t('app.learning.resumeTitle')} location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');openLearningLocationWithAccess(location);}} />
 
                       <div className="phone-modules-header" style={{ flexShrink: 0 }}>
                         <h2 className="cx-home-heading" style={{ color: isPhoneDark ? '#FFFFFF' : '#1f2937' }}>{t('app.modules.title')}</h2>
@@ -709,11 +743,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
                       {modules.length === 0 ? (
                         <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState')} />
                       ) : (
-                        <CustomerModuleCards modules={modules} moduleProgress={learning.moduleProgress} list={viewMode === 'list'} t={t} themeColor={themeColor} dark={isPhoneDark} onOpen={mod => {
-                          if (mod.status === 'Rascunho') return;
-                          if (mod.releaseType === 'locked' || mod.releaseType === 'upsell' || mod.releaseType === 'points') setLockedModuleClick(mod);
-                          else setSelectedMockupModuleId(mod.id);
-                        }} />
+                        <CustomerModuleCards modules={modules} moduleProgress={learning.moduleProgress} list={viewMode === 'list'} isLocked={mod => !moduleAccess(mod).allowed} t={t} themeColor={themeColor} dark={isPhoneDark} onOpen={openModuleWithAccess} />
                       )}
                     </motion.div>
                   )}
@@ -751,22 +781,28 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
 
         {/* MODALS */}
         <AnimatePresence>
-          {lockedModuleClick && (
+          {lockedContentClick && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[200] flex flex-col justify-end">
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setLockedModuleClick(null)} />
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setLockedContentClick(null)} />
               <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className={`relative p-8 rounded-t-[40px] text-center ${isPhoneDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
                 <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-amber-50">
                   <Lock size={28} color="#f59e0b" />
                 </div>
-                <h3 className="text-xl font-black mb-2">{t('app.upsell.lockedTitle')}</h3>
-                <p className="text-sm opacity-60 mb-8 leading-relaxed">{t('app.upsell.lockedMessagePart1')} <strong>{lockedModuleClick.name}</strong>, {t('app.upsell.lockedMessagePart2')}</p>
-                <button onClick={() => {
-                  const url = normalizeExternalUrl(lockedModuleClick.checkoutUrl);
-                  if (!url || !url.startsWith('https://')) return;
-                  void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'link_click',moduleId:String(lockedModuleClick.id),lessonId:'',targetKind:'offer',targetId:String(lockedModuleClick.id)});
-                  openExternalLink(url);
-                }} className="w-full py-5 rounded-2xl font-black bg-gray-900 text-white shadow-xl mb-3" style={{ border: 'none', cursor: 'pointer' }}>{t('app.upsell.checkoutButton')}</button>
-                <button onClick={() => setLockedModuleClick(null)} className="w-full py-3 font-bold opacity-40" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>{t('app.upsell.cancelButton')}</button>
+                <h3 className="text-xl font-black mb-2">{lockedContentClick.decision.reason === 'drip' ? t('app.upsell.dripTitle') : lockedContentClick.decision.reason === 'points' ? t('app.upsell.pointsTitle') : t('app.upsell.lockedTitle')}</h3>
+                <p className="text-sm opacity-60 mb-8 leading-relaxed">{lockedContentClick.decision.reason === 'drip'
+                  ? t('app.upsell.dripMessage', { days: lockedContentClick.decision.remainingDays || 1, date: lockedContentClick.decision.unlockAt ? new Intl.DateTimeFormat(pwaLanguage).format(new Date(lockedContentClick.decision.unlockAt)) : '' })
+                  : lockedContentClick.decision.reason === 'points'
+                    ? t('app.upsell.pointsMessage', { points: lockedContentClick.decision.requiredPoints || 0 })
+                    : <>{lockedContentClick.kind === 'lesson' ? t('app.upsell.lockedLessonPart1') : t('app.upsell.lockedMessagePart1')} <strong>{lockedContentClick.item.name}</strong>, {t('app.upsell.lockedMessagePart2')}</>}</p>
+                {lockedContentClick.decision.reason === 'upsell' && (() => {
+                  const url = normalizeExternalUrl(lockedContentClick.item.checkoutUrl);
+                  if (!url || !url.startsWith('https://')) return null;
+                  return <button onClick={() => {
+                    void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'link_click',moduleId:String(lockedContentClick.moduleId),lessonId:lockedContentClick.lessonId ? String(lockedContentClick.lessonId) : '',targetKind:'offer',targetId:String(lockedContentClick.lessonId || lockedContentClick.moduleId)});
+                    openExternalLink(url);
+                  }} className="w-full py-5 rounded-2xl font-black bg-gray-900 text-white shadow-xl mb-3" style={{ border: 'none', cursor: 'pointer' }}>{t('app.upsell.checkoutButton')}</button>;
+                })()}
+                <button onClick={() => setLockedContentClick(null)} className="w-full py-3 font-bold opacity-40" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>{t('app.upsell.cancelButton')}</button>
               </motion.div>
             </motion.div>
           )}

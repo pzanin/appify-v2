@@ -50,7 +50,7 @@ interface AppStore extends AppState {
     htmlInteractive?: boolean;
     gamificationConfig?: { timeGateSeconds: number; enableCelebration: boolean }
   }) => void;
-  updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked'; dripDays?: number; checkoutUrl?: string }) => void;
+  updateSubmoduleAccess: (payload: { modId: number; subId: number; releaseType?: 'immediate' | 'drip' | 'locked' | 'upsell'; dripDays?: number; checkoutUrl?: string }) => void;
   reorderSubmodule: (payload: { modId: number; dragId: number; overId: number }) => void;
   duplicateSubmodule: (payload: { modId: number; subId: number }) => void;
   moveSubmodule: (payload: { fromModId: number; subId: number; toModId: number }) => void;

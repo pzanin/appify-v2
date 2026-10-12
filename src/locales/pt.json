@@ -52,7 +52,12 @@
       "lockedMessagePart1": "Para acessar o módulo",
       "lockedMessagePart2": "é necessário adquirir este upgrade.",
       "checkoutButton": "Ir para o Checkout",
-      "cancelButton": "Cancelar"
+      "cancelButton": "Cancelar",
+      "lockedLessonPart1": "Para acessar a aula",
+      "dripTitle": "Conteúdo programado",
+      "dripMessage": "Este conteúdo será liberado em {{days}} dia(s), em {{date}}.",
+      "pointsTitle": "Conteúdo por pontos",
+      "pointsMessage": "Você precisa de {{points}} pontos para acessar este conteúdo."
     },
     "header": {
       "theme": "Mudar Tema",
