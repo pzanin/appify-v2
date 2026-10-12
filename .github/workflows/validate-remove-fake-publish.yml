@@ -1,0 +1,42 @@
+name: Validate remove fake publish
+
+on:
+  push:
+    branches:
+      - feature/header-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply fake publish removal patch
+        run: node scripts/patch-remove-fake-publish.mjs
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm test -- --run
+      - name: Build
+        run: npm run build
+      - name: Secret scan
+        run: npm run check:secrets
+      - name: Commit verified cleanup
+        run: |
+          rm scripts/patch-remove-fake-publish.mjs
+          rm .github/workflows/validate-remove-fake-publish.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/CommonComponents.tsx src/hooks.ts src/App.tsx scripts/patch-remove-fake-publish.mjs .github/workflows/validate-remove-fake-publish.yml
+          git commit -m "refactor: remove fake publish action"
+          git push origin HEAD:feature/header-cleanup
