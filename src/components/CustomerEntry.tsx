@@ -118,7 +118,7 @@ export function CustomerEntry({ config, children, preview = false }: { config:Pw
         <div className="customer-eyebrow">{authEnabled ? t('experience.authLabel') : t('experience.demoLabel')}</div>
         <h1>{authEnabled ? t('experience.authTitle') : t('experience.accessTitle')}</h1>
         <p>{authEnabled ? t('experience.authDescription') : t('experience.accessDescription')}</p>
-        <form onSubmit={event=>{event.preventDefault();void requestCode();}}>
+        <form onSubmit={event=>{event.preventDefault();if(authEnabled)void requestCode();else finish();}}>
           <label htmlFor="customer-access-email">{authEnabled ? t('experience.authEmail') : t('experience.email')}</label>
           <div className="customer-input-wrap"><Mail size={20}/><input id="customer-access-email" type="email" autoComplete="email" inputMode="email" required={authEnabled} placeholder={t('experience.emailPlaceholder')} value={email} onChange={event=>{setEmail(event.target.value);setAuthError('');}} /></div>
           <p className="customer-note">{authEnabled ? (preview ? t('experience.authPreviewNote') : t('experience.authNote')) : t('experience.demoNote')}</p>
