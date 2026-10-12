@@ -40,3 +40,5 @@ jobs:
           git add src/components/ModulesAndContent.tsx scripts/patch-editor-panel-organization.mjs .github/workflows/validate-editor-panel-organization.yml
           git commit -m "feat: organize editor properties panel"
           git push origin HEAD:feature/editor-panel-organization
+
+# This branch-only workflow validates the patch before committing it.
