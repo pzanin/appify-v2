@@ -1,0 +1,42 @@
+name: Validate access rules runtime
+
+on:
+  push:
+    branches:
+      - feature/access-rules-runtime
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply access rules patch
+        run: node scripts/patch-access-rules-runtime.mjs
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm test -- --run
+      - name: Build
+        run: npm run build
+      - name: Secret scan
+        run: npm run check:secrets
+      - name: Commit verified access rules
+        run: |
+          rm scripts/patch-access-rules-runtime.mjs
+          rm .github/workflows/validate-access-rules-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/types.ts src/store/useAppStore.ts src/components/ModuleDetail.tsx src/components/CustomerLearning.tsx src/components/PWARuntime.tsx src/locales/pt.json src/locales/en.json src/locales/es.json src/locales/fr.json src/utils/accessRules.ts src/utils/accessRules.test.ts scripts/patch-access-rules-runtime.mjs .github/workflows/validate-access-rules-runtime.yml
+          git commit -m "fix: enforce drip and upsell access rules at runtime"
+          git push origin HEAD:feature/access-rules-runtime
