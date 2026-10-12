@@ -38,6 +38,37 @@ const editorDraftSnapshot = (value: {
   enableCelebration: boolean;
 }) => JSON.stringify(value);
 
+type PropertySectionKey = 'content' | 'style' | 'advanced' | 'lessonAdvanced';
+
+const propertySectionStyle: React.CSSProperties = {
+  border: '1px solid var(--border)',
+  borderRadius: '12px',
+  background: 'var(--surface)',
+  overflow: 'hidden'
+};
+
+const propertySummaryStyle: React.CSSProperties = {
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '8px',
+  cursor: 'pointer',
+  padding: '12px 14px',
+  fontSize: '11px',
+  fontWeight: 800,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  textAlign: 'left',
+  color: 'var(--text)',
+  background: 'var(--surface2)',
+  border: 0,
+  borderBottom: '1px solid var(--border)',
+  userSelect: 'none'
+};
+
+const propertySectionBodyStyle: React.CSSProperties = { padding: '12px' };
+
 export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndContentProps) {
   const storageConfig=useAppStore(state=>state.pwaConfig);
   const storageProjectId=useAppStore(state=>state.currentProjectId);
@@ -49,6 +80,13 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const [audioImportStatus, setAudioImportStatus] = useState<{ blockId: string; message: string; kind: 'loading' | 'success' | 'error' } | null>(null);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>(submodule.htmlMode || 'visual');
   const [submoduleName, setSubmoduleName] = useState(submodule.name || '');
+  const [propertySections, setPropertySections] = useState<Record<PropertySectionKey, boolean>>({
+    content: true,
+    style: true,
+    advanced: false,
+    lessonAdvanced: false
+  });
+  const togglePropertySection = (key: PropertySectionKey) => setPropertySections(current => ({ ...current, [key]: !current[key] }));
 
   // Content Type & URL state
   const [contentType, setContentType] = useState<'web' | 'html' | 'youtube' | 'vimeo' | 'panda'>(submodule.contentType || 'html');
@@ -671,10 +709,14 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
             </div>
 
             {selectedBlock && contentType === 'html' && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {/* ── CONTEÚDO DO BLOCO ── */}
-                <div className="vpb-prop-group">
-                  <span className="vpb-lib-label">Conteúdo do Bloco</span>
+                <section style={{ ...propertySectionStyle, order: 1 }}>
+                  <button type="button" style={propertySummaryStyle} aria-expanded={propertySections.content} onClick={() => togglePropertySection('content')}>
+                    <span>Conteúdo</span><span aria-hidden="true">{propertySections.content ? '−' : '+'}</span>
+                  </button>
+                  <div style={{ ...propertySectionBodyStyle, display: propertySections.content ? 'block' : 'none' }}>
+                    <div className="vpb-prop-group" style={{ marginBottom: 0 }}>
 
                   {selectedBlock.type === 'header' && (
                     <>
@@ -1274,8 +1316,15 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       </div>
                     </>
                   )}
-                </div>
+                    </div>
+                  </div>
+                </section>
 
+                <section style={{ ...propertySectionStyle, order: 3 }}>
+                  <button type="button" style={propertySummaryStyle} aria-expanded={propertySections.advanced} onClick={() => togglePropertySection('advanced')}>
+                    <span>Avançado</span><span aria-hidden="true">{propertySections.advanced ? '−' : '+'}</span>
+                  </button>
+                  <div style={{ ...propertySectionBodyStyle, display: propertySections.advanced ? 'block' : 'none' }}>
                 {(selectedBlock.type === 'link' || selectedBlock.subtype === 'cta') && (
                   <div className="vpb-prop-group">
                     <button type="button" className="btn-ghost" disabled={safeLinkUrl(selectedBlock.props.url) === '#'} onClick={() => openExternalLink(safeLinkUrl(selectedBlock.props.url))}>Testar link no navegador</button>
@@ -1296,7 +1345,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   </div>
                 )}
 
-                {selectedBlock.type === 'container' && <div className="vpb-prop-group">
+                {selectedBlock.type === 'container' && <div className="vpb-prop-group" style={{ marginBottom: 0 }}>
                   <span className="vpb-lib-label">Layout da seção</span>
                   <label className="vpb-label">Largura máxima do conteúdo (px) — 0 = toda a largura</label>
                   <input aria-label="Largura máxima do conteúdo" type="number" className="vpb-input" min="0" max="1600" value={selectedBlock.props.maxWidth ?? 0} onChange={e=>updateProp('maxWidth',e.target.value)}/>
@@ -1312,7 +1361,14 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   {(['marginTop','marginBottom'] as const).map((prop,index)=><React.Fragment key={prop}><label className="vpb-label">{index===0?'Margem acima':'Margem abaixo'} (px)</label><input aria-label={index===0?'Margem acima':'Margem abaixo'} type="number" className="vpb-input" min="0" max="200" value={selectedBlock.props[prop] ?? 0} onChange={e=>updateProp(prop,e.target.value)}/></React.Fragment>)}
                   {['twoColumn','threeColumn'].includes(selectedBlock.subtype || '') && <><label className="vpb-label">Alinhamento vertical dos cards</label><select className="vpb-input" value={selectedBlock.props.columnAlign || 'start'} onChange={e=>updateProp('columnAlign',e.target.value)}><option value="start">Topo</option><option value="center">Centro</option><option value="end">Base</option><option value="stretch">Mesma altura</option></select></>}
                 </div>}
+                  </div>
+                </section>
 
+                <section style={{ ...propertySectionStyle, order: 2 }}>
+                  <button type="button" style={propertySummaryStyle} aria-expanded={propertySections.style} onClick={() => togglePropertySection('style')}>
+                    <span>Estilo</span><span aria-hidden="true">{propertySections.style ? '−' : '+'}</span>
+                  </button>
+                  <div style={{ ...propertySectionBodyStyle, display: propertySections.style ? 'block' : 'none' }}>
                 {/* ── TÍTULO AVANÇADO ── */}
                 {(selectedBlock.type === 'header' || selectedBlock.type === 'card' || selectedBlock.type === 'accordion' || selectedBlock.type === 'audio' || selectedBlock.type === 'download' || (selectedBlock.type === 'container' && ['oneColumn', 'hero', 'cta', 'twoColumn', 'threeColumn', 'imageText'].includes(selectedBlock.subtype || ''))) && (
                   <div className="vpb-prop-group">
@@ -1353,7 +1409,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 )}
 
                 {/* ── ESTILOS GLOBAIS DO BLOCO ── */}
-                <div className="vpb-prop-group">
+                <div className="vpb-prop-group" style={{ marginBottom: 0 }}>
                   <span className="vpb-lib-label">Estilos do Bloco</span>
 
                   {!['image', 'video', 'spacer', 'divider'].includes(selectedBlock.type) && (
@@ -1416,12 +1472,18 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                     ))}
                   </div>
                 </div>
+                  </div>
+                </section>
 
 
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-[var(--border)]">
+            <section style={{ ...propertySectionStyle, marginTop: '16px' }}>
+              <button type="button" style={propertySummaryStyle} aria-expanded={propertySections.lessonAdvanced} onClick={() => togglePropertySection('lessonAdvanced')}>
+                <span>Avançado da Aula</span><span aria-hidden="true">{propertySections.lessonAdvanced ? '−' : '+'}</span>
+              </button>
+              <div style={{ ...propertySectionBodyStyle, display: propertySections.lessonAdvanced ? 'block' : 'none' }}>
               <div className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider mb-4">Gamificação & Anti-Cheat</div>
               <div className="flex flex-col gap-5">
                 <div>
@@ -1454,7 +1516,8 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                   </label>
                 </div>
               </div>
-            </div>
+              </div>
+            </section>
           </div>
         </aside>
       </div>
