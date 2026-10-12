@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import {
   ArrowLeft, Check, LayoutGrid, Columns, Grid, Image as ImageIcon,
   Quote, Zap, Type, AlignLeft, Link as LinkIcon, Minus,
-  SeparatorHorizontal, Trash2, Layers, Video, Globe, Code, Upload, Eye, ArrowUp, ArrowDown, Copy
+  SeparatorHorizontal, Trash2, Layers, Video, Globe, Code, Upload, Eye, ArrowUp, ArrowDown, Copy, Undo2, Redo2
 } from 'lucide-react';
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
@@ -22,6 +22,21 @@ interface ModulesAndContentProps {
   onClose: () => void;
 }
 
+const cloneBuilderBlocks = (items: BuilderBlock[]) =>
+  items.map(block => ({ ...block, props: { ...block.props } }));
+
+const editorDraftSnapshot = (value: {
+  submoduleName: string;
+  blocks: BuilderBlock[];
+  viewMode: 'visual' | 'code';
+  contentType: 'web' | 'html' | 'youtube' | 'vimeo' | 'panda';
+  contentUrl: string;
+  contentHtml: string;
+  htmlInteractive: boolean;
+  hasCustomHtml: boolean;
+  timeGateSeconds: number;
+  enableCelebration: boolean;
+}) => JSON.stringify(value);
 
 export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndContentProps) {
   const storageConfig=useAppStore(state=>state.pwaConfig);
@@ -53,8 +68,67 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const [timeGateSeconds, setTimeGateSeconds] = useState(submodule.gamificationConfig?.timeGateSeconds || 0);
   const [enableCelebration, setEnableCelebration] = useState(submodule.gamificationConfig?.enableCelebration ?? true);
 
+  const historyPastRef = useRef<BuilderBlock[][]>([]);
+  const historyFutureRef = useRef<BuilderBlock[][]>([]);
+  const previousBlocksRef = useRef<BuilderBlock[]>(cloneBuilderBlocks(submodule.builder_data || []));
+  const historyActionRef = useRef<'normal' | 'undo' | 'redo' | 'sync'>('sync');
+  const [historyVersion, setHistoryVersion] = useState(0);
+  const baselineSnapshotRef = useRef(editorDraftSnapshot({
+    submoduleName: submodule.name || '',
+    blocks: submodule.builder_data || [],
+    viewMode: submodule.htmlMode || 'visual',
+    contentType: submodule.contentType || 'html',
+    contentUrl: submodule.contentUrl || '',
+    contentHtml: submodule.customHtml || (submodule.htmlMode === 'code' ? submodule.contentHtml || submodule.content_html || '' : ''),
+    htmlInteractive: submodule.htmlInteractive === true,
+    hasCustomHtml: Boolean(submodule.customHtml || submodule.htmlMode === 'code'),
+    timeGateSeconds: submodule.gamificationConfig?.timeGateSeconds || 0,
+    enableCelebration: submodule.gamificationConfig?.enableCelebration ?? true
+  }));
+
+  const getCurrentDraftSnapshot = () => editorDraftSnapshot({
+    submoduleName,
+    blocks,
+    viewMode,
+    contentType,
+    contentUrl,
+    contentHtml,
+    htmlInteractive,
+    hasCustomHtml,
+    timeGateSeconds,
+    enableCelebration
+  });
+
+  const requestClose = () => {
+    const hasUnsavedChanges = baselineSnapshotRef.current !== getCurrentDraftSnapshot();
+    if (hasUnsavedChanges) {
+      const shouldDiscard = window.confirm(
+        'Existem alterações não salvas nesta aula.\n\nSe sair agora, essas alterações serão perdidas. Deseja sair mesmo assim?'
+      );
+      if (!shouldDiscard) return;
+    }
+    onClose();
+  };
+
   // Sync state with submodule prop when it changes
   React.useEffect(() => {
+    historyPastRef.current = [];
+    historyFutureRef.current = [];
+    previousBlocksRef.current = cloneBuilderBlocks(submodule.builder_data || []);
+    historyActionRef.current = 'sync';
+    baselineSnapshotRef.current = editorDraftSnapshot({
+      submoduleName: submodule.name || '',
+      blocks: submodule.builder_data || [],
+      viewMode: submodule.htmlMode || 'visual',
+      contentType: submodule.contentType || 'html',
+      contentUrl: submodule.contentUrl || '',
+      contentHtml: submodule.customHtml || (submodule.htmlMode === 'code' ? submodule.contentHtml || submodule.content_html || '' : ''),
+      htmlInteractive: submodule.htmlInteractive === true,
+      hasCustomHtml: Boolean(submodule.customHtml || submodule.htmlMode === 'code'),
+      timeGateSeconds: submodule.gamificationConfig?.timeGateSeconds || 0,
+      enableCelebration: submodule.gamificationConfig?.enableCelebration ?? true
+    });
+    setHistoryVersion(version => version + 1);
     setSubmoduleName(submodule.name || '');
     setBlocks(submodule.builder_data || []);
     setViewMode(submodule.htmlMode || 'visual');
@@ -67,6 +141,41 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     setTimeGateSeconds(submodule.gamificationConfig?.timeGateSeconds || 0);
     setEnableCelebration(submodule.gamificationConfig?.enableCelebration ?? true);
   }, [submodule]);
+
+  React.useEffect(() => {
+    const previous = previousBlocksRef.current;
+    const next = cloneBuilderBlocks(blocks);
+
+    if (historyActionRef.current === 'sync') {
+      previousBlocksRef.current = next;
+      historyActionRef.current = 'normal';
+      return;
+    }
+
+    if (JSON.stringify(previous) === JSON.stringify(next)) return;
+
+    if (historyActionRef.current === 'undo' || historyActionRef.current === 'redo') {
+      previousBlocksRef.current = next;
+      historyActionRef.current = 'normal';
+      setHistoryVersion(version => version + 1);
+      return;
+    }
+
+    historyPastRef.current = [...historyPastRef.current.slice(-49), cloneBuilderBlocks(previous)];
+    historyFutureRef.current = [];
+    previousBlocksRef.current = next;
+    setHistoryVersion(version => version + 1);
+  }, [blocks]);
+
+  React.useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (baselineSnapshotRef.current === getCurrentDraftSnapshot()) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  });
 
   const handleSave = () => {
     let finalHtml = '';
@@ -98,6 +207,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
           enableCelebration
         }
       });
+      baselineSnapshotRef.current = getCurrentDraftSnapshot();
       onSave(finalHtml, finalBlocks, contentType === 'html' ? viewMode : undefined);
     }
   };
@@ -125,6 +235,61 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     setSelectedBlockId(newId);
   };
   const deleteBlock = (id: string) => { setBlocks(current => current.filter(b => b.id !== id)); if (selectedBlockId === id) setSelectedBlockId(null); };
+
+  const undoBlocks = () => {
+    const previous = historyPastRef.current.at(-1);
+    if (!previous) return;
+    historyPastRef.current = historyPastRef.current.slice(0, -1);
+    historyFutureRef.current = [...historyFutureRef.current.slice(-49), cloneBuilderBlocks(blocks)];
+    historyActionRef.current = 'undo';
+    const restored = cloneBuilderBlocks(previous);
+    setBlocks(restored);
+    setSelectedBlockId(current => current && restored.some(block => block.id === current) ? current : null);
+    setHistoryVersion(version => version + 1);
+  };
+
+  const redoBlocks = () => {
+    const next = historyFutureRef.current.at(-1);
+    if (!next) return;
+    historyFutureRef.current = historyFutureRef.current.slice(0, -1);
+    historyPastRef.current = [...historyPastRef.current.slice(-49), cloneBuilderBlocks(blocks)];
+    historyActionRef.current = 'redo';
+    const restored = cloneBuilderBlocks(next);
+    setBlocks(restored);
+    setSelectedBlockId(current => current && restored.some(block => block.id === current) ? current : null);
+    setHistoryVersion(version => version + 1);
+  };
+
+  const canUndo = historyVersion > -1 && historyPastRef.current.length > 0;
+  const canRedo = historyVersion > -1 && historyFutureRef.current.length > 0;
+
+  React.useEffect(() => {
+    const handleEditorShortcut = (event: KeyboardEvent) => {
+      if (contentType !== 'html' || viewMode !== 'visual') return;
+      const target = event.target as HTMLElement | null;
+      const isTyping = Boolean(
+        target?.isContentEditable ||
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT'
+      );
+      if (isTyping || !(event.ctrlKey || event.metaKey)) return;
+
+      const key = event.key.toLowerCase();
+      if (key === 'z' && !event.shiftKey) {
+        if (!canUndo) return;
+        event.preventDefault();
+        undoBlocks();
+      } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+        if (!canRedo) return;
+        event.preventDefault();
+        redoBlocks();
+      }
+    };
+
+    window.addEventListener('keydown', handleEditorShortcut);
+    return () => window.removeEventListener('keydown', handleEditorShortcut);
+  }, [contentType, viewMode, canUndo, canRedo, blocks]);
 
   const rememberRichTextSelection = () => {
     const editor = richTextEditorRef.current;
@@ -231,7 +396,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     }}>
       <header className="vpb-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn-ghost" onClick={onClose}><ArrowLeft size={16} /> Voltar</button>
+          <button className="btn-ghost" onClick={requestClose}><ArrowLeft size={16} /> Voltar</button>
           <span style={{ fontFamily: 'Syne', fontWeight: 600, fontSize: '15px' }}>{submoduleName}</span>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -255,10 +420,34 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
             </div>
           )}
           <div className="vpb-header-actions">
+            {contentType === 'html' && viewMode === 'visual' && (
+              <>
+                <button
+                  className="btn-ghost"
+                  onClick={undoBlocks}
+                  disabled={!canUndo}
+                  title="Desfazer (Ctrl+Z)"
+                  aria-label="Desfazer última alteração"
+                  style={{ opacity: canUndo ? 1 : 0.45 }}
+                >
+                  <Undo2 size={16} /> Desfazer
+                </button>
+                <button
+                  className="btn-ghost"
+                  onClick={redoBlocks}
+                  disabled={!canRedo}
+                  title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)"
+                  aria-label="Refazer última alteração"
+                  style={{ opacity: canRedo ? 1 : 0.45 }}
+                >
+                  <Redo2 size={16} /> Refazer
+                </button>
+              </>
+            )}
             <button className="btn-primary" onClick={handleSave}>
               <Check size={16} /> Salvar Aula
             </button>
-            <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+            <button className="btn-ghost" onClick={requestClose}>Cancelar</button>
           </div>
         </div>
       </header>
