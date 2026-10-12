@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, Eye, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, RotateCcw, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Project, ToastType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
@@ -69,12 +69,13 @@ export function Header({ handleOpenProject, handlePublish, showToast }: HeaderPr
             </button>
             <button 
               className="btn-ghost" 
+              title="Reproduzir novamente a tela de abertura no preview ao lado"
               onClick={() => {
                 setSplash(true);
                 setTimeout(() => setSplash(false), 1500);
               }}
             >
-              <Eye size={16} /> Preview PWA
+              <RotateCcw size={16} /> Rever abertura
             </button>
             <button className="btn-primary" onClick={handlePublish}><Sparkles size={16} /> Publicar</button>
           </>

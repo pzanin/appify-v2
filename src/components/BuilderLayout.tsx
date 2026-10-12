@@ -40,7 +40,6 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
   React.useEffect(() => {
     if (!steps.some(step => step.id === activeStep)) setStep(1);
   }, [activeStep, config.engagementEnabled, config.gamification?.enabled, setStep]);
-  const progressPercent = Math.round((Math.max(0, steps.findIndex(step => step.id === activeStep)) / steps.length) * 100);
 
   let activeSubToEdit = null;
   if (editingSubmodule) {
@@ -88,7 +87,6 @@ export default function BuilderLayout({ isPhoneDark, setIsPhoneDark, handleDelet
               <span>{SUPPORTED_LOCALES.find(l => l.code === pwaLanguage)?.label}</span>
             </div>
           </div>
-          {!showHelp && <div className="progress-bar-wrap"><span>{progressPercent}% completo</span><div className="progress-bar"><div className="progress-fill" style={{ width: `${progressPercent}%` }}></div></div></div>}
         </div>
 
         <div className="workspace">
