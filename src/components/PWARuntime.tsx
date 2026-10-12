@@ -9,6 +9,7 @@ import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
 import { openExternalLink, normalizeExternalUrl } from '../utils/externalLinks';
 import { engagementIsEnabled } from '../utils/projectFeatures';
+import { shouldCelebrateLesson } from '../utils/lessonCelebration';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -178,7 +179,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
     if (!canCompleteLesson || selectedMockupModuleId === null || selectedMockupSubmoduleId === null) return;
     if (!learning.complete(selectedMockupModuleId, selectedMockupSubmoduleId)) return;
     void trackAnalyticsEvent(pwaConfig, analyticsLive, {eventName:'lesson_complete',moduleId:String(selectedMockupModuleId),lessonId:String(selectedMockupSubmoduleId)});
-    if (gamification.enabled && gamification.enableCelebration && (selectedMockupSubmodule?.gamificationConfig?.enableCelebration ?? true)) {
+    if (shouldCelebrateLesson(gamification, selectedMockupSubmodule?.gamificationConfig)) {
       setIsCelebrating(true);
       setTimeout(() => setIsCelebrating(false), 3500);
     }
