@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, ExternalLink, Copy, CheckCircle2, AlertCircle, Database, Loader2 } from 'lucide-react';
+import { Download, ExternalLink, Copy, CheckCircle2, AlertCircle, Database, Loader2, Mail } from 'lucide-react';
 import { DeployInstructions } from './DeployInstructions';
 import { useAppStore } from '../store/useAppStore';
 import { ToastType } from '../types';
@@ -113,7 +113,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
           <h3 style={{ margin: 0 }}>2. Backend e acesso</h3>
         </div>
         <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 10 }}>
-          O backend é opcional. Ative o Supabase quando o produto precisar de login, perfil persistente ou validação de compradores.
+          O backend é opcional. Ative o Supabase quando o produto precisar de login, perfil persistente ou, mais adiante, validação de compradores.
         </p>
 
         <label className="vpb-label" htmlFor="backend-provider">Backend</label>
@@ -174,13 +174,28 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
             {connectionState === 'success' && <span style={{ color: 'var(--accent3)', fontSize: 13 }}>✓ {connectionMessage}</span>}
             {connectionState === 'error' && <span role="alert" style={{ color: 'var(--accent2)', fontSize: 13 }}>{connectionMessage}</span>}
           </div>
-          <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0 }}>
-            Nesta fase, o Appify apenas prepara e valida a conexão pública. Login, sessão e perfil persistente serão ativados na próxima etapa.
-          </p>
+
+          <div style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 12 }}>
+            <label htmlFor="customer-auth-enabled" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 700 }}>
+              <input
+                id="customer-auth-enabled"
+                type="checkbox"
+                checked={config.customerAuthEnabled === true}
+                onChange={e => updateConfig({ customerAuthEnabled: e.target.checked })}
+              />
+              <Mail size={18} /> Exigir login por e-mail
+            </label>
+            <p style={{ color: 'var(--muted)', fontSize: 12, margin: '8px 0 0 28px', lineHeight: 1.5 }}>
+              Na primeira entrada, o cliente informa o e-mail e confirma um código. Depois, a sessão válida abre o PWA diretamente. O login aceita somente usuários já existentes no Supabase e ainda não comprova uma compra.
+            </p>
+            {config.customerAuthEnabled && <p style={{ color: 'var(--muted)', fontSize: 12, margin: '8px 0 0 28px', lineHeight: 1.5 }}>
+              Para usar código de 6 dígitos, o template de e-mail do Supabase deve incluir a variável de OTP. A prévia do Appify simula o fluxo sem enviar e-mail.
+            </p>}
+          </div>
         </div>}
 
         {backendProvider === 'none' && <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 14 }}>
-          O PWA será exportado sem configuração de backend e continuará funcionando como hoje.
+          O PWA será exportado sem configuração de backend e continuará funcionando como hoje. Qualquer configuração de login fica inativa enquanto o backend estiver desligado.
         </p>}
       </section>
 
