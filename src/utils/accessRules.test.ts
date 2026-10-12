@@ -1,31 +1,32 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { accessStartStorageKey, evaluateAccessRule, getOrCreateAccessStartedAt } from './accessRules';
 
 describe('access rules', () => {
   it('allows immediate content', () => {
-    expect(evaluateAccessRule({ releaseType: 'immediate' }, 1000, 1000).allowed).toBe(true);
+    assert.equal(evaluateAccessRule({ releaseType: 'immediate' }, 1000, 1000).allowed, true);
   });
 
   it('locks drip content until its release date', () => {
     const day = 24 * 60 * 60 * 1000;
     const result = evaluateAccessRule({ releaseType: 'drip', dripDays: 3 }, 1000, 1000 + day);
-    expect(result.allowed).toBe(false);
-    expect(result.reason).toBe('drip');
-    expect(result.remainingDays).toBe(2);
+    assert.equal(result.allowed, false);
+    assert.equal(result.reason, 'drip');
+    assert.equal(result.remainingDays, 2);
   });
 
   it('releases drip content when the interval is complete', () => {
     const day = 24 * 60 * 60 * 1000;
-    expect(evaluateAccessRule({ releaseType: 'drip', dripDays: 3 }, 1000, 1000 + 3 * day).allowed).toBe(true);
+    assert.equal(evaluateAccessRule({ releaseType: 'drip', dripDays: 3 }, 1000, 1000 + 3 * day).allowed, true);
   });
 
   it('treats zero-day drip as immediately available', () => {
-    expect(evaluateAccessRule({ releaseType: 'drip', dripDays: 0 }, 1000, 1000).allowed).toBe(true);
+    assert.equal(evaluateAccessRule({ releaseType: 'drip', dripDays: 0 }, 1000, 1000).allowed, true);
   });
 
   it('blocks upsell and legacy locked content', () => {
-    expect(evaluateAccessRule({ releaseType: 'upsell' }, 1000, 1000).reason).toBe('upsell');
-    expect(evaluateAccessRule({ releaseType: 'locked' }, 1000, 1000).reason).toBe('upsell');
+    assert.equal(evaluateAccessRule({ releaseType: 'upsell' }, 1000, 1000).reason, 'upsell');
+    assert.equal(evaluateAccessRule({ releaseType: 'locked' }, 1000, 1000).reason, 'upsell');
   });
 
   it('persists the first access timestamp once per product', () => {
@@ -34,8 +35,8 @@ describe('access rules', () => {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => { values.set(key, value); },
     };
-    expect(getOrCreateAccessStartedAt('product-a', 1, 1000, storage)).toBe(1000);
-    expect(getOrCreateAccessStartedAt('product-a', 1, 9000, storage)).toBe(1000);
-    expect(values.get(accessStartStorageKey('product-a', 1))).toBe('1000');
+    assert.equal(getOrCreateAccessStartedAt('product-a', 1, 1000, storage), 1000);
+    assert.equal(getOrCreateAccessStartedAt('product-a', 1, 9000, storage), 1000);
+    assert.equal(values.get(accessStartStorageKey('product-a', 1)), '1000');
   });
 });
