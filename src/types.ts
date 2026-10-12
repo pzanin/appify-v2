@@ -75,7 +75,9 @@ export interface PwaConfig {
   startUrl: string;
   version: string;
   changelogNotes: string;
+  backendProvider?: 'none' | 'supabase';
   supabaseUrl: string;
+  supabasePublishableKey?: string;
   supabaseAnonKey: string;
   carouselInterval?: number;
   defaultTheme: 'light' | 'dark';
