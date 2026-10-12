@@ -7,7 +7,8 @@ import { CustomerModuleCards, CustomerLessonList, LearningProgress, CustomerBott
 import { CustomerEntry } from './CustomerEntry';
 import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
-import { openExternalLink } from '../utils/externalLinks';
+import { openExternalLink, normalizeExternalUrl } from '../utils/externalLinks';
+import { AccessDecision, evaluateAccessRule, getOrCreateAccessStartedAt } from '../utils/accessRules';
 import { engagementIsEnabled } from '../utils/projectFeatures';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock } from 'lucide-react';
@@ -83,7 +84,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
   const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
 
-  const [lockedModuleClick, setLockedModuleClick] = useState<any>(null);
+  const [lockedContentClick, setLockedContentClick] = useState<{ item: any; kind: 'module' | 'lesson'; decision: AccessDecision; moduleId: number; lessonId?: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [hasNewAnnouncement, setHasNewAnnouncement] = useState<boolean>(false);
@@ -118,6 +119,39 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
     enableStreaks: false, 
     streakIcon: '🔥', 
     enableCelebration: false 
+  };
+  const accessStartedAt = React.useMemo(() => getOrCreateAccessStartedAt(pwaConfig.productId, currentProjectId), [pwaConfig.productId, currentProjectId]);
+  const moduleAccess = (mod: any) => evaluateAccessRule(mod, accessStartedAt);
+  const lessonAccess = (lesson: any) => evaluateAccessRule(lesson, accessStartedAt);
+  const openModuleWithAccess = (mod: any) => {
+    if (mod.status === 'Rascunho') return;
+    const decision = moduleAccess(mod);
+    if (!decision.allowed) {
+      setLockedContentClick({ item: mod, kind: 'module', decision, moduleId: mod.id });
+      return;
+    }
+    setSelectedMockupModuleId(mod.id);
+  };
+  const openLessonWithAccess = (mod: any, lessonId: number) => {
+    const lesson = mod?.subs?.find((entry: any) => entry.id === lessonId);
+    if (!lesson) return;
+    const decision = lessonAccess(lesson);
+    if (!decision.allowed) {
+      setLockedContentClick({ item: lesson, kind: 'lesson', decision, moduleId: mod.id, lessonId });
+      return;
+    }
+    setSelectedMockupSubmoduleId(lessonId);
+  };
+  const openLearningLocationWithAccess = (location: { moduleId: number; lessonId: number }) => {
+    const mod = modules.find(entry => entry.id === location.moduleId);
+    if (!mod || mod.status === 'Rascunho') return;
+    const moduleDecision = moduleAccess(mod);
+    if (!moduleDecision.allowed) {
+      setLockedContentClick({ item: mod, kind: 'module', decision: moduleDecision, moduleId: mod.id });
+      return;
+    }
+    setSelectedMockupModuleId(mod.id);
+    openLessonWithAccess(mod, location.lessonId);
   };
 
   const confettiColors = ['#FFC700', '#FF0055', '#00FF88', '#00B8FF'];
@@ -381,21 +415,29 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
         </AnimatePresence>
 
         <AnimatePresence>
-          {lockedModuleClick && (
+          {lockedContentClick && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 60, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <div style={{ position: 'absolute', inset: 0 }} onClick={() => setLockedModuleClick(null)} />
+              <div style={{ position: 'absolute', inset: 0 }} onClick={() => setLockedContentClick(null)} />
               <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} style={{ position: 'relative', background: isPhoneDark ? '#1f2937' : 'white', borderRadius: '32px 32px 0 0', padding: '32px 24px 40px', color: isPhoneDark ? '#fff' : '#111', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', border: '6px solid #FFE0B2' }}>
                   <Lock size={32} color="#F57C00" />
                 </div>
-                <h3 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>{t('app.upsell.lockedTitle')}</h3>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, marginBottom: '8px', color: isPhoneDark ? '#fff' : '#111' }}>{lockedContentClick.decision.reason === 'drip' ? t('app.upsell.dripTitle') : lockedContentClick.decision.reason === 'points' ? t('app.upsell.pointsTitle') : t('app.upsell.lockedTitle')}</h3>
                 <p style={{ fontSize: '14px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '28px', lineHeight: 1.5 }}>
-                  {t('app.upsell.lockedMessagePart1')} <strong>{lockedModuleClick.name}</strong>, {t('app.upsell.lockedMessagePart2')}
+                  {lockedContentClick.decision.reason === 'drip'
+                    ? t('app.upsell.dripMessage', { days: lockedContentClick.decision.remainingDays || 1, date: lockedContentClick.decision.unlockAt ? new Intl.DateTimeFormat(pwaLanguage).format(new Date(lockedContentClick.decision.unlockAt)) : '' })
+                    : lockedContentClick.decision.reason === 'points'
+                      ? t('app.upsell.pointsMessage', { points: lockedContentClick.decision.requiredPoints || 0 })
+                      : <>{lockedContentClick.kind === 'lesson' ? t('app.upsell.lockedLessonPart1') : t('app.upsell.lockedMessagePart1')} <strong>{lockedContentClick.item.name}</strong>, {t('app.upsell.lockedMessagePart2')}</>}
                 </p>
-                <button onClick={() => { if (lockedModuleClick.checkoutUrl) openExternalLink(lockedModuleClick.checkoutUrl); setLockedModuleClick(null); }} style={{ width: '100%', padding: '16px', background: '#0F172A', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 700, fontSize: '16px', cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)' }}>
-                  <PackageOpen size={18} /> {t('app.upsell.checkoutButton')}
-                </button>
-                <button onClick={() => setLockedModuleClick(null)} style={{ background: 'transparent', color: isPhoneDark ? '#9CA3AF' : '#6B7280', width: '100%', padding: '12px', border: 'none', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}>{t('app.upsell.cancelButton')}</button>
+                {lockedContentClick.decision.reason === 'upsell' && (() => {
+                  const url = normalizeExternalUrl(lockedContentClick.item.checkoutUrl);
+                  if (!url || !url.startsWith('https://')) return null;
+                  return <button onClick={() => { openExternalLink(url); setLockedContentClick(null); }} style={{ width: '100%', padding: '16px', background: '#0F172A', color: 'white', borderRadius: '16px', border: 'none', fontWeight: 700, fontSize: '16px', cursor: 'pointer', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.2)' }}>
+                    <PackageOpen size={18} /> {t('app.upsell.checkoutButton')}
+                  </button>;
+                })()}
+                <button onClick={() => setLockedContentClick(null)} style={{ background: 'transparent', color: isPhoneDark ? '#9CA3AF' : '#6B7280', width: '100%', padding: '12px', border: 'none', fontSize: '15px', fontWeight: 600, cursor: 'pointer' }}>{t('app.upsell.cancelButton')}</button>
               </motion.div>
             </motion.div>
           )}
@@ -820,7 +862,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                           {(selectedMockupModule.subs?.length || 0) === 0 ? (
                             <EmptyState icon={PackageOpen} text={t('app.modules.noLessons')} />
                           ) : (
-                            <CustomerLessonList module={selectedMockupModule} completed={learning.completed} onOpen={setSelectedMockupSubmoduleId} t={t} themeColor={themeColor} dark={isPhoneDark} />
+                            <CustomerLessonList module={selectedMockupModule} completed={learning.completed} isLocked={lesson => !lessonAccess(lesson).allowed} onOpen={id => openLessonWithAccess(selectedMockupModule, id)} t={t} themeColor={themeColor} dark={isPhoneDark} />
                           )}
                         </>
                       )}
@@ -870,7 +912,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                         );
                       })()}
 
-                      <ContinueLearning title={t('app.learning.resumeTitle')} location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');setSelectedMockupModuleId(location.moduleId);setSelectedMockupSubmoduleId(location.lessonId);}} />
+                      <ContinueLearning title={t('app.learning.resumeTitle')} location={learning.resume} modules={modules} themeColor={themeColor} dark={isPhoneDark} label={learning.resume && learning.completed(learning.resume.moduleId,learning.resume.lessonId) ? t('app.learning.review') : t('app.learning.continue')} onContinue={location=>{setActiveTab('inicio');openLearningLocationWithAccess(location);}} />
 
                       <div className="phone-modules-header" style={{ flexShrink: 0 }}>
                         <h2 className="cx-home-heading" style={{ color: isPhoneDark ? '#FFFFFF' : '#1f2937' }}>{t('app.modules.title')}</h2>
@@ -879,11 +921,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
                       {modules.length === 0 ? (
                         <EmptyState icon={LayoutGrid} text={t('app.modules.emptyState')} />
                       ) : (
-                        <CustomerModuleCards modules={modules} moduleProgress={learning.moduleProgress} list={viewMode === 'list'} t={t} themeColor={themeColor} dark={isPhoneDark} onOpen={mod => {
-                          if (mod.status === 'Rascunho') return;
-                          if (mod.releaseType === 'locked' || mod.releaseType === 'upsell' || mod.releaseType === 'points') setLockedModuleClick(mod);
-                          else setSelectedMockupModuleId(mod.id);
-                        }} />
+                        <CustomerModuleCards modules={modules} moduleProgress={learning.moduleProgress} list={viewMode === 'list'} isLocked={mod => mod.status !== 'Rascunho' && !moduleAccess(mod).allowed} t={t} themeColor={themeColor} dark={isPhoneDark} onOpen={openModuleWithAccess} />
                       )}
                     </motion.div>
                   )}
