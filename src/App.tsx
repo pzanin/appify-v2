@@ -138,7 +138,6 @@ function AppContent() {
       <CleanYouTubePreviewEnhancer />
       <Header
         handleOpenProject={handleOpenProject}
-        handlePublish={builderActions.handlePublish}
         showToast={showToast}
       />
 

@@ -149,11 +149,6 @@ export function useBuilderActions(showToast: (msg: string, type?: ToastType) => 
   const updateSubmoduleContent = useAppStore(state => state.updateSubmoduleContent);
   const setEditingSubmodule = useAppStore(state => state.setEditingSubmodule);
 
-  const handlePublish = () => {
-    showToast('Iniciando deploy na edge...', 'loading');
-    setTimeout(() => showToast('App serviço publicado com sucesso!', 'success'), 2000);
-  };
-
   const handleDeleteModule = (id: number) => {
     deleteModule(id);
     showToast('Módulo deletado permanentemente.', 'error');
@@ -176,7 +171,6 @@ export function useBuilderActions(showToast: (msg: string, type?: ToastType) => 
   };
 
   return {
-    handlePublish,
     handleDeleteModule,
     handleDeleteSubmodule,
     handleAddSubmodule,

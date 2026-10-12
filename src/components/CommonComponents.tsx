@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, RotateCcw, Download, Sparkles, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Smartphone, Calendar, Users, Plus, Check, ArrowLeft, RotateCcw, Download, Sun, Moon, Bell, Home, Rss, User, Trash2, Copy, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Project, ToastType } from '../types';
 import { useAppStore } from '../store/useAppStore';
 import { PIPELINE_STEPS } from '../constants';
@@ -9,11 +9,10 @@ import { AppifyLogo } from './AppLogo';
 // --- Header ---
 interface HeaderProps {
   handleOpenProject: (id: number, name: string) => void;
-  handlePublish: () => void;
   showToast: (msg: string, type?: ToastType) => void;
 }
 
-export function Header({ handleOpenProject, handlePublish, showToast }: HeaderProps) {
+export function Header({ handleOpenProject, showToast }: HeaderProps) {
   const currentView = useAppStore(state => state.currentView);
   const setView = useAppStore(state => state.setView);
   const setSplash = useAppStore(state => state.setSplash);
@@ -77,7 +76,6 @@ export function Header({ handleOpenProject, handlePublish, showToast }: HeaderPr
             >
               <RotateCcw size={16} /> Rever abertura
             </button>
-            <button className="btn-primary" onClick={handlePublish}><Sparkles size={16} /> Publicar</button>
           </>
         ) : (
           <button 
