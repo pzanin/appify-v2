@@ -1,30 +1,31 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Define values from environment variables
+// Legacy environment support remains for older development setups.
 const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
-const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
+const supabasePublishableKey = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY
+  || (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
 let client: SupabaseClient | null = null;
 
 /**
- * Singleton client for general app persistence
+ * Singleton client for general app persistence.
+ * Only a public/publishable key may be used in browser code.
  */
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
+  supabasePublishableKey || 'placeholder'
 );
 
 /**
- * Factory function for testing or specific configurations (used in PublicationHub)
+ * Factory function for testing or specific public configurations.
  */
-export function getSupabaseClient(url: string, anonKey: string) {
-  if (!url || !anonKey) return null;
-  
-  // If credentials match the singleton, return it
-  if (url === supabaseUrl && anonKey === supabaseAnonKey) return supabase;
+export function getSupabaseClient(url: string, publishableKey: string) {
+  if (!url || !publishableKey) return null;
 
-  // Otherwise create a temporary client (e.g. for testing connection with different credentials)
-  return createClient(url, anonKey, {
+  // If credentials match the singleton, return it.
+  if (url === supabaseUrl && publishableKey === supabasePublishableKey) return supabase;
+
+  return createClient(url, publishableKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -34,8 +35,8 @@ export function getSupabaseClient(url: string, anonKey: string) {
 }
 
 /**
- * Resets the cached connection (not strictly needed but kept for compatibility)
+ * Resets the cached connection (kept for compatibility).
  */
 export function resetClient() {
-  // No-op for the singleton exported above, but matches the interface expected by consumers
+  client = null;
 }
