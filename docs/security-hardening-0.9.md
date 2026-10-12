@@ -1,6 +1,6 @@
 # Appify 0.9 Local — hardening incremental
 
-Atualizado: 05/10/2026. Branch: `feature/appify-0.9-local-foundation`.
+Atualizado: 12/10/2026. A base de segurança continua incremental; as alterações atuais incluem backend público opcional e autenticação Supabase do cliente.
 
 ## Auditoria e correções
 
@@ -15,49 +15,73 @@ Atualizado: 05/10/2026. Branch: `feature/appify-0.9-local-foundation`.
 | Export | Só cinco nomes de secrets no primeiro nível | Bloqueio em dados aninhados e no ZIP final: chaves privadas comuns, JWTs privados, service_role, campos de credenciais e paths fora da lista permitida. Falha no template interrompe a exportação. |
 | Erros | Exceções/stack/corpos de backend nos logs e mensagem bruta na tela | IPC retorna erro fixo; logs não serializam exceções, dados de projeto ou respostas privadas; ErrorBoundary usa mensagem fixa. |
 | .env/Git | Artefatos de build rastreados, exemplo de env antigo | .env e material privado ignorados; artefatos deixam de ser rastreados; variáveis .env não são expostas ao renderer. Hook opcional e CI verificam secrets. |
+| Supabase público | Configuração não estava clara por produto | Publicação aceita apenas Project URL + Publishable Key; configuração é opcional e é removida do JSON público quando backend está desligado. |
+| Chaves Supabase | Risco de colar credencial privilegiada no frontend | UI, validação e scanner rejeitam Secret Key, service_role e padrões privados. Publishable Key é a única chave nova destinada ao PWA. |
+| Login | E-mail simples poderia virar falsa autenticação | Login usa Supabase Auth OTP, sessão persistente e `shouldCreateUser: false`; e-mails desconhecidos não são cadastrados automaticamente pelo PWA. |
+| Regras de acesso | Drip/Upsell poderiam ser contornados na prévia/retomada | Módulos, aulas e Continuar de onde parei passam pela mesma avaliação de acesso no PhoneMockup e runtime. |
 
-Não foi adicionada autenticação nem backend. A integração opcional preexistente com Supabase não foi ampliada.
+## Backend e separação de responsabilidades
+
+O Appify desktop continua local. O Supabase é backend opcional do PWA exportado. Essa separação evita que o editor dependa de um serviço online para abrir ou salvar projetos.
+
+A Publishable Key pode existir no frontend porque é uma credencial pública de baixa permissão. Isso não torna os dados públicos automaticamente: tabelas e Storage devem usar RLS correta. Secret Key, `service_role`, senha do banco, segredo de webhook e tokens administrativos pertencem somente a componentes de backend e nunca ao ZIP.
+
+## Autenticação por e-mail
+
+Quando Exigir login por e-mail está ativado, o PWA usa Supabase Auth:
+
+- sessão existente: entra direto;
+- sem sessão: solicita OTP para o e-mail informado;
+- `shouldCreateUser: false`: não cria conta desconhecida;
+- confirmação do OTP: cria/restaura sessão;
+- sessão fica persistida pelo cliente Supabase e pode ser renovada automaticamente.
+
+A UI não deve exibir mensagens de erro brutas do Supabase. Falhas são traduzidas em mensagens genéricas para evitar vazamento de detalhes internos.
+
+O template de e-mail precisa incluir `{{ .Token }}` para o fluxo de código numérico. Essa configuração é feita no Supabase Auth.
+
+## Limite crítico: login não é compra e não é DRM
+
+Autenticação Supabase comprova uma identidade, não um pagamento. Ainda não existe nesta etapa entitlement automático por produto nem webhook de Hotmart, Stripe ou outro checkout. Um checkout futuro deverá alimentar um backend confiável, que concederá/revogará entitlements.
+
+O ZIP do PWA é frontend distribuído ao cliente e pode conter conteúdo estático. Uma tela de login não impede que alguém tecnicamente capacitado inspecione arquivos já presentes no pacote. Conteúdo realmente protegido deve ser entregue pelo backend somente após validação da sessão e do entitlement.
+
+## Drip e Upsell
+
+Immediate, Drip e Upsell são funcionais no nível de módulo e aula e são respeitados também pela retomada de conteúdo. O Drip atual usa um timestamp de primeiro acesso mantido no navegador/dispositivo. Esse timestamp é adequado ao MVP, mas não é uma data de compra confiável. Quando o backend de entitlement existir, o marco temporal deverá vir do servidor.
+
+Upsell pode encaminhar para checkout HTTPS, mas o retorno de pagamento ainda não libera automaticamente o conteúdo.
 
 ## Validação automatizada
 
 ```sh
 npm ci
+npm run check:secrets
+npm audit --audit-level=low
 npm run lint
 npm test
+npm run build:pwa
 npm run build
-npm run check:secrets
-npm run check:secrets -- --build
 ```
 
-`npm run build` gera primeiro o template PWA e depois o renderer/main/preload desktop. `npm run dev` também prepara o template. O servidor de desenvolvimento escuta apenas em loopback. Node 22.22.2+ (série 22), 24.15.0+ (série 24) ou 26+; CI usa Node 24.
+O CI bloqueia secrets detectáveis, vulnerabilidades conhecidas no nível configurado, falhas de tipos/testes e builds quebrados.
 
-## Revisão de dependências — 05/10/2026
+## Revisão de dependências
 
-- Auditoria inicial: 28 entradas vulneráveis (1 crítica, 25 altas, 1 moderada e 1 baixa), incluindo ferramentas de build e o Electron usado no desktop.
-- Atualizações compatíveis no lockfile; mínimos de Electron 42.11.10, electron-builder 26.15.3 e Vite 6.4.3. A dependência transitiva tar passou a 7.5.22.
-- Removido `shx`, sem uso desde a cópia portátil do template por Node. Não foi usado `npm audit fix --force` nem downgrade automático.
-- Instalação limpa com `npm ci`; auditoria completa retornou zero vulnerabilidades conhecidas nessa data. Isso não certifica ausência de falhas desconhecidas nem autenticação de compradores.
-- CI executa também `npm audit --audit-level=low`, bloqueando novas alterações com alertas conhecidos em qualquer severidade.
-- Testes de tipos, 38 testes automatizados, builds PWA/desktop, scanner de secrets e execução real da atividade no Electron são as verificações desta atualização. O teste resolve o executável pelo pacote Electron, incluindo seu download sob demanda após uma instalação limpa.
+- Dependências críticas de build/Electron foram atualizadas de forma compatível.
+- O projeto não usa `npm audit fix --force` como correção automática de arquitetura.
+- CI usa Node 24 e executa auditoria em cada push/PR.
+- O aviso de bundles grandes continua sendo assunto de otimização, não de autenticação.
 
-Para ativar o hook na sua cópia local:
+## Limites e teste manual
 
-```sh
-npm run security:hooks
-```
+- HTML interativo continua isolado em iframe e não recebe acesso administrativo ao Appify.
+- O scanner de secrets reconhece padrões conhecidos; não prova ausência de segredos ofuscados ou divididos em fragmentos.
+- O PWA publicado ainda deve ser testado com HTTPS, cabeçalhos, CORS, Auth e RLS reais.
+- Para autenticação, testar usuário existente, usuário não cadastrado, código correto/incorreto, expiração, reabertura com sessão e troca de dispositivo.
+- Para acesso, testar Drip/Upsell em módulo, aula e Continuar de onde parei.
+- Para exportação, inspecionar `app-data.json` e confirmar que nenhuma Secret Key/service_role aparece.
 
-Os testes exercitam persistência/assets/backups, rejeição de senders e URLs, IDs contra traversal, erros seguros, sanitização/CSP e bloqueio do ZIP final. O build continua apresentando o aviso anterior de bundles grandes; otimização de tamanho fica fora deste hardening.
+Teste manual no Windows: abrir projetos antigos; criar/salvar/duplicar/importar backup; editar HTML visual e importado; abrir checkout externo; configurar Supabase público; exportar ZIP; testar PWA no navegador/celular; fechar com alterações pendentes; gerar o instalador com `npm run build:win` quando necessário.
 
-## Limites e teste no Windows
-
-- HTML estático remove scripts e formulários arbitrários. A opção interativa por aula mantém scripts inline dentro de um iframe isolado, sem acesso ao editor, Node, armazenamento nativo ou rede. O histórico local usa ponte limitada por atividade, sem acesso às outras chaves do host. Consulte `interactive-html-0.9.md`. O HTML original do projeto continua disponível para edição.
-- Vídeos/sites externos em iframe com origem opaca podem exigir permissões que agora são bloqueadas. Verifique os provedores usados no seu produto; não foi validada a reprodução real neste ambiente.
-- Detecção de secrets usa nomes/padrões conhecidos; não prova ausência de credenciais desconhecidas, codificadas ou divididas em fragmentos. Backup de projeto é um arquivo privado do editor, não um pacote para publicação.
-- CSP permite HTTPS para mídia/frames e conexões do backend opcional já existente; não há allowlist de domínio específica por produto nesta etapa.
-- O teste de atividade usa Electron/Chromium real no Linux; como o ambiente executa como root, somente esse processo de teste usa `--no-sandbox`. O sandbox do produto permanece ativado. A interface completa e o instalador Windows ainda precisam de validação manual.
-- O PWA publicado ainda precisa de inspeção de HTTPS/cabeçalhos de segurança e testes no celular. A entrada por email é demonstrativa, não valida compras nem restringe acesso ao conteúdo.
-- O guard verifica arquivos atuais/no index. Não reescreve nem certifica todo o histórico Git; credenciais anteriormente publicadas precisam de revogação quando identificadas.
-
-Teste manual no Windows: abrir projetos antigos; criar/salvar/duplicar/importar backup; editar HTML visual e importado; abrir um link Hotmart; exportar o ZIP e testar a aula/vídeos no navegador e celular; fechar com alterações pendentes; gerar o instalador com `npm run build:win`.
-
-Referências: [Electron Security](https://www.electronjs.org/docs/latest/tutorial/security), [Electron Sandboxing](https://www.electronjs.org/docs/latest/tutorial/sandbox), [DOMPurify](https://github.com/cure53/DOMPurify).
+Detalhes do fluxo atual: `docs/backend-access-auth-0.9.md` e `docs/customer-entry-0.9.md`.
