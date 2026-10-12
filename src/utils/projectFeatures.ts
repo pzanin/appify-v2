@@ -8,8 +8,14 @@ export const visibleProjectSteps = (config: PwaConfig) => PIPELINE_STEPS.filter(
 
 // Export disabled child features defensively without erasing the editor settings.
 export function publicFeatureConfig(config: PwaConfig): PwaConfig {
-  if (config.gamification?.enabled) return config;
-  return { ...config, gamification: { ...config.gamification, enabled: false,
+  const backendEnabled = config.backendProvider === 'supabase';
+  const publicKey = config.supabasePublishableKey || config.supabaseAnonKey || '';
+  const safeBackendConfig: PwaConfig = backendEnabled
+    ? { ...config, supabasePublishableKey: publicKey, supabaseAnonKey: '' }
+    : { ...config, backendProvider: 'none', supabaseUrl: '', supabasePublishableKey: '', supabaseAnonKey: '' };
+
+  if (safeBackendConfig.gamification?.enabled) return safeBackendConfig;
+  return { ...safeBackendConfig, gamification: { ...safeBackendConfig.gamification, enabled: false,
     progressStyle: 'none', enableStreaks: false, enableCelebration: false,
     enablePoints: false, enableBadges: false, awardsConfig: [] } };
 }
