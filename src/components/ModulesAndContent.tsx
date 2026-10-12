@@ -72,6 +72,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const historyFutureRef = useRef<BuilderBlock[][]>([]);
   const previousBlocksRef = useRef<BuilderBlock[]>(cloneBuilderBlocks(submodule.builder_data || []));
   const historyActionRef = useRef<'normal' | 'undo' | 'redo' | 'sync'>('sync');
+  const pendingHistoryKeyRef = useRef<string | null>(null);
+  const lastHistoryKeyRef = useRef<string | null>(null);
+  const lastHistoryAtRef = useRef(0);
   const [historyVersion, setHistoryVersion] = useState(0);
   const baselineSnapshotRef = useRef(editorDraftSnapshot({
     submoduleName: submodule.name || '',
@@ -116,6 +119,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     historyFutureRef.current = [];
     previousBlocksRef.current = cloneBuilderBlocks(submodule.builder_data || []);
     historyActionRef.current = 'sync';
+    pendingHistoryKeyRef.current = null;
+    lastHistoryKeyRef.current = null;
+    lastHistoryAtRef.current = 0;
     baselineSnapshotRef.current = editorDraftSnapshot({
       submoduleName: submodule.name || '',
       blocks: submodule.builder_data || [],
@@ -161,9 +167,22 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
       return;
     }
 
-    historyPastRef.current = [...historyPastRef.current.slice(-49), cloneBuilderBlocks(previous)];
+    const historyKey = pendingHistoryKeyRef.current;
+    pendingHistoryKeyRef.current = null;
+    const now = Date.now();
+    const shouldCoalesce = Boolean(
+      historyKey &&
+      lastHistoryKeyRef.current === historyKey &&
+      now - lastHistoryAtRef.current < 900
+    );
+
+    if (!shouldCoalesce) {
+      historyPastRef.current = [...historyPastRef.current.slice(-49), cloneBuilderBlocks(previous)];
+    }
     historyFutureRef.current = [];
     previousBlocksRef.current = next;
+    lastHistoryKeyRef.current = historyKey;
+    lastHistoryAtRef.current = now;
     setHistoryVersion(version => version + 1);
   }, [blocks]);
 
@@ -216,6 +235,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
 
 
   const addBlock = (type: string, subtype?: string) => {
+    pendingHistoryKeyRef.current = null;
     const newBlock = { id: generateId(), type, subtype: subtype || null, props: getDefaultProps(type, subtype,storageConfig.language) };
     setBlocks(current => {
       if (!selectedBlockId) return [...current, newBlock];
@@ -227,16 +247,23 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
     });
     setSelectedBlockId(newBlock.id);
   };
-  const updateProp = <K extends keyof BuilderBlock['props']>(key: K, value: BuilderBlock['props'][K]) => { setBlocks(current => current.map(b => b.id === selectedBlockId ? { ...b, props: { ...b.props, [key]: value } } : b)); };
-  const moveBlock = (id: string, dir: number) => setBlocks(current => reorderBlocks(current, id, dir));
+  const updateProp = <K extends keyof BuilderBlock['props']>(key: K, value: BuilderBlock['props'][K]) => {
+    pendingHistoryKeyRef.current = selectedBlockId ? `prop:${selectedBlockId}:${String(key)}` : null;
+    setBlocks(current => current.map(b => b.id === selectedBlockId ? { ...b, props: { ...b.props, [key]: value } } : b));
+  };
+  const moveBlock = (id: string, dir: number) => { pendingHistoryKeyRef.current = null; setBlocks(current => reorderBlocks(current, id, dir)); };
   const duplicateBlock = (id: string) => {
+    pendingHistoryKeyRef.current = null;
     const newId = generateId();
     setBlocks(current => current.flatMap(block => block.id === id ? [block, { ...block, id: newId, props: { ...block.props } }] : [block]));
     setSelectedBlockId(newId);
   };
-  const deleteBlock = (id: string) => { setBlocks(current => current.filter(b => b.id !== id)); if (selectedBlockId === id) setSelectedBlockId(null); };
+  const deleteBlock = (id: string) => { pendingHistoryKeyRef.current = null; setBlocks(current => current.filter(b => b.id !== id)); if (selectedBlockId === id) setSelectedBlockId(null); };
 
   const undoBlocks = () => {
+    pendingHistoryKeyRef.current = null;
+    lastHistoryKeyRef.current = null;
+    lastHistoryAtRef.current = 0;
     const previous = historyPastRef.current.at(-1);
     if (!previous) return;
     historyPastRef.current = historyPastRef.current.slice(0, -1);
@@ -249,6 +276,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   };
 
   const redoBlocks = () => {
+    pendingHistoryKeyRef.current = null;
+    lastHistoryKeyRef.current = null;
+    lastHistoryAtRef.current = 0;
     const next = historyFutureRef.current.at(-1);
     if (!next) return;
     historyFutureRef.current = historyFutureRef.current.slice(0, -1);
