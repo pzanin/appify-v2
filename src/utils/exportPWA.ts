@@ -93,9 +93,14 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         if (!html.trim()) continue;
         const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
         if (!isAllowedExportPath(pagePath)) throw new Error('Identificador de aula inválido.');
-        zip.file(pagePath, lesson.htmlInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html,pwaLanguage));
+        // Lessons that use localStorage must always be exported through Appify's
+        // isolated activity-storage bridge, even if they were imported before the
+        // explicit htmlInteractive flag existed.
+        const usesActivityStorage = /\blocalStorage\b/.test(html);
+        const effectiveInteractive = lesson.htmlInteractive === true || usesActivityStorage;
+        zip.file(pagePath, effectiveInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html,pwaLanguage));
         pageMatches.push(pagePath);
-        pageHeaders.push(`/${pagePath}\n  Content-Security-Policy: ${lesson.htmlInteractive ? `sandbox allow-scripts; ${INTERACTIVE_CSP}` : IMPORTED_HTML_CSP}\n`);
+        pageHeaders.push(`/${pagePath}\n  Content-Security-Policy: ${effectiveInteractive ? `sandbox allow-scripts; ${INTERACTIVE_CSP}` : IMPORTED_HTML_CSP}\n`);
       }
     }
 
