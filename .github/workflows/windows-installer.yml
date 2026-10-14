@@ -3,7 +3,7 @@ name: Windows installer
 on:
   workflow_dispatch:
   push:
-    branches: [feature/appify-0.9-recovery]
+    branches: [feature/appify-0.9-recovery, feature/lesson-activity-persistence]
     paths:
       - '.github/workflows/windows-installer.yml'
       - 'package.json'
