@@ -5,6 +5,7 @@ export const VIDEO_BRIDGE = "document.addEventListener('click',function(event){i
 import { LINK_BRIDGE_HASH, VIDEO_BRIDGE_HASH } from './securityPolicies';
 export { LINK_BRIDGE_HASH, VIDEO_BRIDGE_HASH } from './securityPolicies';
 export const IMPORTED_HTML_CSP = `default-src 'none'; script-src '${LINK_BRIDGE_HASH}' '${VIDEO_BRIDGE_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: data: appify-asset:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
+const SAFE_IMPORTED_URI = /^(?:(?:https?|mailto|data|appify-asset):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i;
 
 export function safeEmbedUrl(value: string): string | undefined {
   try {
@@ -22,6 +23,7 @@ export function sanitizeImportedHtml(source: string, wholeDocument = false): str
     ADD_TAGS: ['link', 'style', 'iframe'],
     FORBID_TAGS: ['script', 'base', 'meta', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', ...(!wholeDocument ? ['style', 'link'] : [])],
     FORBID_ATTR: ['srcdoc', 'action', 'formaction'],
+    ALLOWED_URI_REGEXP: SAFE_IMPORTED_URI,
   });
   const doc = new DOMParser().parseFromString(clean, 'text/html');
   doc.querySelectorAll('iframe').forEach(frame => {
