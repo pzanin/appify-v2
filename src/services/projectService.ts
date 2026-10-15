@@ -1,6 +1,7 @@
 import type { AppState, Project, ProjectBuildResult, ProjectFile, ProjectOperationResult } from '../types';
 
 const BROWSER_STORAGE_KEY = 'appify-browser-projects-v1';
+let activeProjectId: number | null = null;
 
 type BrowserProject = ProjectFile;
 
@@ -115,6 +116,7 @@ function desktopProjects() {
 
 export const projectService = {
   isDesktop: () => Boolean(desktopProjects()),
+  getCurrentProjectId: () => activeProjectId,
 
   getProjects: async (): Promise<Project[]> => {
     const desktop = desktopProjects();
@@ -123,16 +125,21 @@ export const projectService = {
 
   createProject: async (name: string, workspace: AppState): Promise<Project> => {
     const desktop = desktopProjects();
-    return desktop ? desktop.create(name, workspace) : browserFallback.create(name, workspace);
+    const project = desktop ? await desktop.create(name, workspace) : await browserFallback.create(name, workspace);
+    activeProjectId = project.id;
+    return project;
   },
 
   openProject: async (id: number): Promise<ProjectFile> => {
     const desktop = desktopProjects();
-    return desktop ? desktop.open(id) : browserFallback.open(id);
+    const document = desktop ? await desktop.open(id) : await browserFallback.open(id);
+    activeProjectId = id;
+    return document;
   },
 
   saveProject: async (id: number, workspace: AppState): Promise<Project> => {
     const desktop = desktopProjects();
+    activeProjectId = id;
     return desktop ? desktop.save(id, workspace) : browserFallback.save(id, workspace);
   },
 
@@ -143,6 +150,7 @@ export const projectService = {
 
   deleteProject: async (id: number): Promise<void> => {
     const desktop = desktopProjects();
+    if (activeProjectId === id) activeProjectId = null;
     return desktop ? desktop.remove(id) : browserFallback.remove(id);
   },
 
