@@ -10,7 +10,10 @@ import { ProjectRepository } from './projectRepository';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const interactiveContent = new InteractiveContentStore();
-protocol.registerSchemesAsPrivileged([{scheme:'appify-content',privileges:{standard:true,secure:true}}]);
+protocol.registerSchemesAsPrivileged([
+  {scheme:'appify-content',privileges:{standard:true,secure:true}},
+  {scheme:'appify-asset',privileges:{standard:true,secure:true,supportFetchAPI:true,stream:true}},
+]);
 let repository: ProjectRepository;
 const trustedWindows = new Map<number, { win: BrowserWindow; url: string }>();
 const closingWindows = new WeakSet<BrowserWindow>();
@@ -50,6 +53,26 @@ function requireBuildBytes(value: unknown) {
     throw new Error('O arquivo de build deve ter entre 1 byte e 500 MB.');
   }
   return value;
+}
+
+async function serveProjectAudio(request:Request) {
+  if(request.method!=='GET') return new Response('Método não permitido.',{status:405});
+  try {
+    const url=new URL(request.url);
+    const parts=url.pathname.split('/').filter(Boolean).map(part=>decodeURIComponent(part));
+    const projectId=Number(parts[0]);
+    const filename=parts[2] || '';
+    if(url.hostname!=='project' || parts.length!==3 || parts[1]!=='audio' || !Number.isSafeInteger(projectId) || projectId<=0) return new Response('Asset inválido.',{status:400});
+    if(filename.includes('..') || path.basename(filename)!==filename || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3$/i.test(filename)) return new Response('Asset inválido.',{status:400});
+    const projectDirectory=await repository.remove(projectId);
+    const target=path.join(projectDirectory,'assets','audio',filename);
+    const stats=await fs.stat(target);
+    if(!stats.isFile() || stats.size<=0 || stats.size>100*1024*1024) return new Response('Asset inválido.',{status:400});
+    const bytes=await fs.readFile(target);
+    return new Response(bytes,{status:200,headers:{'Content-Type':'audio/mpeg','Content-Length':String(bytes.length),'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  } catch {
+    return new Response('Asset não encontrado.',{status:404});
+  }
 }
 
 function registerProjectHandlers() {
@@ -174,6 +197,7 @@ app.whenReady().then(async () => {
     const html=request.method==='GET' ? interactiveContent.get(request.url) : undefined;
     return new Response(html || 'Prévia indisponível.', {status:html?200:404,headers:{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':`sandbox allow-scripts; ${INTERACTIVE_CSP}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
   });
+  protocol.handle('appify-asset', serveProjectAudio);
   registerProjectHandlers();
   createWindow();
 
