@@ -37,7 +37,7 @@ export function assertPublicExport(value: unknown): void {
 }
 
 export function isAllowedExportPath(name: string): boolean {
-  return /^(?:app-data\.json|index\.html|manifest\.json|sw\.js|_redirects|_headers|(?:icon-192x192|icon-512x512|apple-touch-icon)\.png|pages\/|pages\/lesson-\d+-\d+\.html|assets\/|assets\/[a-z0-9][a-z0-9._-]*\.(?:js|css)|assets\/audio\/[a-z0-9][a-z0-9._-]{0,158}\.mp3)$/i.test(name);
+  return /^(?:app-data\.json|index\.html|manifest\.json|sw\.js|_redirects|_headers|(?:icon-192x192|icon-512x512|apple-touch-icon)\.png|pages\/|pages\/lesson-\d+-\d+\.html|assets\/|assets\/audio\/|assets\/[a-z0-9][a-z0-9._-]*\.(?:js|css)|assets\/audio\/[a-z0-9][a-z0-9._-]{0,158}\.mp3)$/i.test(name);
 }
 
 export async function assertSafeArchive(zip: JSZip): Promise<void> {
