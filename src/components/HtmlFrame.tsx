@@ -9,16 +9,22 @@ import { useAppStore } from '../store/useAppStore';
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
 
-function rewriteProjectAudioUrls(html:string,projectId:number|null) {
-  if(!projectId) return html;
-  return html.replace(/(?:\.\.\/|\.\/)?assets\/audio\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3)/gi,(_match,filename)=>`appify-asset://project/${projectId}/audio/${encodeURIComponent(filename)}`);
+function projectAudioFilename(html:string) {
+  const match=/(?:\.\.\/|\.\/)?assets\/audio\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3)/i.exec(html);
+  return match?.[1];
+}
+
+function removeEmbeddedAudio(html:string) {
+  return html.replace(/<audio\b[^>]*>[\s\S]*?<\/audio>/i,'');
 }
 
 export function HtmlFrame({ html, interactive=false, activityPath, storageKey, uiLanguage, onMaterialClick, className, style, ...props }: Props) {
   const {i18n}=useTranslation();
   const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
   const currentProjectId=useAppStore(state=>state.currentProjectId);
-  const previewHtml=rewriteProjectAudioUrls(html,currentProjectId);
+  const audioFilename=!interactive ? projectAudioFilename(html) : undefined;
+  const nativeAudioUrl=audioFilename && currentProjectId ? `appify-asset://project/${currentProjectId}/audio/${encodeURIComponent(audioFilename)}` : undefined;
+  const previewHtml=nativeAudioUrl ? removeEmbeddedAudio(html) : html;
   const [storageRevision,setStorageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
   const storageError=({pt:'Não foi possível salvar o histórico neste aparelho. Verifique o espaço disponível e as permissões do navegador.',en:'Could not save history on this device. Check available space and browser permissions.',es:'No se pudo guardar el historial en este dispositivo. Revisa el espacio disponible y los permisos del navegador.',fr:"Impossible d’enregistrer l’historique sur cet appareil. Vérifiez l’espace disponible et les autorisations du navigateur."} as Record<string,string>)[(uiLanguage || i18n.language)?.split('-')[0]] || 'Could not save history on this device.';
@@ -118,10 +124,21 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       srcDoc={interactive?undefined:prepareResponsiveHtml(previewHtml,uiLanguage || i18n.language)}
       sandbox="allow-scripts"
       referrerPolicy="strict-origin-when-cross-origin"
-      className={hasBuilderVideo || interactive ? undefined : className}
-      style={hasBuilderVideo || interactive ? { width:'100%', height:'100%', border:0, display:'block', background:'#fff' } : style}
+      className={hasBuilderVideo || interactive || nativeAudioUrl ? undefined : className}
+      style={hasBuilderVideo || interactive || nativeAudioUrl ? { width:'100%', height:'100%', border:0, display:'block', background:'#fff' } : style}
     />
   );
+
+  if(nativeAudioUrl) {
+    return (
+      <div className={className} style={{...style,display:'flex',flexDirection:'column',minHeight:0,width:'100%',background:'#fff'}}>
+        <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(47,62,58,.12)',background:'#faf7f2'}}>
+          <audio controls preload="metadata" src={nativeAudioUrl} style={{width:'100%',display:'block'}} />
+        </div>
+        <div style={{flex:1,minHeight:0}}>{innerFrame}</div>
+      </div>
+    );
+  }
 
   if(!hasBuilderVideo) return interactive ? <div className={className} style={{flex:1,minHeight:0,width:'100%',...style,display:'flex',flexDirection:'column'}}>{storageKey && /\blocalStorage\b/.test(html) && <button type="button" onClick={resetHistory} style={{padding:6,fontSize:12,background:'#fff',color:'#555',border:0,textAlign:'right',cursor:'pointer'}}>{resetText}</button>}<div hidden={!storageFailed} role="alert" style={{padding:8,background:'#fff3cd',color:'#574200',fontSize:13}}>{storageError}</div><div style={{flex:1,minHeight:0,position:'relative'}}>{innerFrame}</div></div> : innerFrame;
 
