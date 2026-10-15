@@ -55,6 +55,13 @@ function requireBuildBytes(value: unknown) {
   return value;
 }
 
+function requireAudioFilename(value: unknown) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3$/i.test(value) || path.basename(value) !== value) {
+    throw new Error('Arquivo de áudio inválido.');
+  }
+  return value;
+}
+
 async function serveProjectAudio(request:Request) {
   if(request.method!=='GET' && request.method!=='HEAD') return new Response('Método não permitido.',{status:405});
   try {
@@ -177,6 +184,15 @@ function registerProjectHandlers() {
       filename,
       requireBuildBytes(payload?.bytes),
     );
+  });
+  handle('projects:read-audio', async (_event, payload: { id?: unknown; filename?: unknown }) => {
+    const projectId = requireProjectId(payload?.id);
+    const filename = requireAudioFilename(payload?.filename);
+    const directory = await repository.remove(projectId);
+    const target = path.join(directory, 'assets', 'audio', filename);
+    const stats = await fs.stat(target);
+    if (!stats.isFile() || stats.size <= 0 || stats.size > 100 * 1024 * 1024) throw new Error('Arquivo de áudio inválido.');
+    return new Uint8Array(await fs.readFile(target));
   });
   ipcMain.on('app:close-ready', event => {
     try {
