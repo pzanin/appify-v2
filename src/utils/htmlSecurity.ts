@@ -4,7 +4,7 @@ export const LINK_BRIDGE = "document.addEventListener('click',function(event){if
 export const VIDEO_BRIDGE = "document.addEventListener('click',function(event){if(!event.isTrusted)return;var target=event.target;var trigger=target&&target.closest&&target.closest('[data-appify-youtube]');if(!trigger)return;event.preventDefault();var id=trigger.getAttribute('data-appify-youtube')||'';if(!/^[A-Za-z0-9_-]{6,}$/.test(id))return;var rect=trigger.getBoundingClientRect();if(parent!==window)parent.postMessage({type:'appify:youtube-play',id:id,title:trigger.getAttribute('data-title')||'Vídeo',rect:{top:rect.top,left:rect.left,width:rect.width,height:rect.height}},'*');});";
 import { LINK_BRIDGE_HASH, VIDEO_BRIDGE_HASH } from './securityPolicies';
 export { LINK_BRIDGE_HASH, VIDEO_BRIDGE_HASH } from './securityPolicies';
-export const IMPORTED_HTML_CSP = `default-src 'none'; script-src '${LINK_BRIDGE_HASH}' '${VIDEO_BRIDGE_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: data:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
+export const IMPORTED_HTML_CSP = `default-src 'none'; script-src '${LINK_BRIDGE_HASH}' '${VIDEO_BRIDGE_HASH}'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src https: data:; media-src https: data: appify-asset:; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com https:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
 
 export function safeEmbedUrl(value: string): string | undefined {
   try {
