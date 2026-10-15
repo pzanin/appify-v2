@@ -196,17 +196,14 @@ export interface BuilderBlock {
     videoPoster?: string;
     videoWidth?: string | number;
     videoCaption?: string;
-    // Advanced image controls
     imgHeight?: string | number;
     imgBorderRadius?: string | number;
     imgObjectFit?: 'cover' | 'contain' | 'fill';
     imgObjectPosition?: 'center' | 'top' | 'bottom' | 'left' | 'right';
-    // Advanced title controls
     titleFontFamily?: string;
     titleFontSize?: string | number;
     titleFontWeight?: string | number;
     titleMarginBottom?: string | number;
-    // Image controls for imageText container
     imageWidth?: string | number;
     imageHeight?: string | number;
     imageBorderRadius?: string | number;
@@ -308,6 +305,7 @@ export interface AppifyDesktopApi {
     exportBackup: (id: number) => Promise<ProjectOperationResult>;
     importBackup: () => Promise<ProjectOperationResult>;
     saveBuild: (id: number, filename: string, bytes: Uint8Array) => Promise<ProjectBuildResult>;
+    readAudio: (id: number, filename: string) => Promise<Uint8Array>;
   };
   lifecycle: {
     onBeforeClose: (listener: () => void | Promise<void>) => () => void;
@@ -323,7 +321,7 @@ export interface SubModule {
   contentUrl?: string;
   contentHtml?: string;
   customHtml?: string;
-  content_html?: string; // Maintain for compatibility
+  content_html?: string;
   builder_data?: BuilderBlock[];
   htmlMode?: 'visual' | 'code';
   htmlInteractive?: boolean;
