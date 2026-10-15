@@ -4,13 +4,21 @@ import { prepareInteractiveHtml } from '../utils/interactiveHtml';
 import { readActivityData, writeActivityData } from '../utils/activityStorage';
 import { useTranslation } from 'react-i18next';
 import { openExternalLink } from '../utils/externalLinks';
+import { useAppStore } from '../store/useAppStore';
 
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
 
+function rewriteProjectAudioUrls(html:string,projectId:number|null) {
+  if(!projectId) return html;
+  return html.replace(/(?:\.\.\/|\.\/)?assets\/audio\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3)/gi,(_match,filename)=>`appify-asset://project/${projectId}/audio/${encodeURIComponent(filename)}`);
+}
+
 export function HtmlFrame({ html, interactive=false, activityPath, storageKey, uiLanguage, onMaterialClick, className, style, ...props }: Props) {
   const {i18n}=useTranslation();
   const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
+  const currentProjectId=useAppStore(state=>state.currentProjectId);
+  const previewHtml=rewriteProjectAudioUrls(html,currentProjectId);
   const [storageRevision,setStorageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
   const storageError=({pt:'Não foi possível salvar o histórico neste aparelho. Verifique o espaço disponível e as permissões do navegador.',en:'Could not save history on this device. Check available space and browser permissions.',es:'No se pudo guardar el historial en este dispositivo. Revisa el espacio disponible y los permisos del navegador.',fr:"Impossible d’enregistrer l’historique sur cet appareil. Vérifiez l’espace disponible et les autorisations du navigateur."} as Record<string,string>)[(uiLanguage || i18n.language)?.split('-')[0]] || 'Could not save history on this device.';
@@ -107,7 +115,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       key={`${storageKey || ""}:${storageRevision}:${html}`}
       ref={frame}
       src={interactive?activity?.url:undefined}
-      srcDoc={interactive?undefined:prepareResponsiveHtml(html,uiLanguage || i18n.language)}
+      srcDoc={interactive?undefined:prepareResponsiveHtml(previewHtml,uiLanguage || i18n.language)}
       sandbox="allow-scripts"
       referrerPolicy="strict-origin-when-cross-origin"
       className={hasBuilderVideo || interactive ? undefined : className}
