@@ -10,14 +10,12 @@ function privateField(name: string) {
 export function containsPrivateCredential(text: string): boolean {
   if (/-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----|\bsb_secret_[a-z0-9_-]+|\bsk-(?:proj-|ant-)?[a-z0-9_-]{16,}|\b(?:ghp_|github_pat_)[a-z0-9_]{20,}|\bAKIA[A-Z0-9]{16}\b/i.test(text)) return true;
   for (const match of text.matchAll(/(SERVICE_ROLE_KEY|PRIVATE_KEY|API_SECRET|CLIENT_SECRET|API_KEY|ACCESS_TOKEN|PASSWORD)["']?\s*[=:]\s*["']([a-z0-9_\-/.+]{8,})["']/gi)) {
-    // Library event-name constants (access_token: "access_token") are not credentials.
     if (match[1].toLowerCase() !== match[2].toLowerCase()) return true;
   }
   if (/(?:^|[\s>])(?:SERVICE_ROLE_KEY|PRIVATE_KEY|API_SECRET|CLIENT_SECRET|API_KEY|ACCESS_TOKEN|PASSWORD)\s*=\s*[a-z0-9_\-/.+]{8,}/i.test(text)) return true;
   for (const match of text.matchAll(/eyJ[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g)) {
     try {
       const payload = JSON.parse(atob(match[1].replace(/-/g, '+').replace(/_/g, '/')));
-      // The legacy public Supabase key is the sole JWT credential allowed in a public ZIP.
       if (payload.role !== 'anon' || typeof payload.iss !== 'string' || !payload.iss.includes('supabase')) return true;
     } catch { return true; }
   }
@@ -39,7 +37,7 @@ export function assertPublicExport(value: unknown): void {
 }
 
 export function isAllowedExportPath(name: string): boolean {
-  return /^(?:app-data\.json|index\.html|manifest\.json|sw\.js|_redirects|_headers|(?:icon-192x192|icon-512x512|apple-touch-icon)\.png|pages\/|pages\/lesson-\d+-\d+\.html|assets\/|assets\/[a-z0-9][a-z0-9._-]*\.(?:js|css))$/i.test(name);
+  return /^(?:app-data\.json|index\.html|manifest\.json|sw\.js|_redirects|_headers|(?:icon-192x192|icon-512x512|apple-touch-icon)\.png|pages\/|pages\/lesson-\d+-\d+\.html|assets\/|assets\/[a-z0-9][a-z0-9._-]*\.(?:js|css)|assets\/audio\/[a-z0-9][a-z0-9._-]{0,158}\.mp3)$/i.test(name);
 }
 
 export async function assertSafeArchive(zip: JSZip): Promise<void> {
