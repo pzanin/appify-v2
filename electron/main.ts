@@ -62,12 +62,23 @@ async function serveProjectAudio(request:Request) {
     const parts=url.pathname.split('/').filter(Boolean).map(part=>decodeURIComponent(part));
     const projectId=Number(parts[0]);
     const filename=parts[2] || '';
-    if(url.hostname!=='project' || parts.length!==3 || parts[1]!=='audio' || !Number.isSafeInteger(projectId) || projectId<=0) return new Response('Asset inválido.',{status:400});
-    if(filename.includes('..') || path.basename(filename)!==filename || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3$/i.test(filename)) return new Response('Asset inválido.',{status:400});
+    console.log(`[Appify Audio] pedido recebido: projeto=${projectId || 'inválido'} arquivo=${filename || 'ausente'} range=${request.headers.get('range') || 'nenhum'}`);
+    if(url.hostname!=='project' || parts.length!==3 || parts[1]!=='audio' || !Number.isSafeInteger(projectId) || projectId<=0) {
+      console.warn('[Appify Audio] URL interna inválida.');
+      return new Response('Asset inválido.',{status:400});
+    }
+    if(filename.includes('..') || path.basename(filename)!==filename || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3$/i.test(filename)) {
+      console.warn('[Appify Audio] Nome de arquivo inválido.');
+      return new Response('Asset inválido.',{status:400});
+    }
     const projectDirectory=await repository.remove(projectId);
     const target=path.join(projectDirectory,'assets','audio',filename);
     const stats=await fs.stat(target);
-    if(!stats.isFile() || stats.size<=0 || stats.size>100*1024*1024) return new Response('Asset inválido.',{status:400});
+    if(!stats.isFile() || stats.size<=0 || stats.size>100*1024*1024) {
+      console.warn(`[Appify Audio] arquivo recusado: ${filename}`);
+      return new Response('Asset inválido.',{status:400});
+    }
+    console.log(`[Appify Audio] arquivo encontrado: ${filename} (${stats.size} bytes)`);
 
     const baseHeaders:Record<string,string>={
       'Content-Type':'audio/mpeg',
@@ -94,6 +105,7 @@ async function serveProjectAudio(request:Request) {
       try {
         const bytes=Buffer.alloc(length);
         await handle.read(bytes,0,length,start);
+        console.log(`[Appify Audio] resposta parcial 206: ${start}-${end}/${stats.size}`);
         return new Response(request.method==='HEAD'?null:bytes,{status:206,headers:{...baseHeaders,'Content-Length':String(length),'Content-Range':`bytes ${start}-${end}/${stats.size}`}});
       } finally {
         await handle.close();
@@ -101,8 +113,11 @@ async function serveProjectAudio(request:Request) {
     }
 
     const bytes=request.method==='HEAD' ? null : await fs.readFile(target);
+    console.log(`[Appify Audio] resposta completa 200: ${stats.size} bytes`);
     return new Response(bytes,{status:200,headers:{...baseHeaders,'Content-Length':String(stats.size)}});
-  } catch {
+  } catch (error) {
+    const code=error && typeof error==='object' && 'code' in error ? String((error as {code?:unknown}).code || '') : '';
+    console.warn(`[Appify Audio] arquivo não encontrado ou leitura falhou${code ? ` (${code})` : ''}.`);
     return new Response('Asset não encontrado.',{status:404});
   }
 }
