@@ -132,10 +132,10 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
   if(nativeAudioUrl) {
     return (
       <div className={className} style={{...style,display:'flex',flexDirection:'column',minHeight:0,width:'100%',background:'#fff'}}>
-        <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(47,62,58,.12)',background:'#faf7f2'}}>
+        <div style={{flex:1,minHeight:0}}>{innerFrame}</div>
+        <div style={{padding:'12px 16px',borderTop:'1px solid rgba(47,62,58,.12)',background:'#faf7f2'}}>
           <audio controls preload="metadata" src={nativeAudioUrl} style={{width:'100%',display:'block'}} />
         </div>
-        <div style={{flex:1,minHeight:0}}>{innerFrame}</div>
       </div>
     );
   }
