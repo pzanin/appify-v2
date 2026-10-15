@@ -4,7 +4,7 @@ import { prepareInteractiveHtml } from '../utils/interactiveHtml';
 import { readActivityData, writeActivityData } from '../utils/activityStorage';
 import { useTranslation } from 'react-i18next';
 import { openExternalLink } from '../utils/externalLinks';
-import { useAppStore } from '../store/useAppStore';
+import { projectService } from '../services/projectService';
 
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
@@ -21,7 +21,7 @@ function removeEmbeddedAudio(html:string) {
 export function HtmlFrame({ html, interactive=false, activityPath, storageKey, uiLanguage, onMaterialClick, className, style, ...props }: Props) {
   const {i18n}=useTranslation();
   const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
-  const currentProjectId=useAppStore(state=>state.currentProjectId);
+  const currentProjectId=projectService.getCurrentProjectId();
   const audioFilename=!interactive ? projectAudioFilename(html) : undefined;
   const nativeAudioUrl=audioFilename && currentProjectId ? `appify-asset://project/${currentProjectId}/audio/${encodeURIComponent(audioFilename)}` : undefined;
   const previewHtml=nativeAudioUrl ? removeEmbeddedAudio(html) : html;
