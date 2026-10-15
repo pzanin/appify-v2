@@ -162,4 +162,10 @@ export const projectService = {
     const desktop = desktopProjects();
     return desktop ? desktop.saveBuild(id, filename, bytes) : null;
   },
+
+  readAudio: async (id: number, filename: string): Promise<Uint8Array> => {
+    const desktop = desktopProjects();
+    if (!desktop) throw new Error('Áudio local disponível apenas no aplicativo desktop.');
+    return desktop.readAudio(id, filename);
+  },
 };
