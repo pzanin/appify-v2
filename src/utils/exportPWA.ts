@@ -17,6 +17,10 @@ function escapeHtml(value: string) {
   })[character] || character);
 }
 
+function audioFilenames(html: string) {
+  return [...html.matchAll(/(?:\.\.\/|\.\/)?assets\/audio\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3)/gi)].map(match => match[1]);
+}
+
 async function createPwaIcon(source: string | null | undefined, size: number, background: string, appName: string) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -65,7 +69,6 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const pwaLanguage = state.pwaConfig?.language || 'pt-BR';
     const appName = productName(state.appName,pwaLanguage);
     
-    // Extrai apenas os dados necessários do construtor
     const { description, noIndex, showAdvanced, exportHistory, publishedUrl, ...cleanPwaConfig } = publicFeatureConfig(state.pwaConfig);
     
     const appData = {
@@ -79,18 +82,17 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const zip = new JSZip();
     const pageMatches: string[] = [];
     const pageHeaders: string[] = [];
+    const projectAudio = new Set<string>();
 
-    // 1. Arquivo de dados do PWA
     zip.file('app-data.json', JSON.stringify(appData, null, 2));
 
-    // Mantém cópias HTML independentes das aulas dentro do pacote exportado.
-    // A pasta também é criada quando o projeto ainda não possui uma aula HTML.
     zip.folder('pages');
     for (const module of state.modules) {
       for (const lesson of module.subs || []) {
         if (lesson.contentType !== 'html') continue;
         const html = lessonHtml(lesson,pwaLanguage);
         if (!html.trim()) continue;
+        audioFilenames(html).forEach(filename => projectAudio.add(filename));
         const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
         if (!isAllowedExportPath(pagePath)) throw new Error('Identificador de aula inválido.');
         zip.file(pagePath, lesson.htmlInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html,pwaLanguage));
@@ -99,13 +101,28 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       }
     }
 
-    // 2. Manifest do PWA (configuração standalone)
+    const audioAssetPaths: string[] = [];
+    if (projectAudio.size > 0) {
+      if (!state.currentProjectId || !projectService.isDesktop()) {
+        throw new Error('Os arquivos de áudio locais só podem ser exportados pelo Appify Desktop.');
+      }
+      zip.folder('assets/audio');
+      for (const filename of projectAudio) {
+        const assetPath = `assets/audio/${filename}`;
+        if (!isAllowedExportPath(assetPath)) throw new Error('Arquivo de áudio inválido.');
+        const bytes = await projectService.readAudio(state.currentProjectId, filename);
+        if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) throw new Error(`Áudio ausente: ${filename}`);
+        zip.file(assetPath, bytes);
+        audioAssetPaths.push(assetPath);
+      }
+    }
+
     const manifest = {
       name: appName,
       short_name: appName,
       id: ".",
       lang: pwaLanguage,
-      start_url: ".", // Host-agnostic: funciona em subdiretórios (Vercel, Netlify, Github Pages)
+      start_url: ".",
       scope: "./",
       display: "standalone",
       description: description || state.pwaConfig?.tagline || appName,
@@ -134,7 +151,6 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
 
     let assetMatches: string[] = [];
 
-    // 3. Arquivos do Template Base do PWA (Extrator Dinâmico)
     try {
       const htmlRes = await fetch('./pwa-template/index.html');
       if (htmlRes.ok) {
@@ -150,7 +166,6 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     <meta name="apple-mobile-web-app-title" content="${escapeHtml(appName)}">`;
         htmlText = htmlText.replace('</head>', `${installMetadata}\n  </head>`);
 
-        // Injeta o registro do Service Worker se não existir
         if (!htmlText.includes('serviceWorker in navigator') && !htmlText.includes('serviceWorker\' in navigator')) {
           const swRegistrationScript = `
     <script>
@@ -167,8 +182,6 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         }
         zip.file('index.html', htmlText);
 
-        // Inclui os assets do HTML e o chunk carregado dinamicamente pelo runtime.
-        // Os nomes são estáveis porque estão definidos em vite.config.ts.
         assetMatches = Array.from(new Set([
           ...[...htmlText.matchAll(/(?:src|href)="[^"]*(assets\/[^"]+)"/g)].map(m => m[1]),
           'assets/pwa-engine-chunk.js',
@@ -195,7 +208,6 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       throw new Error('Não foi possível carregar o template completo do PWA.');
     }
 
-    // 4. Geração do Service Worker sw.js robusto com Cache Offline (PWA Compliance)
     const cacheVersion = `${state.pwaConfig?.version || '1.0.0'}-${crypto.randomUUID()}`;
     const assetsToCache = [
       './',
@@ -206,20 +218,18 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       './icon-512x512.png',
       './apple-touch-icon.png',
       ...assetMatches.map(path => `./${path}`),
+      ...audioAssetPaths.map(path => `./${path}`),
       ...pageMatches.map(path => `./${path}`)
     ];
 
     const swContent = generateServiceWorker(`appify-pwa-${cacheVersion}`, assetsToCache, state.pwaConfig?.offlineMode !== false);
     zip.file('sw.js', swContent);
 
-    // Regras de roteamento para hosts (Netlify, Vercel, etc)
     zip.file('_redirects', '/* /index.html 200');
     zip.file('_headers', `/sw.js\n  Cache-Control: no-cache\n/index.html\n  Cache-Control: no-cache\n/app-data.json\n  Cache-Control: no-cache\n/manifest.json\n  Cache-Control: no-cache\n${pageHeaders.join('')}`);
 
-    // Check the assembled archive, including template code, before any disk write/download.
     await assertSafeArchive(zip);
 
-    // 5. Empacota tudo e salva no computador
     const content = await zip.generateAsync({ type: 'blob' });
     const filename = `${appName.toLowerCase().replace(/\s+/g, '-')}-pwa.zip`;
     let buildCopyFailed = false;
