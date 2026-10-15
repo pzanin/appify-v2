@@ -12,7 +12,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const interactiveContent = new InteractiveContentStore();
 protocol.registerSchemesAsPrivileged([
   {scheme:'appify-content',privileges:{standard:true,secure:true}},
-  {scheme:'appify-asset',privileges:{standard:true,secure:true,supportFetchAPI:true,stream:true}},
+  {scheme:'appify-asset',privileges:{standard:true,secure:true,supportFetchAPI:true,stream:true,corsEnabled:true}},
 ]);
 let repository: ProjectRepository;
 const trustedWindows = new Map<number, { win: BrowserWindow; url: string }>();
@@ -56,7 +56,7 @@ function requireBuildBytes(value: unknown) {
 }
 
 async function serveProjectAudio(request:Request) {
-  if(request.method!=='GET') return new Response('Método não permitido.',{status:405});
+  if(request.method!=='GET' && request.method!=='HEAD') return new Response('Método não permitido.',{status:405});
   try {
     const url=new URL(request.url);
     const parts=url.pathname.split('/').filter(Boolean).map(part=>decodeURIComponent(part));
@@ -68,8 +68,40 @@ async function serveProjectAudio(request:Request) {
     const target=path.join(projectDirectory,'assets','audio',filename);
     const stats=await fs.stat(target);
     if(!stats.isFile() || stats.size<=0 || stats.size>100*1024*1024) return new Response('Asset inválido.',{status:400});
-    const bytes=await fs.readFile(target);
-    return new Response(bytes,{status:200,headers:{'Content-Type':'audio/mpeg','Content-Length':String(bytes.length),'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+
+    const baseHeaders:Record<string,string>={
+      'Content-Type':'audio/mpeg',
+      'Accept-Ranges':'bytes',
+      'Cache-Control':'no-store',
+      'X-Content-Type-Options':'nosniff',
+      'Access-Control-Allow-Origin':'*',
+    };
+    const range=request.headers.get('range');
+    if(range) {
+      const match=/^bytes=(\d*)-(\d*)$/i.exec(range.trim());
+      if(!match) return new Response(null,{status:416,headers:{...baseHeaders,'Content-Range':`bytes */${stats.size}`}});
+      let start=match[1] ? Number(match[1]) : 0;
+      let end=match[2] ? Number(match[2]) : stats.size-1;
+      if(!match[1] && match[2]) {
+        const suffix=Number(match[2]);
+        start=Math.max(0,stats.size-suffix);
+        end=stats.size-1;
+      }
+      if(!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start<0 || end<start || start>=stats.size) return new Response(null,{status:416,headers:{...baseHeaders,'Content-Range':`bytes */${stats.size}`}});
+      end=Math.min(end,stats.size-1);
+      const length=end-start+1;
+      const handle=await fs.open(target,'r');
+      try {
+        const bytes=Buffer.alloc(length);
+        await handle.read(bytes,0,length,start);
+        return new Response(request.method==='HEAD'?null:bytes,{status:206,headers:{...baseHeaders,'Content-Length':String(length),'Content-Range':`bytes ${start}-${end}/${stats.size}`}});
+      } finally {
+        await handle.close();
+      }
+    }
+
+    const bytes=request.method==='HEAD' ? null : await fs.readFile(target);
+    return new Response(bytes,{status:200,headers:{...baseHeaders,'Content-Length':String(stats.size)}});
   } catch {
     return new Response('Asset não encontrado.',{status:404});
   }
