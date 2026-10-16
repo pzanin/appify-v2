@@ -134,6 +134,16 @@ export const projectService = {
     const desktop = desktopProjects();
     const document = desktop ? await desktop.open(id) : await browserFallback.open(id);
     activeProjectId = id;
+    if (!document.workspace.pwaConfig?.productId) {
+      document.workspace.pwaConfig = { ...document.workspace.pwaConfig, productId: crypto.randomUUID() };
+      try {
+        document.project = desktop
+          ? await desktop.save(id, document.workspace)
+          : await browserFallback.save(id, document.workspace);
+      } catch {
+        console.warn('[Appify] Não foi possível persistir a identidade do produto legado nesta abertura.');
+      }
+    }
     return document;
   },
 
