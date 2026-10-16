@@ -5,6 +5,7 @@ import { readActivityData, writeActivityData } from '../utils/activityStorage';
 import { useTranslation } from 'react-i18next';
 import { openExternalLink } from '../utils/externalLinks';
 import { projectService } from '../services/projectService';
+import { customerDesktopAssetUrl, customerWebAssetUrl } from '../utils/customerAssets';
 
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
@@ -23,8 +24,12 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
   const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
   const currentProjectId=projectService.getCurrentProjectId();
   const audioFilename=!interactive ? projectAudioFilename(html) : undefined;
-  const nativeAudioUrl=audioFilename && currentProjectId ? `appify-asset://project/${currentProjectId}/audio/${encodeURIComponent(audioFilename)}` : undefined;
-  const previewHtml=nativeAudioUrl ? removeEmbeddedAudio(html) : html;
+  const audioUrl=audioFilename
+    ? (projectService.isDesktop()
+        ? customerDesktopAssetUrl('audio',audioFilename,currentProjectId)
+        : customerWebAssetUrl('audio',audioFilename,document.baseURI))
+    : undefined;
+  const previewHtml=audioUrl ? removeEmbeddedAudio(html) : html;
   const [storageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
   const storageError=t('app.errors.activityStorageError');
@@ -118,17 +123,17 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       srcDoc={interactive?undefined:prepareResponsiveHtml(previewHtml,uiLanguage || i18n.language)}
       sandbox="allow-scripts"
       referrerPolicy="strict-origin-when-cross-origin"
-      className={hasBuilderVideo || interactive || nativeAudioUrl ? undefined : className}
-      style={hasBuilderVideo || interactive || nativeAudioUrl ? { width:'100%', height:'100%', border:0, display:'block', background:'#fff' } : style}
+      className={hasBuilderVideo || interactive || audioUrl ? undefined : className}
+      style={hasBuilderVideo || interactive || audioUrl ? { width:'100%', height:'100%', border:0, display:'block', background:'#fff' } : style}
     />
   );
 
-  if(nativeAudioUrl) {
+  if(audioUrl) {
     return (
       <div className={className} style={{...style,display:'flex',flexDirection:'column',minHeight:0,width:'100%',background:'#fff'}}>
         <div style={{flex:1,minHeight:0}}>{innerFrame}</div>
         <div style={{padding:'12px 16px',borderTop:'1px solid rgba(47,62,58,.12)',background:'#faf7f2'}}>
-          <audio controls preload="metadata" src={nativeAudioUrl} style={{width:'100%',display:'block'}} />
+          <audio controls preload="metadata" src={audioUrl} style={{width:'100%',display:'block'}} />
         </div>
       </div>
     );
