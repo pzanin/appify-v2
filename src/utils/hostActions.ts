@@ -36,10 +36,9 @@ export function normalizeHostDownloadUrl(value: string, baseUrl: string) {
     if (url.username || url.password) return null;
     if (url.origin === base.origin) {
       const assetRoot = new URL('./assets/', base).pathname;
-      if (url.pathname.startsWith(assetRoot)) {
-        const tail = decodeURIComponent(url.pathname.slice(assetRoot.length));
-        if (SAFE_ASSET_TAIL.test(tail)) return { url: url.href, local: true } as const;
-      }
+      if (!url.pathname.startsWith(assetRoot)) return null;
+      const tail = decodeURIComponent(url.pathname.slice(assetRoot.length));
+      return SAFE_ASSET_TAIL.test(tail) ? { url: url.href, local: true } as const : null;
     }
     if (url.protocol === 'https:' && url.hostname) return { url: url.href, local: false } as const;
   } catch { /* Invalid values remain blocked. */ }
