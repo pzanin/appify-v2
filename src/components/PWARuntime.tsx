@@ -279,7 +279,7 @@ export function PWARuntime({ isPhoneDark, setIsPhoneDark, analyticsLive = false 
         <div className="flex items-center justify-between px-6 pt-12 pb-4 relative z-10" style={{ background: themeColor, color: pwaConfig?.textColor || '#FFFFFF' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), transparent)', pointerEvents: 'none' }} />
           <div className="flex items-center gap-3 text-lg font-bold relative z-10">
-            <div className="w-8 h-8 bg-[#1a1a24] flex items-center justify-center rounded-lg shadow-lg">{pwaConfig?.logoBase64 ? <img src={pwaConfig.logoBase64} alt="Logo" className="w-full h-full rounded-md object-contain" /> : displayAppName.charAt(0).toUpperCase()}</div>
+            <div className="w-8 h-8 bg-[#1a1a24] flex items-center justify-center rounded-lg shadow-lg">{pwaConfig?.logoBase64 ? <img src={pwaConfig.logoBase64} alt={displayAppName} className="w-full h-full rounded-md object-contain" /> : displayAppName.charAt(0).toUpperCase()}</div>
             <span className="tracking-tight">{displayAppName}</span>
           </div>
           <div className="flex items-center gap-4 relative z-10">

@@ -27,7 +27,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
   const previewHtml=nativeAudioUrl ? removeEmbeddedAudio(html) : html;
   const [storageRevision,setStorageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
-  const storageError=({pt:'Não foi possível salvar o histórico neste aparelho. Verifique o espaço disponível e as permissões do navegador.',en:'Could not save history on this device. Check available space and browser permissions.',es:'No se pudo guardar el historial en este dispositivo. Revisa el espacio disponible y los permisos del navegador.',fr:"Impossible d’enregistrer l’historique sur cet appareil. Vérifiez l’espace disponible et les autorisations du navigateur."} as Record<string,string>)[(uiLanguage || i18n.language)?.split('-')[0]] || 'Could not save history on this device.';
+  const storageError=t('app.errors.activityStorageError');
   const storageReady=useRef(false);
   const frame = useRef<HTMLIFrameElement>(null);
   const [activity,setActivity] = useState<{source:string;url?:string;error?:string} | null>(null);
@@ -44,7 +44,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     const api=window.appifyDesktop?.content;
     setActivity(null);
     if(!api) {
-      setActivity(/^pages\/lesson-\d+-\d+\.html$/.test(activityPath || '') ? {source:html,url:activityPath} : {source:html,error:t('app.errors.activityDesktop')});
+      setActivity(/^pages\/lesson-\d+-\d+\.html$/.test(activityPath || '') ? {source:html,url:activityPath} : {source:html,error:t('app.errors.activityUnavailable')});
       return;
     }
     void prepareInteractiveHtml(html).then(async prepared=>{
@@ -82,7 +82,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
           frame.current?.contentWindow?.postMessage({type:'appify:storage-result',id:message.id,ok},'*');
         }
         if(['appify:storage-unavailable','appify:storage-failure'].includes(message?.type))setStorageFailed(true);
-        if(event.data?.type==='appify:activity-error' && typeof event.data.message==='string') setActivity({source:html,error:t('app.errors.activityError',{message:event.data.message.slice(0,160)})});
+        if(event.data?.type==='appify:activity-error' && typeof event.data.message==='string') { console.error('[Appify] Interactive activity error:',event.data.message.slice(0,160)); setActivity({source:html,error:t('app.errors.activityUnavailable')}); }
         return;
       }
       if(event.data?.type === 'appify:youtube-play') {
@@ -109,10 +109,9 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
 
   if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : t('app.errors.activityPreparing')}</div>;
 
-  const locale=(uiLanguage || i18n.language)?.split('-')[0];
-  const resetText=({pt:'Limpar histórico desta atividade',en:'Clear this activity’s history',es:'Borrar el historial de esta actividad',fr:'Effacer l’historique de cette activité'} as Record<string,string>)[locale] || 'Clear this activity’s history';
+  const resetText=t('app.errors.activityClearHistory');
   const resetHistory=()=>{
-    if(!storageKey || !window.confirm(`${resetText}?`))return;
+    if(!storageKey || !window.confirm(t('app.errors.activityClearHistoryConfirm')))return;
     try {window.localStorage.removeItem(storageKey);setStorageFailed(false);setStorageRevision(value=>value+1);}catch{setStorageFailed(true);}
   };
   const innerFrame = (

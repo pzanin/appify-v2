@@ -50,7 +50,7 @@ test('exported activities load the compiled lesson file with an opaque sandbox; 
   const frame=document.querySelector('iframe')!;assert.equal(frame.getAttribute('src'),'pages/lesson-1-2.html');
   assert.equal(frame.getAttribute('srcdoc'),null);assert.equal(frame.getAttribute('sandbox'),'allow-scripts');
   await act(async()=>root.render(React.createElement(HtmlFrame,{html:'<button>Activity</button>',interactive:true,activityPath:'../../private.html'})));
-  assert.equal(document.querySelector('iframe'),null);assert.match(document.body.textContent || '',/Appify desktop/);
+  assert.equal(document.querySelector('iframe'),null);assert.match(document.body.textContent || '',/Não foi possível abrir esta atividade/);assert.doesNotMatch(document.body.textContent || '',/Appify desktop|PWA exportado|pages/);
   await act(async()=>root.unmount());
 });
 
@@ -66,7 +66,7 @@ test('desktop preview uses native memory content, rejects activity requests to o
   await act(async()=>window.dispatchEvent(new dom.window.MessageEvent('message',{source:dom.window as any,data:{type:'appify:activity-error',message:'Wrong sender'}})));
   assert.ok(document.querySelector('iframe'));
   await act(async()=>window.dispatchEvent(new dom.window.MessageEvent('message',{source:frame.contentWindow,data:{type:'appify:activity-error',message:'Invalid JavaScript'}})));
-  assert.match(document.body.textContent || '',/Erro na atividade: Invalid JavaScript/);
+  assert.match(document.body.textContent || '',/Não foi possível abrir esta atividade/);assert.doesNotMatch(document.body.textContent || '',/Invalid JavaScript/);
   await act(async()=>root.unmount());assert.equal(released,'appify-content://activity/test');
   delete window.appifyDesktop;
 });

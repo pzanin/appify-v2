@@ -106,8 +106,11 @@
       "retry": "Try again",
       "activityPreparing": "Preparing activity…",
       "activityUnavailable": "This activity could not be opened. Please try again.",
-      "activityDesktop": "Open this preview in the Appify desktop app. In the exported PWA, the activity loads from the pages folder.",
-      "activityError": "Activity error: {{message}}"
+      "activityDesktop": "This activity could not be opened. Please try again.",
+      "activityError": "This activity could not be opened. Please try again.",
+      "activityStorageError": "This activity could not be saved on this device. Check available space and try again.",
+      "activityClearHistory": "Clear saved answers for this activity",
+      "activityClearHistoryConfirm": "Clear the saved answers for this activity?"
     },
     "defaultName": "My App"
   },

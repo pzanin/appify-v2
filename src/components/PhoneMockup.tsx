@@ -492,7 +492,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2), transparent)', pointerEvents: 'none' }} />
           <div className="flex items-center gap-3 text-lg font-bold relative z-10" style={{ color: pwaConfig.textColor || '#FFFFFF' }}>
             <div className="phone-logo-icon" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-              {pwaConfig.logoBase64 ? <img src={pwaConfig.logoBase64} alt="Logo" style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'contain' }} /> : displayAppName.charAt(0).toUpperCase()}
+              {pwaConfig.logoBase64 ? <img src={pwaConfig.logoBase64} alt={displayAppName} style={{ width: '100%', height: '100%', borderRadius: '6px', objectFit: 'contain' }} /> : displayAppName.charAt(0).toUpperCase()}
             </div>
             <span style={{ letterSpacing: '-0.5px' }}>{displayAppName}</span>
           </div>

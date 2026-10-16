@@ -69,7 +69,7 @@ test('English activity errors use the product language, without falling back to 
  await act(async()=>root.render(React.createElement(HtmlFrame,{html:'<button>Activity</button>',interactive:true,activityPath:'pages/lesson-1-2.html',uiLanguage:'en-US'})));
  const frame=document.querySelector('iframe')!;
  await act(async()=>window.dispatchEvent(new dom.window.MessageEvent('message',{source:frame.contentWindow,data:{type:'appify:activity-error',message:'Invalid JavaScript'}})));
- assert.match(document.body.textContent || '',/Activity error: Invalid JavaScript/);noPortuguese();
+ assert.match(document.body.textContent || '',/This activity could not be opened. Please try again./);assert.doesNotMatch(document.body.textContent || '',/Invalid JavaScript/);noPortuguese();
  await act(async()=>root.unmount());
 });
 

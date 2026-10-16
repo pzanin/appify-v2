@@ -106,8 +106,11 @@
       "retry": "Intentar de nuevo",
       "activityPreparing": "Preparando actividad…",
       "activityUnavailable": "No se pudo abrir esta actividad. Inténtalo de nuevo.",
-      "activityDesktop": "Abre esta vista previa en Appify para escritorio. En el PWA exportado, la actividad se carga desde la carpeta pages.",
-      "activityError": "Error en la actividad: {{message}}"
+      "activityDesktop": "No se pudo abrir esta actividad. Inténtalo de nuevo.",
+      "activityError": "No se pudo abrir esta actividad. Inténtalo de nuevo.",
+      "activityStorageError": "No se pudo guardar esta actividad en este dispositivo. Revisa el espacio disponible e inténtalo de nuevo.",
+      "activityClearHistory": "Borrar las respuestas guardadas de esta actividad",
+      "activityClearHistoryConfirm": "¿Borrar las respuestas guardadas de esta actividad?"
     },
     "defaultName": "Mi aplicación"
   },

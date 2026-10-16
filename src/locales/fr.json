@@ -106,8 +106,11 @@
       "retry": "Réessayer",
       "activityPreparing": "Préparation de l’activité…",
       "activityUnavailable": "Cette activité n’a pas pu être ouverte. Réessayez.",
-      "activityDesktop": "Ouvrez cet aperçu dans Appify pour ordinateur. Dans le PWA exporté, l’activité se charge depuis le dossier pages.",
-      "activityError": "Erreur dans l’activité : {{message}}"
+      "activityDesktop": "Cette activité n’a pas pu être ouverte. Réessayez.",
+      "activityError": "Cette activité n’a pas pu être ouverte. Réessayez.",
+      "activityStorageError": "Cette activité n’a pas pu être enregistrée sur cet appareil. Vérifiez l’espace disponible et réessayez.",
+      "activityClearHistory": "Effacer les réponses enregistrées de cette activité",
+      "activityClearHistoryConfirm": "Effacer les réponses enregistrées de cette activité ?"
     },
     "defaultName": "Mon application"
   },
