@@ -1,0 +1,153 @@
+name: One-time preview performance fix
+
+on:
+  push:
+    branches:
+      - feature/pwa-runtime-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  fix-preview-performance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/pwa-runtime-hardening
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Apply focused preview and repository fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'Anchor not found in {path}: {old[:160]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # Profile must actually scroll to the preview-only reset button.
+          replace_once(
+              'src/components/CustomerProfilePanel.tsx',
+              '<div className="flex-1 min-h-0 flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">',
+              '<div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">',
+          )
+
+          # Cover thumbnails are already local/in-memory; avoid lazy-loading inside animated overflow containers.
+          replace_once(
+              'src/components/CustomerLearning.tsx',
+              '{module.coverImageUrl ? <img src={module.coverImageUrl} alt="" loading="lazy" /> : <RenderDynamicIcon name={module.iconName} size={40} />}',
+              '{module.coverImageUrl ? <img src={module.coverImageUrl} alt="" decoding="async" /> : <RenderDynamicIcon name={module.iconName} size={40} />}',
+          )
+          replace_once(
+              'src/components/CustomerLearning.tsx',
+              '{lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" loading="lazy" /> : <span>{index + 1}</span>}',
+              '{lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" decoding="async" /> : <span>{index + 1}</span>}',
+          )
+
+          # Navigation-only state must not schedule disk autosaves.
+          store = Path('src/store/useAppStore.ts')
+          text = store.read_text(encoding='utf-8')
+          for line in [
+              '    currentView: state.currentView,\n',
+              '    activeStep: state.activeStep,\n',
+              '    selectedModuleId: state.selectedModuleId,\n',
+              '    editingSubmodule: state.editingSubmodule,\n',
+          ]:
+              if line in text:
+                  text = text.replace(line, '', 1)
+          for line in [
+              '      && previous.currentView === current.currentView\n',
+              '      && previous.activeStep === current.activeStep\n',
+              '      && previous.selectedModuleId === current.selectedModuleId\n',
+              '      && previous.editingSubmodule === current.editingSubmodule\n',
+          ]:
+              if line in text:
+                  text = text.replace(line, '', 1)
+          store.write_text(text, encoding='utf-8')
+
+          # Project discovery/list/save should read compact stored JSON without hydrating every image to Base64.
+          replace_once(
+              'electron/projectRepository.ts',
+              '        const document = await this.readFromDirectory(path.join(this.projectsRoot, entry.name));\n        return document.project;\n',
+              '        const document = await this.readStoredDocument(path.join(this.projectsRoot, entry.name));\n        return document.project;\n',
+          )
+          replace_once(
+              'electron/projectRepository.ts',
+              '    const existing = await this.readFromDirectory(directory);\n',
+              '    const existing = await this.readStoredDocument(directory);\n',
+          )
+          replace_once(
+              'electron/projectRepository.ts',
+              '        const document = await this.readFromDirectory(directory);\n        if (document.project.id === id) return directory;\n',
+              '        const document = await this.readStoredDocument(directory);\n        if (document.project.id === id) return directory;\n',
+          )
+
+          repo = Path('electron/projectRepository.ts')
+          text = repo.read_text(encoding='utf-8')
+          start = text.find('  private async readFromDirectory(directory: string): Promise<ProjectFile> {\n')
+          end = text.find('  private async writeDocument(directory: string, document: ProjectFile) {\n', start)
+          if start < 0 or end < 0:
+              raise SystemExit('Could not locate readFromDirectory block')
+          replacement = '''  private async readFromDirectory(directory: string): Promise<ProjectFile> {\n    return this.hydrateAssetReferences(directory, await this.readStoredDocument(directory));\n  }\n\n  private async readStoredDocument(directory: string): Promise<ProjectFile> {\n    const target = path.join(directory, PROJECT_FILE);\n    try {\n      return await this.readDocument(target);\n    } catch (primaryError) {\n      const candidates = [path.join(directory, PROJECT_BACKUP_FILE)];\n      const entries = await fs.readdir(directory).catch(() => [] as string[]);\n      candidates.push(...entries\n        .filter(name => name.startsWith(`${PROJECT_FILE}.`) && name.endsWith('.tmp'))\n        .sort()\n        .reverse()\n        .map(name => path.join(directory, name)));\n      candidates.push(path.join(directory, `${PROJECT_FILE}.tmp`));\n\n      for (const candidate of candidates) {\n        try {\n          const recovered = await this.readDocument(candidate);\n          await fs.copyFile(candidate, target);\n          console.warn(`[Appify] Projeto recuperado automaticamente a partir de ${path.basename(candidate)}.`);\n          return recovered;\n        } catch {\n          // Try the next recovery candidate.\n        }\n      }\n      throw primaryError;\n    }\n  }\n\n'''
+          text = text[:start] + replacement + text[end:]
+          repo.write_text(text, encoding='utf-8')
+
+          # Regression test: listing and saving must not require local image assets to be rehydrated.
+          tests = Path('electron/projectRepository.test.ts')
+          test_text = tests.read_text(encoding='utf-8')
+          marker = "test('analytics settings survive local save and backups while duplicated projects start with collection disabled',async()=>{\n"
+          extra = '''test('project listing and saving do not hydrate image assets unnecessarily', async () => {\n  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'appify-fast-metadata-'));\n  try {\n    const repository = new ProjectRepository(root);\n    const state = workspace();\n    state.modules[0].coverImageUrl = ONE_PIXEL_PNG;\n    const project = await repository.create('Fast Metadata', state);\n    const projectDirectory = path.join(root, (await fs.readdir(root))[0]);\n    const assetsDirectory = path.join(projectDirectory, 'assets');\n    const assetNames = await fs.readdir(assetsDirectory);\n    assert.ok(assetNames.length > 0);\n\n    // Metadata-only operations must still work even if an asset is temporarily unavailable.\n    const firstAsset = path.join(assetsDirectory, assetNames[0]);\n    const bytes = await fs.readFile(firstAsset);\n    await fs.rm(firstAsset);\n    assert.equal((await repository.list())[0].id, project.id);\n    await repository.save(project.id, state);\n    await fs.writeFile(firstAsset, bytes);\n    assert.equal((await repository.open(project.id)).workspace.modules[0].coverImageUrl, ONE_PIXEL_PNG);\n  } finally {\n    await fs.rm(root, {recursive:true, force:true});\n  }\n});\n\n'''
+          if extra not in test_text:
+              if marker not in test_text:
+                  raise SystemExit('projectRepository test marker missing')
+              tests.write_text(test_text.replace(marker, extra + marker, 1), encoding='utf-8')
+
+          # Static safety checks for the focused fixes.
+          profile = Path('src/components/CustomerProfilePanel.tsx').read_text(encoding='utf-8')
+          if 'overflow-y-auto' not in profile:
+              raise SystemExit('Profile scroll fix missing')
+          learning = Path('src/components/CustomerLearning.tsx').read_text(encoding='utf-8')
+          if 'loading="lazy"' in learning:
+              raise SystemExit('Lazy cover loading remains')
+          store_text = Path('src/store/useAppStore.ts').read_text(encoding='utf-8')
+          selector = store_text[store_text.find('useAppStore.subscribe('):]
+          for transient in ['currentView: state.currentView', 'activeStep: state.activeStep', 'selectedModuleId: state.selectedModuleId', 'editingSubmodule: state.editingSubmodule']:
+              if transient in selector:
+                  raise SystemExit(f'Transient navigation state still autosaves: {transient}')
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Verify focused fixes
+        run: |
+          npm run check:secrets
+          npm run lint
+          npm test
+          npm run build:pwa
+          npm run build
+
+      - name: Commit verified fixes
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to change"
+            exit 0
+          fi
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/CustomerProfilePanel.tsx src/components/CustomerLearning.tsx src/store/useAppStore.ts electron/projectRepository.ts electron/projectRepository.test.ts
+          git commit -m "Fix preview scrolling and reduce project image overhead"
+          git push origin HEAD:feature/pwa-runtime-hardening
