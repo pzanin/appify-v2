@@ -14,8 +14,16 @@ export function customerIdentity(config: PwaConfig, preview: boolean, projectId:
   return config.productId || (preview ? `local-${projectId ?? config.appName}` : `legacy-${config.appName}`);
 }
 
+export function customerStorageScope(config: PwaConfig, preview: boolean, projectId: number | null) {
+  return `${preview ? 'preview' : 'customer'}:${encodeURIComponent(customerIdentity(config, preview, projectId))}`;
+}
+
 export function customerProfileStorageKey(config: PwaConfig, preview: boolean, projectId: number | null) {
-  return `appify-customer-profile:v1:${preview ? 'preview' : 'customer'}:${encodeURIComponent(customerIdentity(config, preview, projectId))}`;
+  return `appify-customer-profile:v1:${customerStorageScope(config, preview, projectId)}`;
+}
+
+export function customerEntryStorageKey(config: PwaConfig, preview: boolean, projectId: number | null) {
+  return `appify-entry:v2:${customerStorageScope(config, preview, projectId)}`;
 }
 
 function normalizedText(value: unknown, max: number) {
@@ -51,4 +59,21 @@ export function writeCustomerProfile(storage: Storage, key: string, profile: Pic
 
 export function clearCustomerProfile(storage: Storage, key: string) {
   storage.removeItem(key);
+}
+
+export function resetCustomerProductData(storage: Storage, config: PwaConfig, preview: boolean, projectId: number | null) {
+  const scope = customerStorageScope(config, preview, projectId);
+  const exact = new Set([
+    `appify-customer-profile:v1:${scope}`,
+    `appify-entry:v2:${scope}`,
+    `appify-lesson-progress:v1:${scope}`,
+  ]);
+  const activityPrefix = `appify-activity:v1:${scope}:`;
+  const remove: string[] = [];
+  for (let index = 0; index < storage.length; index++) {
+    const key = storage.key(index);
+    if (key && (exact.has(key) || key.startsWith(activityPrefix))) remove.push(key);
+  }
+  remove.forEach(key => storage.removeItem(key));
+  return remove.length;
 }
