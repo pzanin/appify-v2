@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-import { sanitizeImportedHtml, IMPORTED_HTML_CSP, LINK_BRIDGE, VIDEO_BRIDGE } from './htmlSecurity';
+import { sanitizeImportedHtml, IMPORTED_HTML_CSP, HOST_ACTION_BRIDGE, LINK_BRIDGE, VIDEO_BRIDGE } from './htmlSecurity';
 const RESPONSIVE_STYLE = `
 <style id="appify-responsive-html">
   html, body {
@@ -65,6 +65,9 @@ export function prepareResponsiveHtml(html: string,language='pt-BR'): string {
   doc.documentElement.lang=language;
   doc.querySelector('#appify-responsive-html')?.remove();
   doc.head.innerHTML = `<meta http-equiv="Content-Security-Policy" content="${IMPORTED_HTML_CSP}">${VIEWPORT_META}${RESPONSIVE_STYLE}` + doc.head.innerHTML;
+  const actionScript = doc.createElement('script');
+  actionScript.textContent = HOST_ACTION_BRIDGE;
+  doc.body.appendChild(actionScript);
   const linkScript = doc.createElement('script');
   linkScript.textContent = LINK_BRIDGE;
   doc.body.appendChild(linkScript);
