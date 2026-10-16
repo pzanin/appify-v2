@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   unify-profile:
-    if: ${{ !contains(github.event.head_commit.message, '[profile-unified]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,46 +18,54 @@ jobs:
           fetch-depth: 0
 
       - name: Replace duplicated PhoneMockup profile
-        shell: python
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
-          path = Path('src/components/PhoneMockup.tsx')
-          text = path.read_text(encoding='utf-8')
+          path = Path("src/components/PhoneMockup.tsx")
+          text = path.read_text(encoding="utf-8")
 
-          if "import { CustomerProfilePanel } from './CustomerProfilePanel';" not in text:
-              anchor = "import { CustomerEntry } from './CustomerEntry';\n"
+          if "<CustomerProfilePanel" in text and "mockProfileImg" not in text:
+              print("PhoneMockup profile already unified")
+              raise SystemExit(0)
+
+          import_line = "import { CustomerProfilePanel } from './CustomerProfilePanel';"
+          anchor = "import { CustomerEntry } from './CustomerEntry';\n"
+          if import_line not in text:
               if anchor not in text:
-                  raise SystemExit('CustomerEntry import anchor not found')
-              text = text.replace(anchor, anchor + "import { CustomerProfilePanel } from './CustomerProfilePanel';\n", 1)
+                  raise SystemExit("CustomerEntry import anchor not found")
+              text = text.replace(anchor, anchor + import_line + "\n", 1)
 
           text = text.replace("  const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);\n", "", 1)
-          text = text.replace('  const [userName, setUserName] = useState(\"\");\n', "", 1)
-          text = text.replace('  const [userEmail, setUserEmail] = useState(\"\");\n', "", 1)
+          text = text.replace('  const [userName, setUserName] = useState("");\n', "", 1)
+          text = text.replace('  const [userEmail, setUserEmail] = useState("");\n', "", 1)
 
           start_marker = "            ) : activeTab === 'perfil' ? (\n"
           end_marker = "            ) : activeTab === 'suporte' ? (\n"
           start = text.find(start_marker)
           end = text.find(end_marker, start + len(start_marker)) if start >= 0 else -1
           if start < 0 or end < 0:
-              raise SystemExit(f'Profile block markers not found: start={start} end={end}')
+              raise SystemExit(f"Profile block markers not found: start={start} end={end}")
 
-          replacement = """            ) : activeTab === 'perfil' ? (
-              <motion.div key=\"perfil\" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className=\"absolute inset-0 flex min-h-0\">
-                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} />
-              </motion.div>
-            ) : activeTab === 'suporte' ? (
-"""
+          replacement = (
+              "            ) : activeTab === 'perfil' ? (\n"
+              "              <motion.div key=\"perfil\" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className=\"absolute inset-0 flex min-h-0\">\n"
+              "                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} />\n"
+              "              </motion.div>\n"
+              "            ) : activeTab === 'suporte' ? (\n"
+          )
           text = text[:start] + replacement + text[end + len(end_marker):]
 
-          if 'mockProfileImg' in text or 'setMockProfileImg' in text or 'setUserName' in text or 'setUserEmail' in text:
-              raise SystemExit('Legacy profile state still present')
-          if 'image/jpeg, image/jpg' in text:
-              raise SystemExit('Legacy profile upload still present')
-          if text.count('<CustomerProfilePanel') != 1:
-              raise SystemExit('Expected exactly one shared CustomerProfilePanel in PhoneMockup')
+          forbidden = ["mockProfileImg", "setMockProfileImg", "setUserName", "setUserEmail", "image/jpeg, image/jpg"]
+          leftovers = [item for item in forbidden if item in text]
+          if leftovers:
+              raise SystemExit(f"Legacy profile code still present: {leftovers}")
+          if text.count("<CustomerProfilePanel") != 1:
+              raise SystemExit("Expected exactly one shared CustomerProfilePanel in PhoneMockup")
 
-          path.write_text(text, encoding='utf-8')
+          path.write_text(text, encoding="utf-8")
+          print("PhoneMockup profile unified")
+          PY
 
       - name: Commit structural fix
         run: |
