@@ -22,7 +22,15 @@ jobs:
           node-version: 24
           cache: npm
       - name: Apply migration
-        run: node scripts/one-time-material-actions.cjs
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const path='scripts/one-time-material-actions.cjs';
+          let text=fs.readFileSync(path,'utf8');
+          text=text.replace('>Testar link externo no navegador</button>', '>Testar arquivo no navegador</button>');
+          fs.writeFileSync(path,text);
+          NODE
+          node scripts/one-time-material-actions.cjs
       - name: Install dependencies
         run: npm ci
         env:
