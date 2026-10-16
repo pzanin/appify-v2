@@ -18,7 +18,10 @@
       "namePlaceholder": "Nome Completo",
       "nameDefault": "Nome do Aluno",
       "emailPlaceholder": "E-mail (informação de perfil)",
-      "saveButton": "Salvar Alterações"
+      "saveButton": "Salvar Alterações",
+      "saved": "Dados salvos neste aparelho.",
+      "saveError": "Não foi possível salvar os dados neste aparelho.",
+      "localNote": "Seu perfil fica salvo somente neste aparelho e neste produto."
     },
     "community": {
       "title": "Comunidade",
