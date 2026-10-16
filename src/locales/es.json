@@ -18,7 +18,10 @@
       "namePlaceholder": "Nombre Completo",
       "nameDefault": "Nombre del Alumno",
       "emailPlaceholder": "Correo (información del perfil)",
-      "saveButton": "Guardar Cambios"
+      "saveButton": "Guardar Cambios",
+      "saved": "Tus datos se guardaron en este dispositivo.",
+      "saveError": "No se pudieron guardar tus datos en este dispositivo.",
+      "localNote": "Tu perfil se guarda solo en este dispositivo y para este producto."
     },
     "community": {
       "title": "Comunidad",
@@ -61,7 +64,7 @@
     },
     "support": {
       "title": "¿Cómo podemos ayudarte?",
-      "description": "Nuestro equipo está listo para resolver tus dudas e qualquer problema.",
+      "description": "Nuestro equipo está listo para resolver tus dudas e cualquier problema.",
       "copyEmail": "Copiar Correo",
       "openWa": "Abrir WhatsApp",
       "copied": "¡Copiado!",
