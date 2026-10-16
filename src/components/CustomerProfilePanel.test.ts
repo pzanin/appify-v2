@@ -35,7 +35,7 @@ test('profile save shows localized success and survives remount',async()=>{
   const save=[...document.querySelectorAll('button')].find(node=>node.textContent?.includes('Save Changes'))!;
   assert.ok(save);
   await act(async()=>save.click());
-  assert.match(document.body.textContent || '',/Profile saved on this device/);
+  assert.match(document.body.textContent || '',/Your details were saved on this device\./);
   await act(async()=>root.unmount());
 
   root=createRoot(host);
