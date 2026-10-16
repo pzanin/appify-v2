@@ -18,7 +18,10 @@
       "namePlaceholder": "Nom Complet",
       "nameDefault": "Nom de l'Étudiant",
       "emailPlaceholder": "E-mail (information du profil)",
-      "saveButton": "Enregistrer"
+      "saveButton": "Enregistrer",
+      "saved": "Vos informations ont été enregistrées sur cet appareil.",
+      "saveError": "Vos informations n’ont pas pu être enregistrées sur cet appareil.",
+      "localNote": "Votre profil est enregistré uniquement sur cet appareil et pour ce produit."
     },
     "community": {
       "title": "Communauté",
