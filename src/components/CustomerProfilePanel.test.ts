@@ -5,7 +5,11 @@ import { JSDOM } from 'jsdom';
 import { INITIAL_PWA_CONFIG } from '../constants';
 
 const dom=new JSDOM('<div id="root"></div>',{url:'https://appify.test/'});
-Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true});
+Object.defineProperty(globalThis,'window',{value:dom.window,configurable:true,writable:true});
+Object.defineProperty(globalThis,'document',{value:dom.window.document,configurable:true,writable:true});
+Object.defineProperty(globalThis,'localStorage',{value:dom.window.localStorage,configurable:true,writable:true});
+Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
+Object.defineProperty(globalThis,'IS_REACT_ACT_ENVIRONMENT',{value:true,configurable:true,writable:true});
 const { createRoot }=await import('react-dom/client');
 await import('../i18n');
 const { CustomerProfilePanel }=await import('./CustomerProfilePanel');
