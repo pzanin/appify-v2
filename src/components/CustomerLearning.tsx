@@ -39,7 +39,7 @@ export function CustomerModuleCards({ modules, moduleProgress, onOpen, t, themeC
         const count = module.subs?.length || 0;
         return <button type="button" key={module.id} className="phone-module-wrapper cx-module-card" disabled={draft} onClick={() => onOpen(module)}>
           <div className="cx-module-cover">
-            {module.coverImageUrl ? <img src={module.coverImageUrl} alt="" loading="lazy" /> : <RenderDynamicIcon name={module.iconName} size={40} />}
+            {module.coverImageUrl ? <img src={module.coverImageUrl} alt="" decoding="async" /> : <RenderDynamicIcon name={module.iconName} size={40} />}
             {locked && <span className="cx-module-lock"><Lock size={20} aria-hidden="true" /><span className="sr-only">{t('app.upsell.lockedTitle')}</span></span>}
             {module.releaseType === 'points' && <span className="cx-points">{module.requiredPoints || 0} {t('app.gamification.points')}</span>}
           </div>
@@ -60,7 +60,7 @@ export function CustomerLessonList({ module, completed, onOpen, t, themeColor, d
   return <div className="cx-lesson-list" data-lesson-count={module.subs.length} style={learningColors(dark)}>
     {module.subs.map((lesson, index) => <button type="button" key={lesson.id} className="cx-lesson-card" onClick={() => onOpen(lesson.id)}>
       <span className="cx-lesson-cover">
-        {lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" loading="lazy" /> : <span>{index + 1}</span>}
+        {lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" decoding="async" /> : <span>{index + 1}</span>}
       </span>
       <span className="cx-lesson-copy">
         <span className="cx-lesson-title">{lesson.name}</span>

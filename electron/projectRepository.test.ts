@@ -114,6 +114,24 @@ test('externalizes images, writes pages and rehydrates projects and backups', as
   }
 });
 
+test('project metadata operations preserve externalized cover assets', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'appify-fast-metadata-'));
+  try {
+    const repository = new ProjectRepository(root);
+    const state = workspace();
+    state.modules[0].coverImageUrl = ONE_PIXEL_PNG;
+    const project = await repository.create('Fast Metadata', state);
+    const projectDirectory = path.join(root, (await fs.readdir(root))[0]);
+    const projectJson = await fs.readFile(path.join(projectDirectory, 'project.json'), 'utf8');
+    assert.match(projectJson, /"coverImageUrl": "assets\/asset-[a-f0-9]{24}\.png"/);
+    assert.equal((await repository.list())[0].id, project.id);
+    await repository.save(project.id, state);
+    assert.equal((await repository.open(project.id)).workspace.modules[0].coverImageUrl, ONE_PIXEL_PNG);
+  } finally {
+    await fs.rm(root, {recursive:true, force:true});
+  }
+});
+
 test('analytics settings survive local save and backups while duplicated projects start with collection disabled',async()=>{
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'appify-analytics-'));
   try {

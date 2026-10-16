@@ -96,7 +96,7 @@ export class ProjectRepository {
     const entries = await fs.readdir(this.projectsRoot, { withFileTypes: true });
     const projects = await Promise.all(entries.filter(entry => entry.isDirectory()).map(async entry => {
       try {
-        const document = await this.readFromDirectory(path.join(this.projectsRoot, entry.name));
+        const document = await this.readStoredDocument(path.join(this.projectsRoot, entry.name));
         return document.project;
       } catch (error) {
         console.warn('[Appify] Ignorando pasta de projeto inválida.');
@@ -136,7 +136,7 @@ export class ProjectRepository {
 
   async save(id: number, workspace: AppState): Promise<Project> {
     const directory = await this.findDirectory(id);
-    const existing = await this.readFromDirectory(directory);
+    const existing = await this.readStoredDocument(directory);
     const project: Project = {
       ...existing.project,
       name: workspace.appName.trim() || existing.project.name,
@@ -242,7 +242,7 @@ export class ProjectRepository {
       if (!entry.isDirectory()) continue;
       const directory = path.join(this.projectsRoot, entry.name);
       try {
-        const document = await this.readFromDirectory(directory);
+        const document = await this.readStoredDocument(directory);
         if (document.project.id === id) return directory;
       } catch {
         // Invalid directories are ignored instead of being exposed to the renderer.
@@ -252,9 +252,13 @@ export class ProjectRepository {
   }
 
   private async readFromDirectory(directory: string): Promise<ProjectFile> {
+    return this.hydrateAssetReferences(directory, await this.readStoredDocument(directory));
+  }
+
+  private async readStoredDocument(directory: string): Promise<ProjectFile> {
     const target = path.join(directory, PROJECT_FILE);
     try {
-      return await this.hydrateAssetReferences(directory, await this.readDocument(target));
+      return await this.readDocument(target);
     } catch (primaryError) {
       const candidates = [path.join(directory, PROJECT_BACKUP_FILE)];
       const entries = await fs.readdir(directory).catch(() => [] as string[]);
@@ -270,7 +274,7 @@ export class ProjectRepository {
           const recovered = await this.readDocument(candidate);
           await fs.copyFile(candidate, target);
           console.warn(`[Appify] Projeto recuperado automaticamente a partir de ${path.basename(candidate)}.`);
-          return await this.hydrateAssetReferences(directory, recovered);
+          return recovered;
         } catch {
           // Try the next recovery candidate.
         }

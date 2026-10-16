@@ -95,7 +95,7 @@ export function CustomerProfilePanel({
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">
+    <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">
       <div className={`text-2xl font-black mb-8 self-start ${dark ? 'text-white' : 'text-gray-900'}`}>{t('app.profile.title')}</div>
       <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 mb-8 ${dark ? 'bg-gray-800 border-white/5' : 'bg-white border-black/5 shadow-sm'}`} style={{ color: themeColor }} aria-label={t('app.profile.title')}>
         <User size={40} />

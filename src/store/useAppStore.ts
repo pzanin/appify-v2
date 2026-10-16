@@ -439,13 +439,9 @@ useAppStore.subscribe(
   (state) => ({
     currentProjectId: state.currentProjectId,
     isLoading: state.isLoading,
-    currentView: state.currentView,
-    activeStep: state.activeStep,
     appName: state.appName,
     modules: state.modules,
-    selectedModuleId: state.selectedModuleId,
     pwaConfig: state.pwaConfig,
-    editingSubmodule: state.editingSubmodule,
     activeLocale: state.activeLocale,
     splashActive: state.splashActive,
     mockupOnboardingCompleted: state.mockupOnboardingCompleted,
@@ -470,13 +466,9 @@ useAppStore.subscribe(
     equalityFn: (previous, current) => (
       previous.currentProjectId === current.currentProjectId
       && previous.isLoading === current.isLoading
-      && previous.currentView === current.currentView
-      && previous.activeStep === current.activeStep
       && previous.appName === current.appName
       && previous.modules === current.modules
-      && previous.selectedModuleId === current.selectedModuleId
       && previous.pwaConfig === current.pwaConfig
-      && previous.editingSubmodule === current.editingSubmodule
       && previous.activeLocale === current.activeLocale
       && previous.splashActive === current.splashActive
       && previous.mockupOnboardingCompleted === current.mockupOnboardingCompleted
