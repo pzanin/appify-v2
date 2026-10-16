@@ -31,9 +31,9 @@ jobs:
           def replace_once(path, old, new):
               p = Path(path)
               text = p.read_text(encoding='utf-8')
-              if new in text:
-                  return
               if old not in text:
+                  if new in text:
+                      return
                   raise SystemExit(f'Anchor not found in {path}: {old[:180]!r}')
               p.write_text(text.replace(old, new, 1), encoding='utf-8')
 
@@ -84,23 +84,15 @@ jobs:
               path = Path(f'src/locales/{locale}.json')
               data = json.loads(path.read_text(encoding='utf-8'))
               data['app']['errors'].update(values)
-              # Keep old keys harmless and customer-safe if legacy code ever references them.
               data['app']['errors']['activityDesktop'] = data['app']['errors']['activityUnavailable']
               data['app']['errors']['activityError'] = data['app']['errors']['activityUnavailable']
               path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
-          # Accessibility copy should not inject a fixed-language word into the published header.
-          runtime = Path('src/components/PWARuntime.tsx')
-          text = runtime.read_text(encoding='utf-8')
-          text = text.replace('alt="Logo"', 'alt={displayAppName}')
-          runtime.write_text(text, encoding='utf-8')
+          for component in ['src/components/PWARuntime.tsx', 'src/components/PhoneMockup.tsx']:
+              path = Path(component)
+              text = path.read_text(encoding='utf-8').replace('alt="Logo"', 'alt={displayAppName}')
+              path.write_text(text, encoding='utf-8')
 
-          phone = Path('src/components/PhoneMockup.tsx')
-          text = phone.read_text(encoding='utf-8')
-          text = text.replace('alt="Logo"', 'alt={displayAppName}')
-          phone.write_text(text, encoding='utf-8')
-
-          # Update regression expectations so customer-visible technical details cannot return.
           test_path = Path('src/components/HtmlFrame.test.ts')
           test_text = test_path.read_text(encoding='utf-8')
           test_text = test_text.replace(
@@ -113,39 +105,41 @@ jobs:
           )
           test_path.write_text(test_text, encoding='utf-8')
 
-          guard = Path('src/components/CustomerLanguageGuard.test.ts')
-          guard.write_text("""import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import test from 'node:test';
-
-const customerFiles = [
-  'src/components/PWARuntime.tsx',
-  'src/components/PhoneMockup.tsx',
-  'src/components/HtmlFrame.tsx',
-  'src/components/CustomerEntry.tsx',
-  'src/components/InstallGuide.tsx',
-  'src/components/CustomerProfilePanel.tsx',
-  'src/components/CustomerLearning.tsx',
-  'src/components/ContinueLearning.tsx',
-  'src/components/ScreenErrorBoundary.tsx',
-];
-
-test('customer runtime does not expose known Appify implementation copy or manual locale maps', () => {
-  const combined = customerFiles.map(file => readFileSync(file, 'utf8')).join('\\n');
-  for (const forbidden of [
-    'Abra esta prévia no Appify desktop',
-    'Open this preview in the Appify desktop app',
-    'PWA exportado',
-    'exported PWA',
-    'Erro na atividade: {{message}}',
-    'Activity error: {{message}}',
-    "pt:'Limpar histórico desta atividade'",
-    "en:'Clear this activity’s history'",
-    'title="Marcar como não concluída"',
-    'alt="Logo"',
-  ]) assert.equal(combined.includes(forbidden), false, `customer-visible implementation copy found: ${forbidden}`);
-});
-""", encoding='utf-8')
+          guard_lines = [
+              "import assert from 'node:assert/strict';",
+              "import { readFileSync } from 'node:fs';",
+              "import test from 'node:test';",
+              "",
+              "const customerFiles = [",
+              "  'src/components/PWARuntime.tsx',",
+              "  'src/components/PhoneMockup.tsx',",
+              "  'src/components/HtmlFrame.tsx',",
+              "  'src/components/CustomerEntry.tsx',",
+              "  'src/components/InstallGuide.tsx',",
+              "  'src/components/CustomerProfilePanel.tsx',",
+              "  'src/components/CustomerLearning.tsx',",
+              "  'src/components/ContinueLearning.tsx',",
+              "  'src/components/ScreenErrorBoundary.tsx',",
+              "];",
+              "",
+              "test('customer runtime does not expose known Appify implementation copy or manual locale maps', () => {",
+              "  const combined = customerFiles.map(file => readFileSync(file, 'utf8')).join('\\n');",
+              "  for (const forbidden of [",
+              "    'Abra esta prévia no Appify desktop',",
+              "    'Open this preview in the Appify desktop app',",
+              "    'PWA exportado',",
+              "    'exported PWA',",
+              "    'Erro na atividade: {{message}}',",
+              "    'Activity error: {{message}}',",
+              "    \"pt:'Limpar histórico desta atividade'\",",
+              "    \"en:'Clear this activity’s history'\",",
+              "    'title=\"Marcar como não concluída\"',",
+              "    'alt=\"Logo\"',",
+              "  ]) assert.equal(combined.includes(forbidden), false, `customer-visible implementation copy found: ${forbidden}`);",
+              "});",
+              "",
+          ]
+          Path('src/components/CustomerLanguageGuard.test.ts').write_text('\n'.join(guard_lines), encoding='utf-8')
 
       - name: Install dependencies
         run: npm ci
