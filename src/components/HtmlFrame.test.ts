@@ -86,7 +86,7 @@ test('material click instrumentation accepts only the current static frame and i
   await act(async()=>root.unmount());
 });
 
-test('scoped activity bridge persists across remount, rejects forged senders and invalid data, and warns on failed writes',async(t)=>{
+test('scoped activity bridge persists across remount, rejects forged senders and invalid data, and warns on failed writes without customer reset controls',async()=>{
  const root=createRoot(document.getElementById('root')!);const storageKey='appify-activity:test';
  const html='<script>localStorage.getItem("history")</script>';
  window.localStorage.clear();window.localStorage.setItem('private-project','secret');
@@ -111,12 +111,8 @@ test('scoped activity bridge persists across remount, rejects forged senders and
  await act(async()=>root.render(React.createElement(HtmlFrame,{html,interactive:true,activityPath:'pages/lesson-1-2.html',storageKey,onMaterialClick:()=>{}})));
  await send({type:'appify:storage-write',id:5,data:{history:'after render'}});
  assert.equal(JSON.parse(window.localStorage.getItem(storageKey)!).history,'after render');
- const confirm=t.mock.method(window,'confirm',()=>false);
- await act(async()=>(document.querySelector('button') as HTMLButtonElement).click());
- assert.ok(window.localStorage.getItem(storageKey));assert.equal(document.querySelector('iframe'),frame);
- confirm.mock.mockImplementation(()=>true);
- await act(async()=>(document.querySelector('button') as HTMLButtonElement).click());
- assert.equal(window.localStorage.getItem(storageKey),null);assert.equal(window.localStorage.getItem('private-project'),'secret');
- assert.notEqual(document.querySelector('iframe'),frame);
+ assert.equal(document.querySelector('button'),null);
+ assert.equal(window.localStorage.getItem('private-project'),'secret');
+ assert.equal(document.querySelector('iframe'),frame);
  await act(async()=>root.unmount());
 });
