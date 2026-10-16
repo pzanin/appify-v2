@@ -4,6 +4,16 @@ import { useTranslation } from 'react-i18next';
 import type { PwaConfig } from '../types';
 import { customerProfileStorageKey, readCustomerProfile, writeCustomerProfile } from '../utils/customerStorage';
 
+type PreviewProfile = { name: string; email: string; updatedAt: number };
+type PreviewProfileProjectsApi = {
+  readPreviewProfile?: (id: number) => Promise<PreviewProfile>;
+  writePreviewProfile?: (id: number, profile: { name: string; email: string }) => Promise<PreviewProfile>;
+};
+
+function previewProfileApi() {
+  return window.appifyDesktop?.projects as typeof window.appifyDesktop.projects & PreviewProfileProjectsApi | undefined;
+}
+
 export function CustomerProfilePanel({
   config,
   projectId,
@@ -26,18 +36,38 @@ export function CustomerProfilePanel({
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle');
 
   useEffect(() => {
-    const profile = readCustomerProfile(window.localStorage, storageKey);
-    setName(profile.name);
-    setEmail(profile.email);
-    setStatus('idle');
-  }, [storageKey]);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const desktop = preview && projectId ? previewProfileApi() : undefined;
+        const profile = desktop?.readPreviewProfile
+          ? await desktop.readPreviewProfile(projectId!)
+          : readCustomerProfile(window.localStorage, storageKey);
+        if (cancelled) return;
+        setName(profile.name);
+        setEmail(profile.email);
+        setStatus('idle');
+      } catch {
+        if (!cancelled) setStatus('error');
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [preview, projectId, storageKey]);
 
-  const save = () => {
+  const save = async () => {
     try {
-      const written = writeCustomerProfile(window.localStorage, storageKey, { name, email });
-      const confirmed = readCustomerProfile(window.localStorage, storageKey);
-      const ok = confirmed.name === written.name && confirmed.email === written.email && confirmed.updatedAt === written.updatedAt;
-      if (!ok) throw new Error('Customer profile storage verification failed');
+      const desktop = preview && projectId ? previewProfileApi() : undefined;
+      const confirmed = desktop?.writePreviewProfile
+        ? await desktop.writePreviewProfile(projectId!, { name, email })
+        : (() => {
+            const written = writeCustomerProfile(window.localStorage, storageKey, { name, email });
+            const reread = readCustomerProfile(window.localStorage, storageKey);
+            if (reread.name !== written.name || reread.email !== written.email || reread.updatedAt !== written.updatedAt) {
+              throw new Error('Customer profile storage verification failed');
+            }
+            return reread;
+          })();
       setName(confirmed.name);
       setEmail(confirmed.email);
       setStatus('saved');
@@ -49,7 +79,7 @@ export function CustomerProfilePanel({
   return (
     <div className="flex-1 min-h-0 flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">
       <div className={`text-2xl font-black mb-8 self-start ${dark ? 'text-white' : 'text-gray-900'}`}>{t('app.profile.title')}</div>
-      <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 mb-8 ${dark ? 'bg-gray-800 border-white/5' : 'bg-white border-black/5 shadow-sm'}`} style={{ color: themeColor }}>
+      <div className={`w-24 h-24 rounded-full flex items-center justify-center border-4 mb-8 ${dark ? 'bg-gray-800 border-white/5' : 'bg-white border-black/5 shadow-sm'}`} style={{ color: themeColor }} aria-label={t('app.profile.title')}>
         <User size={40} />
       </div>
       <div className="w-full space-y-4 mb-4">
@@ -74,7 +104,7 @@ export function CustomerProfilePanel({
         />
       </div>
       <p className={`w-full text-xs leading-relaxed mb-5 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('app.profile.localNote')}</p>
-      <button type="button" onClick={save} className="w-full py-5 rounded-2xl font-black text-white shadow-2xl transition-transform active:scale-95" style={{ background: themeColor, boxShadow: `0 12px 24px ${themeColor}44` }}>
+      <button type="button" onClick={() => { void save(); }} className="w-full py-5 rounded-2xl font-black text-white shadow-2xl transition-transform active:scale-95" style={{ background: themeColor, boxShadow: `0 12px 24px ${themeColor}44` }}>
         {status === 'saved' ? t('app.profile.saved') : t('app.profile.saveButton')}
       </button>
       {status !== 'idle' && (
