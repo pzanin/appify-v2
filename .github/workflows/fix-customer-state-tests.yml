@@ -1,0 +1,89 @@
+name: One-time customer state test alignment
+
+on:
+  push:
+    branches:
+      - feature/pwa-runtime-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  align-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/pwa-runtime-hardening
+          fetch-depth: 0
+
+      - name: Align returning-customer test fixtures
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'Anchor not found in {path}: {old[:140]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # CustomerEntry: the disabled-welcome scenario must assert the new scoped key.
+          path = Path('src/components/CustomerEntry.test.ts')
+          text = path.read_text(encoding='utf-8')
+          old = "  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),'done');\n"
+          new = "  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,welcomeEnabled:false,customerAccessMode:'demo'},false,42)),'done');\n"
+          # Change the remaining legacy assertion, not the first published-product assertion.
+          if new not in text:
+              positions = []
+              start = 0
+              while True:
+                  index = text.find(old, start)
+                  if index < 0: break
+                  positions.append(index)
+                  start = index + len(old)
+              if len(positions) < 2:
+                  raise SystemExit(f'Expected a second legacy entry assertion, found {len(positions)}')
+              index = positions[1]
+              text = text[:index] + new + text[index + len(old):]
+              path.write_text(text, encoding='utf-8')
+
+          # Resume/access test: PhoneMockup is intentionally a returning-customer scenario.
+          replace_once(
+              'src/components/CustomerExperience.test.ts',
+              "import {progressStorageKey} from '../utils/lessonProgress';\n",
+              "import {progressStorageKey} from '../utils/lessonProgress';\nimport {customerEntryStorageKey} from '../utils/customerStorage';\n",
+          )
+          replace_once(
+              'src/components/CustomerExperience.test.ts',
+              "      localStorage.setItem(storage,saved);\n      useAppStore.setState({currentProjectId:1,activeStep:1,splashActive:false,pwaConfig:config,modules});\n",
+              "      localStorage.setItem(storage,saved);\n      if (Component === PhoneMockup) localStorage.setItem(customerEntryStorageKey(config,true,1),'done');\n      useAppStore.setState({currentProjectId:1,activeStep:1,splashActive:false,pwaConfig:config,modules});\n",
+          )
+
+          # Feature-navigation test is not an onboarding test; seed the preview as already entered.
+          replace_once(
+              'src/components/ProjectFeatures.test.ts',
+              "import { publicFeatureConfig, visibleProjectSteps } from '../utils/projectFeatures';\n",
+              "import { publicFeatureConfig, visibleProjectSteps } from '../utils/projectFeatures';\nimport { customerEntryStorageKey } from '../utils/customerStorage';\n",
+          )
+          replace_once(
+              'src/components/ProjectFeatures.test.ts',
+              "  const config={...INITIAL_PWA_CONFIG,engagementEnabled:false,gamification:{...INITIAL_PWA_CONFIG.gamification,enabled:false,enablePoints:true,enableCelebration:true}};\n  useAppStore.setState({pwaConfig:config,activeStep:1,splashActive:false});\n",
+              "  const config={...INITIAL_PWA_CONFIG,engagementEnabled:false,gamification:{...INITIAL_PWA_CONFIG.gamification,enabled:false,enablePoints:true,enableCelebration:true}};\n  localStorage.clear();\n  localStorage.setItem(customerEntryStorageKey(config,true,1),'done');\n  useAppStore.setState({currentProjectId:1,pwaConfig:config,activeStep:1,splashActive:false});\n",
+          )
+
+      - name: Commit test alignment
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to change"
+            exit 0
+          fi
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/CustomerEntry.test.ts src/components/CustomerExperience.test.ts src/components/ProjectFeatures.test.ts
+          git commit -m "Align customer state tests with first-visit behavior"
+          git push origin HEAD:feature/pwa-runtime-hardening
