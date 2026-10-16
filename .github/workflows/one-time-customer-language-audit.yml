@@ -105,6 +105,14 @@ jobs:
           )
           test_path.write_text(test_text, encoding='utf-8')
 
+          language_test = Path('src/components/ProductLanguage.test.ts')
+          language_text = language_test.read_text(encoding='utf-8')
+          old = " assert.match(document.body.textContent || '',/Activity error: Invalid JavaScript/);noPortuguese();\n"
+          new = " assert.match(document.body.textContent || '',/This activity could not be opened. Please try again./);assert.doesNotMatch(document.body.textContent || '',/Invalid JavaScript/);noPortuguese();\n"
+          if old not in language_text and new not in language_text:
+              raise SystemExit('ProductLanguage activity error expectation not found')
+          language_test.write_text(language_text.replace(old,new,1),encoding='utf-8')
+
           guard_lines = [
               "import assert from 'node:assert/strict';",
               "import { readFileSync } from 'node:fs';",
@@ -163,6 +171,6 @@ jobs:
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/components/HtmlFrame.tsx src/components/HtmlFrame.test.ts src/components/PWARuntime.tsx src/components/PhoneMockup.tsx src/components/CustomerLanguageGuard.test.ts src/locales/pt.json src/locales/en.json src/locales/es.json src/locales/fr.json
+          git add src/components/HtmlFrame.tsx src/components/HtmlFrame.test.ts src/components/ProductLanguage.test.ts src/components/PWARuntime.tsx src/components/PhoneMockup.tsx src/components/CustomerLanguageGuard.test.ts src/locales/pt.json src/locales/en.json src/locales/es.json src/locales/fr.json
           git commit -m "Harden customer-facing localization and activity errors"
           git push origin HEAD:feature/pwa-runtime-hardening
