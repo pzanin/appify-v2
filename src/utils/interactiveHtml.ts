@@ -4,6 +4,7 @@ import themeCss from './tailwindTheme.json';
 import preflightCss from './tailwindPreflight.json';
 import { assertPublicExport } from './exportSecurity';
 import { ACTIVITY_STORAGE_BRIDGE } from './activityStorage';
+import { HOST_ACTION_BRIDGE } from './htmlSecurity';
 
 import { INTERACTIVE_CSP } from './securityPolicies';
 export { INTERACTIVE_CSP } from './securityPolicies';
@@ -122,6 +123,7 @@ async function prepare(source: string): Promise<string> {
     doc.querySelectorAll('script:not([type]),script[type=""],script[type="text/javascript"],script[type="application/javascript"]').forEach(script=>script.setAttribute('type','application/appify-pending'));
     const bridge=doc.createElement('script');bridge.textContent=ACTIVITY_STORAGE_BRIDGE;doc.head.insertBefore(bridge,doc.head.querySelector('script'));
   }
+  const hostBridge=doc.createElement('script');hostBridge.textContent=HOST_ACTION_BRIDGE;doc.head.insertBefore(hostBridge,doc.head.querySelector('script'));
   const guard=doc.createElement('script');guard.textContent="window.addEventListener('error',function(event){if(parent!==window)parent.postMessage({type:'appify:activity-error',message:String(event.message||'Erro de JavaScript').slice(0,160)},'*')});";
   doc.head.insertBefore(guard,doc.head.querySelector('script'));
   return '<!DOCTYPE html>'+doc.documentElement.outerHTML;
