@@ -22,7 +22,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
 
           path = Path('src/components/PhoneMockup.tsx')
           text = path.read_text(encoding='utf-8')
@@ -37,22 +36,20 @@ jobs:
           text = text.replace('  const [userName, setUserName] = useState(\"\");\n', "", 1)
           text = text.replace('  const [userEmail, setUserEmail] = useState(\"\");\n', "", 1)
 
-          pattern = re.compile(
-              r"\s*\) : activeTab === 'perfil' \? \(\n"
-              r"\s*<motion\.div key=\\\"perfil\\\".*?\n"
-              r"\s*</motion\.div>\n"
-              r"\s*\) : activeTab === 'suporte' \? \(",
-              re.S,
-          )
-          replacement = """
-            ) : activeTab === 'perfil' ? (
+          start_marker = "            ) : activeTab === 'perfil' ? (\n"
+          end_marker = "            ) : activeTab === 'suporte' ? (\n"
+          start = text.find(start_marker)
+          end = text.find(end_marker, start + len(start_marker)) if start >= 0 else -1
+          if start < 0 or end < 0:
+              raise SystemExit(f'Profile block markers not found: start={start} end={end}')
+
+          replacement = """            ) : activeTab === 'perfil' ? (
               <motion.div key=\"perfil\" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className=\"absolute inset-0 flex min-h-0\">
                 <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} />
               </motion.div>
-            ) : activeTab === 'suporte' ? ("""
-          text, count = pattern.subn(replacement, text, count=1)
-          if count != 1:
-              raise SystemExit(f'Expected to replace one profile block, replaced {count}')
+            ) : activeTab === 'suporte' ? (
+"""
+          text = text[:start] + replacement + text[end + len(end_marker):]
 
           if 'mockProfileImg' in text or 'setMockProfileImg' in text or 'setUserName' in text or 'setUserEmail' in text:
               raise SystemExit('Legacy profile state still present')
