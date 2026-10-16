@@ -25,7 +25,11 @@ test('customer runtime does not expose known Appify implementation copy or manua
     'Activity error: {{message}}',
     "pt:'Limpar histórico desta atividade'",
     "en:'Clear this activity’s history'",
+    "t('app.errors.activityClearHistory')",
     'title="Marcar como não concluída"',
     'alt="Logo"',
+    'mockEarnedBadges',
+    'mockTotalPoints',
+    'mockProfileImg',
   ]) assert.equal(combined.includes(forbidden), false, `customer-visible implementation copy found: ${forbidden}`);
 });
