@@ -50,7 +50,8 @@
       "completed_status": "Terminée",
       "complete": "Marquer comme terminée",
       "contentTitle": "Contenu de la leçon",
-      "emptyContent": "Aucun contenu n’a été ajouté."
+      "emptyContent": "Aucun contenu n’a été ajouté.",
+      "markIncomplete": "Marquer comme non terminée"
     },
     "upsell": {
       "lockedTitle": "Contenu Verrouillé",

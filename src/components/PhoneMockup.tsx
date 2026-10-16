@@ -79,10 +79,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
     setSelectedMockupSubmoduleId(null);
     setActiveTab('inicio');
   }, [currentProjectId, previewEntryKey]);
-  const awards = pwaConfig.gamification?.awardsConfig || [];
-  const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
-  const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
-
   const [lockedModuleClick, setLockedModuleClick] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
@@ -501,20 +497,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             <span style={{ letterSpacing: '-0.5px' }}>{displayAppName}</span>
           </div>
           <div className="flex items-center gap-2 relative z-10">
-            {/* Streak Pill */}
-            {gamification.enabled && gamification.enableStreaks && (
-              <div style={{ 
-                display: 'flex', alignItems: 'center', gap: '4px', 
-                background: 'rgba(255,255,255,0.2)', 
-                backdropFilter: 'blur(8px)',
-                padding: '5px 12px', borderRadius: '99px', marginRight: '4px',
-                border: '1px solid rgba(255,255,255,0.1)'
-              }}>
-                <span style={{ fontSize: '14px' }}>{gamification.streakIcon}</span>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: pwaConfig.textColor || '#FFFFFF' }}>3</span>
-              </div>
-            )}
-            
             <div className="phone-header-icon" onClick={() => setIsPhoneDark(!isPhoneDark)} role="button">
               {isPhoneDark ? <Sun size={15} strokeWidth={2.5} /> : <Moon size={15} strokeWidth={2.5} />}
             </div>

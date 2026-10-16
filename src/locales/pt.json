@@ -50,7 +50,8 @@
       "completed_status": "Concluída",
       "complete": "Concluir",
       "contentTitle": "Conteúdo da aula",
-      "emptyContent": "Nenhum conteúdo definido."
+      "emptyContent": "Nenhum conteúdo definido.",
+      "markIncomplete": "Marcar como não concluída"
     },
     "upsell": {
       "lockedTitle": "Conteúdo Bloqueado",

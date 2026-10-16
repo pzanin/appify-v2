@@ -50,7 +50,8 @@
       "completed_status": "Completed",
       "complete": "Mark as complete",
       "contentTitle": "Lesson content",
-      "emptyContent": "No content has been added."
+      "emptyContent": "No content has been added.",
+      "markIncomplete": "Mark as incomplete"
     },
     "upsell": {
       "lockedTitle": "Locked Content",
