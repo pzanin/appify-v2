@@ -4,7 +4,17 @@ import { JSDOM } from 'jsdom';
 import { INITIAL_PWA_CONFIG } from '../constants';
 
 const dom=new JSDOM('<div></div>',{url:'https://appify.test/'});
-Object.assign(globalThis,{window:dom.window,document:dom.window.document,DOMParser:dom.window.DOMParser,Image:dom.window.Image,localStorage:dom.window.localStorage});
+Object.assign(globalThis,{
+  window:dom.window,
+  document:dom.window.document,
+  DOMParser:dom.window.DOMParser,
+  Image:dom.window.Image,
+  localStorage:dom.window.localStorage,
+  FileReader: class {
+    onload?: (event:{target:{result:ArrayBuffer}})=>void;
+    readAsArrayBuffer(blob:Blob){ void blob.arrayBuffer().then(result=>this.onload?.({target:{result}})); }
+  },
+});
 const {useAppStore}=await import('../store/useAppStore');
 const {handleExportZIP}=await import('./exportPWA');
 
