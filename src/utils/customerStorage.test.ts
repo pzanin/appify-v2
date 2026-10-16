@@ -22,6 +22,13 @@ test('customer profile is isolated by product identity and preview mode', () => 
   assert.equal(readCustomerProfile(storage, secondCustomerKey).name, '');
 });
 
+test('desktop preview identity stays stable even when a legacy project receives a regenerated product id', () => {
+  const before = { ...INITIAL_PWA_CONFIG, appName: 'Legacy project', productId: 'generated-a' };
+  const after = { ...before, productId: 'generated-b' };
+  assert.equal(customerProfileStorageKey(before, true, 123), customerProfileStorageKey(after, true, 123));
+  assert.notEqual(customerProfileStorageKey(before, false, null), customerProfileStorageKey(after, false, null));
+});
+
 test('customer profile survives reload-like reads and trims bounded fields', () => {
   storage.clear();
   const config = { ...INITIAL_PWA_CONFIG, productId: 'persistent-product' };
