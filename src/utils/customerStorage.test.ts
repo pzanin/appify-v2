@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { INITIAL_PWA_CONFIG } from '../constants';
-import { clearCustomerProfile, customerProfileStorageKey, readCustomerProfile, writeCustomerProfile } from './customerStorage';
+import { clearCustomerProfile, customerEntryStorageKey, customerProfileStorageKey, customerStorageScope, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from './customerStorage';
 
 const dom = new JSDOM('', { url: 'https://appify.test/' });
 const storage = dom.window.localStorage;
@@ -42,4 +42,25 @@ test('invalid storage content fails closed and profile can be cleared', () => {
   writeCustomerProfile(storage, key, { name: 'A', email: 'a@example.com' });
   clearCustomerProfile(storage, key);
   assert.equal(storage.getItem(key), null);
+});
+
+test('reset removes only runtime data for the selected product and mode', () => {
+  storage.clear();
+  const config = { ...INITIAL_PWA_CONFIG, productId: 'reset-product' };
+  const other = { ...INITIAL_PWA_CONFIG, productId: 'other-product' };
+  const scope = customerStorageScope(config, false, null);
+  storage.setItem(customerProfileStorageKey(config, false, null), '{}');
+  storage.setItem(customerEntryStorageKey(config, false, null), 'done');
+  storage.setItem(`appify-lesson-progress:v1:${scope}`, '{}');
+  storage.setItem(`appify-activity:v1:${scope}:1:2`, '{}');
+  storage.setItem(customerProfileStorageKey(config, true, 7), '{}');
+  storage.setItem(customerProfileStorageKey(other, false, null), '{}');
+
+  assert.equal(resetCustomerProductData(storage, config, false, null), 4);
+  assert.equal(storage.getItem(customerProfileStorageKey(config, false, null)), null);
+  assert.equal(storage.getItem(customerEntryStorageKey(config, false, null)), null);
+  assert.equal(storage.getItem(`appify-lesson-progress:v1:${scope}`), null);
+  assert.equal(storage.getItem(`appify-activity:v1:${scope}:1:2`), null);
+  assert.notEqual(storage.getItem(customerProfileStorageKey(config, true, 7)), null);
+  assert.notEqual(storage.getItem(customerProfileStorageKey(other, false, null)), null);
 });
