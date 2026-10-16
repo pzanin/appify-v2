@@ -4,6 +4,7 @@ import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
 import { INITIAL_PWA_CONFIG } from '../constants';
 import { publicFeatureConfig, visibleProjectSteps } from '../utils/projectFeatures';
+import { customerEntryStorageKey } from '../utils/customerStorage';
 const dom = new JSDOM('<div id="root"></div>', {url:'https://appify.test/'});
 Object.assign(globalThis, {window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true});
 const { createRoot } = await import('react-dom/client');
@@ -39,7 +40,9 @@ test('project switches hide and restore tabs without losing gamification setting
 
 test('disabled engagement disappears from runtime and preview navigation; disabled gamification is sanitized on export without mutating the project',async()=>{
   const config={...INITIAL_PWA_CONFIG,engagementEnabled:false,gamification:{...INITIAL_PWA_CONFIG.gamification,enabled:false,enablePoints:true,enableCelebration:true}};
-  useAppStore.setState({pwaConfig:config,activeStep:1,splashActive:false});
+  localStorage.clear();
+  localStorage.setItem(customerEntryStorageKey(config,true,1),'done');
+  useAppStore.setState({currentProjectId:1,pwaConfig:config,activeStep:1,splashActive:false});
   for(const component of [PWARuntime,PhoneMockup]){
     const root=createRoot(document.getElementById('root')!);
     await act(async()=>root.render(React.createElement(component,{isPhoneDark:false,setIsPhoneDark:()=>{}})));

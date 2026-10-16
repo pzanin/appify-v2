@@ -78,7 +78,7 @@ test('disabling welcome opens content immediately and preserves completed entry 
   localStorage.clear();const root=await render({...config,welcomeEnabled:false,customerAccessMode:'demo'});
   assert.ok(document.querySelector('[data-testid="library"]'));
   assert.equal(document.querySelector('input'),null);
-  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),'done');
+  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,welcomeEnabled:false,customerAccessMode:'demo'},false,42)),'done');
   await act(async()=>root.unmount());
   const returned=await render({...config,welcomeEnabled:false,customSplash:true});
   assert.ok(document.querySelector('[data-testid="library"]'));

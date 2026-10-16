@@ -4,6 +4,7 @@ import React, {act} from 'react';
 import {JSDOM} from 'jsdom';
 import {INITIAL_PWA_CONFIG} from '../constants';
 import {progressStorageKey} from '../utils/lessonProgress';
+import {customerEntryStorageKey} from '../utils/customerStorage';
 import type {Module, PwaConfig} from '../types';
 
 const dom = new JSDOM('<div id="root"></div>', {url:'https://product.test/', pretendToBeVisual:true});
@@ -31,6 +32,7 @@ test('runtime and phone preview preserve resume, access rules and progress acros
       const storage=progressStorageKey(config,true,1);
       const saved=JSON.stringify({completed:['1:1'],last:{moduleId:1,lessonId:2}});
       localStorage.setItem(storage,saved);
+      if (Component === PhoneMockup) localStorage.setItem(customerEntryStorageKey(config,true,1),'done');
       useAppStore.setState({currentProjectId:1,activeStep:1,splashActive:false,pwaConfig:config,modules});
       const root=createRoot(document.getElementById('root')!);
       await act(async()=>root.render(React.createElement(Component,{isPhoneDark:false,setIsPhoneDark:()=>{}})));
