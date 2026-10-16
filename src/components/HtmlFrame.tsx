@@ -25,7 +25,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
   const audioFilename=!interactive ? projectAudioFilename(html) : undefined;
   const nativeAudioUrl=audioFilename && currentProjectId ? `appify-asset://project/${currentProjectId}/audio/${encodeURIComponent(audioFilename)}` : undefined;
   const previewHtml=nativeAudioUrl ? removeEmbeddedAudio(html) : html;
-  const [storageRevision,setStorageRevision]=useState(0);
+  const [storageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
   const storageError=t('app.errors.activityStorageError');
   const storageReady=useRef(false);
@@ -109,11 +109,6 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
 
   if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : t('app.errors.activityPreparing')}</div>;
 
-  const resetText=t('app.errors.activityClearHistory');
-  const resetHistory=()=>{
-    if(!storageKey || !window.confirm(t('app.errors.activityClearHistoryConfirm')))return;
-    try {window.localStorage.removeItem(storageKey);setStorageFailed(false);setStorageRevision(value=>value+1);}catch{setStorageFailed(true);}
-  };
   const innerFrame = (
     <iframe
       {...props}
@@ -139,7 +134,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     );
   }
 
-  if(!hasBuilderVideo) return interactive ? <div className={className} style={{flex:1,minHeight:0,width:'100%',...style,display:'flex',flexDirection:'column'}}>{storageKey && /\blocalStorage\b/.test(html) && <button type="button" onClick={resetHistory} style={{padding:6,fontSize:12,background:'#fff',color:'#555',border:0,textAlign:'right',cursor:'pointer'}}>{resetText}</button>}<div hidden={!storageFailed} role="alert" style={{padding:8,background:'#fff3cd',color:'#574200',fontSize:13}}>{storageError}</div><div style={{flex:1,minHeight:0,position:'relative'}}>{innerFrame}</div></div> : innerFrame;
+  if(!hasBuilderVideo) return interactive ? <div className={className} style={{flex:1,minHeight:0,width:'100%',...style,display:'flex',flexDirection:'column'}}><div hidden={!storageFailed} role="alert" style={{padding:8,background:'#fff3cd',color:'#574200',fontSize:13}}>{storageError}</div><div style={{flex:1,minHeight:0,position:'relative'}}>{innerFrame}</div></div> : innerFrame;
 
   return (
     <div className={className} style={{ ...style, position: style?.position || 'relative', overflow:'hidden' }}>
