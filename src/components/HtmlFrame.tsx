@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { openExternalLink } from '../utils/externalLinks';
 import { projectService } from '../services/projectService';
 import { customerDesktopAssetUrl, customerWebAssetUrl } from '../utils/customerAssets';
+import { copyCustomerText, launchCustomerDownload, parseHostActionRequest, printCustomerHtml } from '../utils/hostActions';
 
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
@@ -19,9 +20,20 @@ function removeEmbeddedAudio(html:string) {
   return html.replace(/<audio\b[^>]*>[\s\S]*?<\/audio>/i,'');
 }
 
+function hostActionExists(html:string,action:string,value:string,targetId:string) {
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  return [...doc.querySelectorAll<HTMLElement>('[data-appify-action]')].some(element=>{
+    const elementAction=element.getAttribute('data-appify-action') || '';
+    const elementValue=element.getAttribute('data-appify-value') || element.getAttribute('href') || '';
+    const elementTarget=element.getAttribute('data-appify-material') || element.getAttribute('data-appify-target') || '';
+    return elementAction===action && elementValue===value && elementTarget===targetId;
+  });
+}
+
 export function HtmlFrame({ html, interactive=false, activityPath, storageKey, uiLanguage, onMaterialClick, className, style, ...props }: Props) {
   const {i18n}=useTranslation();
-  const t=i18n.getFixedT((uiLanguage || i18n.language).split('-')[0]);
+  const language=uiLanguage || i18n.language;
+  const t=i18n.getFixedT(language.split('-')[0]);
   const currentProjectId=projectService.getCurrentProjectId();
   const audioFilename=!interactive ? projectAudioFilename(html) : undefined;
   const audioUrl=audioFilename
@@ -65,6 +77,25 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     let writes=0;let reads=0;let windowStart=Date.now();
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow) return;
+
+      const hostAction=parseHostActionRequest(event.data);
+      if(hostAction) {
+        if(!hostActionExists(html,hostAction.action,hostAction.value,hostAction.targetId)) return;
+        const reply=(ok:boolean)=>frame.current?.contentWindow?.postMessage({type:'appify:host-action-result',action:hostAction.action,targetId:hostAction.targetId,ok},'*');
+        if(hostAction.action==='copy') {
+          void copyCustomerText(hostAction.value).then(reply).catch(()=>reply(false));
+          return;
+        }
+        if(hostAction.action==='print') {
+          reply(printCustomerHtml(html,language,typeof props.title==='string'?props.title:''));
+          return;
+        }
+        const ok=launchCustomerDownload(hostAction.value,document.baseURI);
+        if(ok && /^[a-zA-Z0-9._:-]{1,80}$/.test(hostAction.targetId)) onMaterialClick?.(hostAction.targetId);
+        reply(ok);
+        return;
+      }
+
       if(interactive) {
         const message=event.data;
         if(message?.type==='appify:storage-init') {
@@ -110,7 +141,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [interactive,html,storageKey,storageRevision,onMaterialClick,uiLanguage]);
+  }, [interactive,html,storageKey,storageRevision,onMaterialClick,uiLanguage,language,props.title]);
 
   if(interactive && (!activity || activity.source!==html || activity.error)) return <div role="status" style={{padding:20,background:'#fff',color:'#333'}}>{activity?.source===html && activity.error ? activity.error : t('app.errors.activityPreparing')}</div>;
 
@@ -120,7 +151,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       key={`${storageKey || ""}:${storageRevision}:${html}`}
       ref={frame}
       src={interactive?activity?.url:undefined}
-      srcDoc={interactive?undefined:prepareResponsiveHtml(previewHtml,uiLanguage || i18n.language)}
+      srcDoc={interactive?undefined:prepareResponsiveHtml(previewHtml,language)}
       sandbox="allow-scripts"
       referrerPolicy="strict-origin-when-cross-origin"
       className={hasBuilderVideo || interactive || audioUrl ? undefined : className}
