@@ -55,25 +55,29 @@ jobs:
               '{lesson.coverImageUrl ? <img src={lesson.coverImageUrl} alt="" decoding="async" /> : <span>{index + 1}</span>}',
           )
 
-          # Navigation-only state must not schedule disk autosaves.
+          # Navigation-only state must not schedule disk autosaves. Keep it in snapshots, just remove it from the autosave selector.
           store = Path('src/store/useAppStore.ts')
           text = store.read_text(encoding='utf-8')
+          sub_start = text.find('useAppStore.subscribe(\n')
+          sub_end = text.find('\n\nvoid i18n.changeLanguage', sub_start)
+          if sub_start < 0 or sub_end < 0:
+              raise SystemExit('Could not locate autosave subscription')
+          selector = text[sub_start:sub_end]
           for line in [
               '    currentView: state.currentView,\n',
               '    activeStep: state.activeStep,\n',
               '    selectedModuleId: state.selectedModuleId,\n',
               '    editingSubmodule: state.editingSubmodule,\n',
           ]:
-              if line in text:
-                  text = text.replace(line, '', 1)
+              selector = selector.replace(line, '')
           for line in [
               '      && previous.currentView === current.currentView\n',
               '      && previous.activeStep === current.activeStep\n',
               '      && previous.selectedModuleId === current.selectedModuleId\n',
               '      && previous.editingSubmodule === current.editingSubmodule\n',
           ]:
-              if line in text:
-                  text = text.replace(line, '', 1)
+              selector = selector.replace(line, '')
+          text = text[:sub_start] + selector + text[sub_end:]
           store.write_text(text, encoding='utf-8')
 
           # Project discovery/list/save should read compact stored JSON without hydrating every image to Base64.
@@ -103,11 +107,11 @@ jobs:
           text = text[:start] + replacement + text[end:]
           repo.write_text(text, encoding='utf-8')
 
-          # Regression test: listing and saving must not require local image assets to be rehydrated.
+          # Regression test: metadata operations remain safe around externalized cover assets.
           tests = Path('electron/projectRepository.test.ts')
           test_text = tests.read_text(encoding='utf-8')
           marker = "test('analytics settings survive local save and backups while duplicated projects start with collection disabled',async()=>{\n"
-          extra = '''test('project listing and saving do not hydrate image assets unnecessarily', async () => {\n  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'appify-fast-metadata-'));\n  try {\n    const repository = new ProjectRepository(root);\n    const state = workspace();\n    state.modules[0].coverImageUrl = ONE_PIXEL_PNG;\n    const project = await repository.create('Fast Metadata', state);\n    const projectDirectory = path.join(root, (await fs.readdir(root))[0]);\n    const assetsDirectory = path.join(projectDirectory, 'assets');\n    const assetNames = await fs.readdir(assetsDirectory);\n    assert.ok(assetNames.length > 0);\n\n    // Metadata-only operations must still work even if an asset is temporarily unavailable.\n    const firstAsset = path.join(assetsDirectory, assetNames[0]);\n    const bytes = await fs.readFile(firstAsset);\n    await fs.rm(firstAsset);\n    assert.equal((await repository.list())[0].id, project.id);\n    await repository.save(project.id, state);\n    await fs.writeFile(firstAsset, bytes);\n    assert.equal((await repository.open(project.id)).workspace.modules[0].coverImageUrl, ONE_PIXEL_PNG);\n  } finally {\n    await fs.rm(root, {recursive:true, force:true});\n  }\n});\n\n'''
+          extra = '''test('project metadata operations preserve externalized cover assets', async () => {\n  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'appify-fast-metadata-'));\n  try {\n    const repository = new ProjectRepository(root);\n    const state = workspace();\n    state.modules[0].coverImageUrl = ONE_PIXEL_PNG;\n    const project = await repository.create('Fast Metadata', state);\n    const projectDirectory = path.join(root, (await fs.readdir(root))[0]);\n    const projectJson = await fs.readFile(path.join(projectDirectory, 'project.json'), 'utf8');\n    assert.match(projectJson, /\"coverImageUrl\": \"assets\\/asset-[a-f0-9]{24}\\.png\"/);\n    assert.equal((await repository.list())[0].id, project.id);\n    await repository.save(project.id, state);\n    assert.equal((await repository.open(project.id)).workspace.modules[0].coverImageUrl, ONE_PIXEL_PNG);\n  } finally {\n    await fs.rm(root, {recursive:true, force:true});\n  }\n});\n\n'''
           if extra not in test_text:
               if marker not in test_text:
                   raise SystemExit('projectRepository test marker missing')
@@ -121,10 +125,16 @@ jobs:
           if 'loading="lazy"' in learning:
               raise SystemExit('Lazy cover loading remains')
           store_text = Path('src/store/useAppStore.ts').read_text(encoding='utf-8')
-          selector = store_text[store_text.find('useAppStore.subscribe('):]
+          sub_start = store_text.find('useAppStore.subscribe(\n')
+          sub_end = store_text.find('\n\nvoid i18n.changeLanguage', sub_start)
+          autosave = store_text[sub_start:sub_end]
           for transient in ['currentView: state.currentView', 'activeStep: state.activeStep', 'selectedModuleId: state.selectedModuleId', 'editingSubmodule: state.editingSubmodule']:
-              if transient in selector:
+              if transient in autosave:
                   raise SystemExit(f'Transient navigation state still autosaves: {transient}')
+          snapshot = store_text[store_text.find('export function getProjectWorkspaceSnapshot'):store_text.find('let saveTimer')]
+          for persistent in ['currentView: state.currentView', 'activeStep: state.activeStep', 'selectedModuleId: state.selectedModuleId', 'editingSubmodule: state.editingSubmodule']:
+              if persistent not in snapshot:
+                  raise SystemExit(f'Workspace snapshot lost state: {persistent}')
 
       - name: Install dependencies
         run: npm ci
