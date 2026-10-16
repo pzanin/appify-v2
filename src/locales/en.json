@@ -18,7 +18,10 @@
       "namePlaceholder": "Full Name",
       "nameDefault": "Student Name",
       "emailPlaceholder": "Email (profile information)",
-      "saveButton": "Save Changes"
+      "saveButton": "Save Changes",
+      "saved": "Your details were saved on this device.",
+      "saveError": "Your details could not be saved on this device.",
+      "localNote": "Your profile is stored only on this device and for this product."
     },
     "community": {
       "title": "Community",
