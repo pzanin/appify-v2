@@ -5,6 +5,7 @@ import { useLessonProgress } from '../hooks/useLessonProgress';
 import { ContinueLearning } from './ContinueLearning';
 import { CustomerModuleCards, CustomerLessonList, LearningProgress, CustomerBottomNavigation, learningColors } from './CustomerLearning';
 import { CustomerEntry } from './CustomerEntry';
+import { CustomerProfilePanel } from './CustomerProfilePanel';
 import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
 import { openExternalLink } from '../utils/externalLinks';
@@ -68,7 +69,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
-  const [mockProfileImg, setMockProfileImg] = useState<string | null>(null);
 
   // Reset states when project changes
   useEffect(() => {
@@ -77,8 +77,6 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
     setSelectedMockupSubmoduleId(null);
     setActiveTab('inicio');
   }, [currentProjectId]);
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
   const awards = pwaConfig.gamification?.awardsConfig || [];
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
   const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
@@ -554,80 +552,8 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             {activeStep === 0 && !entryFinished ? (
               <div key="customer-entry" className="absolute inset-0"><CustomerEntry config={pwaConfig} preview><div className="customer-screen"><h2>{t('experience.previewReady')}</h2><button className="customer-primary" style={{background:themeColor}} onClick={()=>setEntryFinished(true)}>{t('experience.continue')}</button></div></CustomerEntry></div>
             ) : activeTab === 'perfil' ? (
-              <motion.div key="perfil" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col items-center overflow-y-auto no-scrollbar" style={{ padding: '32px 24px 80px 24px' }}>
-                <div style={{ fontWeight: 800, fontSize: '20px', color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '28px', alignSelf: 'flex-start', flexShrink: 0 }}>{t('app.profile.title')}</div>
-                <div style={{ position: 'relative', marginBottom: '12px', flexShrink: 0 }}>
-                  <label style={{ cursor: 'pointer', display: 'block' }}>
-                    <input type="file" hidden accept="image/jpeg, image/jpg" onChange={(e) => { if (e.target.files && e.target.files[0]) setMockProfileImg(URL.createObjectURL(e.target.files[0])); }} />
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: isPhoneDark ? 'rgba(255,255,255,0.08)' : '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: themeColor, overflow: 'hidden', border: `2px solid ${themeColor}33`, boxShadow: isPhoneDark ? 'none' : '0 4px 12px rgba(0,0,0,0.05)' }}>
-                      {mockProfileImg ? <img src={mockProfileImg} alt={t('app.profile.title')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={32} />}
-                    </div>
-                    <div style={{ position: 'absolute', bottom: '0', right: '0', background: themeColor, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: isPhoneDark ? '2px solid #111' : '2px solid #fff' }}>
-                      <User size={12} />
-                    </div>
-                  </label>
-                </div>
-                <span style={{ fontSize: '10px', color: isPhoneDark ? '#9CA3AF' : '#6B7280', marginBottom: '32px', fontWeight: 600, flexShrink: 0 }}>{t('app.profile.fileFormat')}</span>
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px', flexShrink: 0 }}>
-                  <input type="text" placeholder={t('app.profile.namePlaceholder') as string} value={userName} onChange={(e) => setUserName(e.target.value)} style={{ width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '14px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)', color: isPhoneDark ? '#ffffff' : '#111111', fontSize: '14px', outline: 'none' }} />
-                  <input
-                    type="email"
-                    placeholder={t('app.profile.emailPlaceholder') as string}
-                    value={userEmail}
-                    onChange={(e) => setUserEmail(e.target.value)}
-                    style={{
-                      width: '100%', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.02)' : '#f9fafb',
-                      borderRadius: '14px', border: isPhoneDark ? '1px dashed rgba(255,255,255,0.1)' : '1px dashed #d1d5db',
-                      color: isPhoneDark ? '#ffffff' : '#111111',
-                      fontSize: '14px', outline: 'none'
-                    }}
-                  />
-                </div>
-
-                {gamification.enabled && pwaConfig.gamification?.enablePoints && (
-                  <div style={{ width: '100%', marginBottom: '32px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isPhoneDark ? 'rgba(255,255,255,0.05)' : '#ffffff', borderRadius: '16px', marginBottom: '16px', border: isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb', boxShadow: isPhoneDark ? 'none' : '0 2px 4px rgba(0,0,0,0.02)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isPhoneDark ? '#ffffff' : '#111111', fontWeight: 600, fontSize: '14px' }}>
-                        <Trophy size={18} color={themeColor} /> {t('app.gamification.points')}
-                      </div>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: themeColor }}>{mockTotalPoints}</div>
-                    </div>
-
-                    {awards.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: 700, color: isPhoneDark ? '#ffffff' : '#111111', marginBottom: '12px' }}>{t('app.gamification.achievements')}</div>
-                        <div className="grid grid-cols-3 gap-3">
-                          {awards.map((award) => {
-                            const isEarned = mockEarnedBadges.includes(award.id);
-                            return (
-                              <div key={award.id} style={{ 
-                                aspectRatio: '1/1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px', 
-                                borderRadius: '12px', textAlign: 'center', transition: 'all 0.2s',
-                                background: isEarned ? `${themeColor}15` : (isPhoneDark ? 'rgba(255,255,255,0.02)' : '#f9fafb'),
-                                border: isEarned ? `1px solid ${themeColor}30` : (isPhoneDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e5e7eb'),
-                                filter: isEarned ? 'none' : 'grayscale(100%)',
-                                opacity: isEarned ? 1 : 0.5,
-                                position: 'relative'
-                              }}>
-                                {!isEarned && (
-                                  <div style={{ position: 'absolute', top: '6px', right: '6px', color: isPhoneDark ? '#9CA3AF' : '#6B7280' }}>
-                                    <Lock size={10} />
-                                  </div>
-                                )}
-                                <div style={{ fontSize: '24px', marginBottom: '4px' }}>{award.icon}</div>
-                                <div style={{ fontSize: '10px', fontWeight: 700, lineHeight: 1.1, color: isEarned ? (isPhoneDark ? '#ffffff' : '#111111') : (isPhoneDark ? '#9CA3AF' : '#6B7280') }}>
-                                  {award.title}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <button onClick={() => setActiveTab('inicio')} style={{ width: '100%', padding: '16px', background: themeColor, color: '#ffffff', borderRadius: '14px', border: 'none', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: `0 8px 20px ${themeColor}33`, flexShrink: 0 }}>{t('app.profile.saveButton')}</button>
+              <motion.div key="perfil" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex min-h-0">
+                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} />
               </motion.div>
             ) : activeTab === 'suporte' ? (
               <motion.div key="suporte" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col items-center overflow-y-auto no-scrollbar" style={{ padding: '32px 24px 80px 24px' }}>
