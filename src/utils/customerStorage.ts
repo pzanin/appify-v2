@@ -11,7 +11,8 @@ const MAX_NAME_LENGTH = 120;
 const MAX_EMAIL_LENGTH = 254;
 
 export function customerIdentity(config: PwaConfig, preview: boolean, projectId: number | null) {
-  return config.productId || (preview ? `local-${projectId ?? config.appName}` : `legacy-${config.appName}`);
+  if (preview) return `local-${projectId ?? config.appName}`;
+  return config.productId || `legacy-${config.appName}`;
 }
 
 export function customerStorageScope(config: PwaConfig, preview: boolean, projectId: number | null) {
