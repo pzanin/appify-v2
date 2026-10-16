@@ -173,8 +173,9 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
       case 'copyAction': {
         const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
         const value=String(p.content || '').slice(0,20000);
+        const visible=value ? `<p data-appify-copy-content="${escapeHtml(String(mod.id))}" style="white-space:pre-wrap;margin:0 0 12px;overflow-wrap:anywhere;">${escapeHtml(value)}</p>` : '';
         const button=value ? `<a href="#" data-appify-action="copy" data-appify-value="${escapeHtml(value)}" data-appify-target="${escapeHtml(String(mod.id))}" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || copy('Copiar conteúdo'))}</a>` : '';
-        return `${heading}${button}`;
+        return `${heading}${visible}${button}`;
       }
       case 'printAction': {
         const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';

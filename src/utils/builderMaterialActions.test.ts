@@ -26,7 +26,11 @@ test('visual builder emits declared host actions for download, copy and print',(
   assert.equal(link.textContent,'Get planner');
 
   const copy=generateBuilderHtml([{id:'copy-1',type:'copyAction',props:{...getDefaultProps('copyAction','', 'en-US'),content:'My answer <safe>',buttonText:'Copy answer'}}]);
-  const copyLink=new JSDOM(copy).window.document.querySelector('[data-appify-action="copy"]')!;
+  const copyDoc=new JSDOM(copy).window.document;
+  const copyVisible=copyDoc.querySelector('[data-appify-copy-content="copy-1"]')!;
+  const copyLink=copyDoc.querySelector('[data-appify-action="copy"]')!;
+  assert.equal(copyVisible.textContent,'My answer <safe>');
+  assert.ok(copy.includes('My answer &lt;safe&gt;'));
   assert.equal(copyLink.getAttribute('data-appify-target'),'copy-1');
   assert.equal(copyLink.getAttribute('data-appify-value'),'My answer <safe>');
   assert.equal(copyLink.textContent,'Copy answer');
