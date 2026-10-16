@@ -31,7 +31,7 @@ jobs:
           def replace_once(path, old, new):
               p = Path(path)
               text = p.read_text(encoding='utf-8')
-              if new in text:
+              if new and new in text:
                   return
               if old not in text:
                   raise SystemExit(f'Anchor not found in {path}: {old[:180]!r}')
@@ -94,7 +94,7 @@ jobs:
               for forbidden in ['mockEarnedBadges', 'mockTotalPoints']:
                   if forbidden in text:
                       raise SystemExit(f'{forbidden} still present in {file}')
-              if '>3</span>' in text or '>3</' in text and 'streak' in text.lower():
+              if '>3</span>' in text or ('>3</' in text and 'streak' in text.lower()):
                   raise SystemExit(f'Hardcoded streak value still present in {file}')
 
       - name: Install dependencies
