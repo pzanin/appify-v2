@@ -62,6 +62,17 @@ export function clearCustomerProfile(storage: Storage, key: string) {
   storage.removeItem(key);
 }
 
+export function clearCustomerActivityData(storage: Storage, config: PwaConfig, preview: boolean, projectId: number | null) {
+  const prefix = `appify-activity:v1:${customerStorageScope(config, preview, projectId)}:`;
+  const remove: string[] = [];
+  for (let index = 0; index < storage.length; index++) {
+    const key = storage.key(index);
+    if (key?.startsWith(prefix)) remove.push(key);
+  }
+  remove.forEach(key => storage.removeItem(key));
+  return remove.length;
+}
+
 export function resetCustomerProductData(storage: Storage, config: PwaConfig, preview: boolean, projectId: number | null) {
   const scope = customerStorageScope(config, preview, projectId);
   const exact = new Set([
