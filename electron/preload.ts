@@ -5,6 +5,8 @@ type PreviewProfile = { name: string; email: string; updatedAt: number };
 type ExtendedProjectsApi = AppifyDesktopApi['projects'] & {
   readPreviewProfile: (id: number) => Promise<PreviewProfile>;
   writePreviewProfile: (id: number, profile: { name: string; email: string }) => Promise<PreviewProfile>;
+  writeMaterial: (id:number, filename:string, bytes:Uint8Array) => Promise<{filename:string;size:number}>;
+  readMaterial: (id:number, filename:string) => Promise<Uint8Array>;
 };
 
 const api: AppifyDesktopApi & { projects: ExtendedProjectsApi } = {
@@ -21,6 +23,8 @@ const api: AppifyDesktopApi & { projects: ExtendedProjectsApi } = {
     importBackup: () => ipcRenderer.invoke('projects:import-backup'),
     saveBuild: (id, filename, bytes) => ipcRenderer.invoke('projects:save-build', { id, filename, bytes }),
     readAudio: (id, filename) => ipcRenderer.invoke('projects:read-audio', { id, filename }),
+    writeMaterial: (id, filename, bytes) => ipcRenderer.invoke('projects:write-material', { id, filename, bytes }),
+    readMaterial: (id, filename) => ipcRenderer.invoke('projects:read-material', { id, filename }),
     readPreviewProfile: id => ipcRenderer.invoke('projects:read-preview-profile', { id }),
     writePreviewProfile: (id, profile) => ipcRenderer.invoke('projects:write-preview-profile', { id, profile }),
   },

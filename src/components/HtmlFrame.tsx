@@ -7,6 +7,7 @@ import { openExternalLink } from '../utils/externalLinks';
 import { projectService } from '../services/projectService';
 import { customerDesktopAssetUrl, customerWebAssetUrl } from '../utils/customerAssets';
 import { copyCustomerText, launchCustomerDownload, parseHostActionRequest, printCustomerHtml } from '../utils/hostActions';
+import { packagedMaterialFilename } from '../utils/builderMaterial';
 
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
@@ -88,6 +89,14 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
         }
         if(hostAction.action==='print') {
           reply(printCustomerHtml(html,language,typeof props.title==='string'?props.title:''));
+          return;
+        }
+        const packaged=packagedMaterialFilename(hostAction.value);
+        if(packaged && projectService.isDesktop() && currentProjectId) {
+          void projectService.readMaterial(currentProjectId,packaged).then(bytes=>{
+            const blob=new Blob([bytes],{type:'application/pdf'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=packaged;link.style.display='none';document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+            if(/^[a-zA-Z0-9._:-]{1,80}$/.test(hostAction.targetId)) onMaterialClick?.(hostAction.targetId);reply(true);
+          }).catch(()=>reply(false));
           return;
         }
         const ok=launchCustomerDownload(hostAction.value,document.baseURI);

@@ -226,6 +226,10 @@
     "addVideo": "Add a valid YouTube or Shorts URL in the block settings.",
     "addAudio": "Upload an MP3 or M4A, or add a direct HTTPS link to the audio.",
     "addFile": "Add an HTTPS link to the file.",
-    "details": "Details"
+    "details": "Details",
+    "copyAction": "Copy content",
+    "copyValue": "Text to copy",
+    "printAction": "Print / Save PDF",
+    "printHelp": "Print this lesson or save a PDF copy."
   }
 }

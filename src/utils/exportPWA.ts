@@ -20,6 +20,9 @@ function escapeHtml(value: string) {
 function audioFilenames(html: string) {
   return [...html.matchAll(/(?:\.\.\/|\.\/)?assets\/audio\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.mp3)/gi)].map(match => match[1]);
 }
+function materialFilenames(html:string) {
+  return [...html.matchAll(/(?:\.\.\/|\.\/)?assets\/documents\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.pdf)/gi)].map(match=>match[1]);
+}
 
 async function createPwaIcon(source: string | null | undefined, size: number, background: string, appName: string) {
   const canvas = document.createElement('canvas');
@@ -83,6 +86,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const pageMatches: string[] = [];
     const pageHeaders: string[] = [];
     const projectAudio = new Set<string>();
+    const projectMaterials = new Set<string>();
 
     zip.file('app-data.json', JSON.stringify(appData, null, 2));
 
@@ -93,6 +97,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         const html = lessonHtml(lesson,pwaLanguage);
         if (!html.trim()) continue;
         audioFilenames(html).forEach(filename => projectAudio.add(filename));
+        materialFilenames(html).forEach(filename => projectMaterials.add(filename));
         const pagePath = `pages/lesson-${module.id}-${lesson.id}.html`;
         if (!isAllowedExportPath(pagePath)) throw new Error('Identificador de aula inválido.');
         zip.file(pagePath, lesson.htmlInteractive ? await prepareInteractiveHtml(html) : prepareResponsiveHtml(html,pwaLanguage));
@@ -114,6 +119,17 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
         if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) throw new Error(`Áudio ausente: ${filename}`);
         zip.file(assetPath, bytes);
         audioAssetPaths.push(assetPath);
+      }
+    }
+
+    const materialAssetPaths:string[]=[];
+    if(projectMaterials.size>0) {
+      if(!state.currentProjectId || !projectService.isDesktop()) throw new Error('Os PDFs locais só podem ser exportados pelo Appify Desktop.');
+      zip.folder('assets/documents');
+      for(const filename of projectMaterials){
+        const assetPath=`assets/documents/${filename}`;if(!isAllowedExportPath(assetPath)) throw new Error('PDF local inválido.');
+        const bytes=await projectService.readMaterial(state.currentProjectId,filename);if(!(bytes instanceof Uint8Array)||bytes.byteLength<5) throw new Error(`PDF ausente: ${filename}`);
+        zip.file(assetPath,bytes);materialAssetPaths.push(assetPath);
       }
     }
 
@@ -219,6 +235,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
       './apple-touch-icon.png',
       ...assetMatches.map(path => `./${path}`),
       ...audioAssetPaths.map(path => `./${path}`),
+      ...materialAssetPaths.map(path => `./${path}`),
       ...pageMatches.map(path => `./${path}`)
     ];
 

@@ -226,6 +226,10 @@
     "addVideo": "Ajoutez une URL YouTube ou Shorts valide dans les propriétés du bloc.",
     "addAudio": "Importez un MP3 ou M4A, ou ajoutez un lien HTTPS direct vers l’audio.",
     "addFile": "Ajoutez un lien HTTPS vers le fichier.",
-    "details": "Détails"
+    "details": "Détails",
+    "copyAction": "Copier le contenu",
+    "copyValue": "Texte à copier",
+    "printAction": "Imprimer / Enregistrer en PDF",
+    "printHelp": "Imprimez cette leçon ou enregistrez une copie PDF."
   }
 }

@@ -19,7 +19,9 @@ export function escapeHtml(value: unknown): string {
 }
 
 export function builderDownloadUrl(value?: string): string {
-  const url = safeLinkUrl(value);
+  const raw=value?.trim() || '';
+  if (/^assets\/documents\/[A-Za-z0-9][A-Za-z0-9._-]{0,158}\.pdf$/i.test(raw)) return raw;
+  const url = safeLinkUrl(raw);
   return url.startsWith('https:') ? url : '';
 }
 
@@ -34,6 +36,8 @@ const baseDefaultProps = (type: string, subtype?: string) => {
       case 'accordion': return { ...base, bgColor: 'transparent', padding: '0', title: 'Clique para ver mais', content: 'Escreva aqui a explicação ou resposta desta seção.', accordionOpen: false, cardBgColor: '#f3f4f6', cardPadding: '16', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'audio': return { ...base, title: 'Áudio', audioMode: 'file' as const, audioData: '', audioFileName: '', url: '', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'download': return { ...base, title: 'Material de apoio', content: '', url: '', buttonText: 'Baixar material', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
+      case 'copyAction': return { ...base, title: 'Copiar conteúdo', content: 'Texto para copiar', buttonText: 'Copiar conteúdo', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
+      case 'printAction': return { ...base, title: 'Imprimir / Salvar PDF', content: 'Imprima esta aula ou salve uma cópia em PDF.', buttonText: 'Imprimir / Salvar PDF', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', titleFontFamily: 'Syne', titleFontSize: '18', titleFontWeight: '600', titleMarginBottom: '12' };
       case 'image': return { ...base, src: '', alt: 'Imagem', width: '100', align: 'center', imgHeight: 'auto', imgBorderRadius: '0', imgObjectFit: 'cover' as const, imgObjectPosition: 'center' as const };
       case 'video': return { ...base, url: '', videoAspectRatio: 'auto' as const, videoTitle: 'Vídeo', videoPoster: '', videoWidth: '100', videoCaption: '', align: 'center', padding: '0', bgColor: 'transparent', borderRadius: '16' };
       case 'link': return { ...base, borderRadius: '6', text: 'Clique aqui', url: 'https://', style: 'button', buttonColor: '#6b8af0', buttonTextColor: '#ffffff', buttonWidth: 'auto' as const, buttonSize: 'medium' as const, align: 'center' };
@@ -163,7 +167,19 @@ export const getBlockInnerHtml = (mod: BuilderBlock,language='pt-BR') => {
         const url = builderDownloadUrl(p.url);
         const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
         const description = p.content?.trim() ? `<p style="white-space:pre-wrap;margin:0 0 12px;">${escapeHtml(p.content)}</p>` : '';
-        const button = url ? `<a data-appify-material="${escapeHtml(String(mod.id))}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || copy('Baixar material'))}</a>` : `<p style="margin:0;opacity:.7;">${escapeHtml(copy('Informe um link HTTPS para o arquivo.'))}</p>`;
+        const button = url ? `<a data-appify-action="download" data-appify-value="${escapeHtml(url)}" data-appify-material="${escapeHtml(String(mod.id))}" href="${escapeHtml(url)}" rel="noopener noreferrer" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || copy('Baixar material'))}</a>` : `<p style="margin:0;opacity:.7;">${escapeHtml(copy('Informe um link HTTPS para o arquivo.'))}</p>`;
+        return `${heading}${description}${button}`;
+      }
+      case 'copyAction': {
+        const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
+        const value=String(p.content || '').slice(0,20000);
+        const button=value ? `<a href="#" data-appify-action="copy" data-appify-value="${escapeHtml(value)}" data-appify-target="${escapeHtml(String(mod.id))}" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || copy('Copiar conteúdo'))}</a>` : '';
+        return `${heading}${button}`;
+      }
+      case 'printAction': {
+        const heading = p.title?.trim() ? `<h3 style="${titleStyle}margin:0 0 ${tmb}px;">${escapeHtml(p.title)}</h3>` : '';
+        const description=p.content?.trim() ? `<p style="white-space:pre-wrap;margin:0 0 12px;">${escapeHtml(p.content)}</p>` : '';
+        const button=`<a href="#" data-appify-action="print" data-appify-target="${escapeHtml(String(mod.id))}" style="display:inline-block;max-width:100%;padding:12px 24px;border-radius:${p.borderRadius}px;background:${p.buttonColor};color:${p.buttonTextColor};font-size:${p.fontSize}px;font-weight:600;text-decoration:none;text-align:center;overflow-wrap:anywhere;">${escapeHtml(p.buttonText?.trim() || copy('Imprimir / Salvar PDF'))}</a>`;
         return `${heading}${description}${button}`;
       }
       case 'audio': {

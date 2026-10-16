@@ -63,6 +63,21 @@ function requireAudioFilename(value: unknown) {
   return value;
 }
 
+function requireMaterialFilename(value: unknown) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,158}\.pdf$/i.test(value) || path.basename(value)!==value) throw new Error('Arquivo PDF inválido.');
+  return value;
+}
+function requirePdfBytes(value:unknown) {
+  if (!(value instanceof Uint8Array) || value.byteLength<5 || value.byteLength>15*1024*1024) throw new Error('PDF fora do limite permitido.');
+  if (value[0]!==0x25 || value[1]!==0x50 || value[2]!==0x44 || value[3]!==0x46 || value[4]!==0x2d) throw new Error('Conteúdo PDF inválido.');
+  return value;
+}
+function storedMaterialFilename(value:unknown) {
+  if(typeof value!=='string' || !/\.pdf$/i.test(value)) throw new Error('Nome de PDF inválido.');
+  const base=path.basename(value,'.pdf').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9._-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,80) || 'document';
+  return `material-${Date.now()}-${base}.pdf`;
+}
+
 function normalizePreviewProfile(value: unknown) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
   return {
@@ -233,6 +248,16 @@ function registerProjectHandlers() {
     const stats = await fs.stat(target);
     if (!stats.isFile() || stats.size <= 0 || stats.size > 100 * 1024 * 1024) throw new Error('Arquivo de áudio inválido.');
     return new Uint8Array(await fs.readFile(target));
+  });
+  handle('projects:write-material', async (_event,payload:{id?:unknown;filename?:unknown;bytes?:unknown}) => {
+    const projectId=requireProjectId(payload?.id);const bytes=requirePdfBytes(payload?.bytes);const filename=storedMaterialFilename(payload?.filename);
+    const directory=await repository.remove(projectId);const documents=path.join(directory,'assets','documents');await fs.mkdir(documents,{recursive:true});
+    const target=path.join(documents,filename);const temporary=`${target}.${process.pid}.tmp`;await fs.writeFile(temporary,bytes);await fs.copyFile(temporary,target);await fs.rm(temporary,{force:true});
+    return {filename,size:bytes.byteLength};
+  });
+  handle('projects:read-material', async (_event,payload:{id?:unknown;filename?:unknown}) => {
+    const projectId=requireProjectId(payload?.id);const filename=requireMaterialFilename(payload?.filename);const directory=await repository.remove(projectId);const target=path.join(directory,'assets','documents',filename);
+    const stats=await fs.stat(target);if(!stats.isFile() || stats.size<5 || stats.size>15*1024*1024) throw new Error('PDF inválido.');const bytes=new Uint8Array(await fs.readFile(target));requirePdfBytes(bytes);return bytes;
   });
   ipcMain.on('app:close-ready', event => {
     try {

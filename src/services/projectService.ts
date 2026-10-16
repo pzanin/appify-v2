@@ -1,4 +1,4 @@
-import type { AppState, Project, ProjectBuildResult, ProjectFile, ProjectOperationResult } from '../types';
+import type { AppState, AppifyDesktopApi, Project, ProjectBuildResult, ProjectFile, ProjectOperationResult } from '../types';
 
 const BROWSER_STORAGE_KEY = 'appify-browser-projects-v1';
 let activeProjectId: number | null = null;
@@ -110,8 +110,12 @@ const browserFallback = {
   },
 };
 
-function desktopProjects() {
-  return window.appifyDesktop?.projects;
+type MaterialProjectsApi = AppifyDesktopApi['projects'] & {
+  writeMaterial: (id:number, filename:string, bytes:Uint8Array)=>Promise<{filename:string;size:number}>;
+  readMaterial: (id:number, filename:string)=>Promise<Uint8Array>;
+};
+function desktopProjects(): MaterialProjectsApi | undefined {
+  return window.appifyDesktop?.projects as MaterialProjectsApi | undefined;
 }
 
 export const projectService = {
@@ -185,5 +189,17 @@ export const projectService = {
     const desktop = desktopProjects();
     if (!desktop) throw new Error('Áudio local disponível apenas no aplicativo desktop.');
     return desktop.readAudio(id, filename);
+  },
+
+  writeMaterial: async (id:number, filename:string, bytes:Uint8Array) => {
+    const desktop=desktopProjects();
+    if(!desktop) throw new Error('PDF local disponível apenas no aplicativo desktop.');
+    return desktop.writeMaterial(id,filename,bytes);
+  },
+
+  readMaterial: async (id:number, filename:string):Promise<Uint8Array> => {
+    const desktop=desktopProjects();
+    if(!desktop) throw new Error('PDF local disponível apenas no aplicativo desktop.');
+    return desktop.readMaterial(id,filename);
   },
 };

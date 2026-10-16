@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import {
   ArrowLeft, Check, LayoutGrid, Columns, Grid, Image as ImageIcon,
   Quote, Zap, Type, AlignLeft, Link as LinkIcon, Minus,
-  SeparatorHorizontal, Trash2, Layers, Video, Globe, Code, Upload, Eye, ArrowUp, ArrowDown, Copy
+  SeparatorHorizontal, Trash2, Layers, Video, Globe, Code, Upload, Eye, ArrowUp, ArrowDown, Copy, Printer
 } from 'lucide-react';
 import { SubModule, BuilderBlock } from '../types';
 import { GOOGLE_FONTS } from '../constants';
@@ -14,6 +14,8 @@ import { sanitizeImportedHtml } from '../utils/htmlSecurity';
 import { BUILDER_CSS, builderDownloadUrl, builderFontLinks, generateBuilderHtml, getBlockInnerHtml, getDefaultProps, normalizedBlockProps, reorderBlocks, safeLinkUrl } from '../utils/builderHtml';
 import { openExternalLink } from '../utils/externalLinks';
 import { builderAudioSource, readAudioFile } from '../utils/builderAudio';
+import { packagedMaterialFilename, readPdfMaterial } from '../utils/builderMaterial';
+import { projectService } from '../services/projectService';
 import { plainTextToRichHtml, sanitizeRichTextHtml } from '../utils/richText';
 
 interface ModulesAndContentProps {
@@ -32,6 +34,7 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
   const [blocks, setBlocks] = useState<BuilderBlock[]>(submodule.builder_data || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [audioImportStatus, setAudioImportStatus] = useState<{ blockId: string; message: string; kind: 'loading' | 'success' | 'error' } | null>(null);
+  const [materialImportStatus, setMaterialImportStatus] = useState<{ blockId: string; message: string; kind: 'loading' | 'success' | 'error' } | null>(null);
   const [viewMode, setViewMode] = useState<'visual' | 'code'>(submodule.htmlMode || 'visual');
   const [submoduleName, setSubmoduleName] = useState(submodule.name || '');
 
@@ -289,7 +292,9 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                 <button className="vpb-module-btn" onClick={() => addBlock('card')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Card / Destaque</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Dica ou informação importante</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('accordion')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Acordeão</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Seção que abre e fecha</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('audio')}><Layers className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Áudio</div><div style={{fontSize:'10px',color:'var(--muted)'}}>MP3, M4A ou link externo</div></div></button>
-                <button className="vpb-module-btn" onClick={() => addBlock('download')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Arquivo para download</div><div style={{fontSize:'10px',color:'var(--muted)'}}>PDF, planner ou material externo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('download')}><ArrowDown className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Arquivo para download</div><div style={{fontSize:'10px',color:'var(--muted)'}}>PDF local ou material externo</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('copyAction')}><Copy className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Copiar conteúdo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Copia texto com um toque</div></div></button>
+                <button className="vpb-module-btn" onClick={() => addBlock('printAction')}><Printer className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imprimir / PDF</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Imprime ou salva a aula em PDF</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('image')}><ImageIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Imagem</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Upload direto</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('video')}><Video className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Vídeo</div><div style={{fontSize:'10px',color:'var(--muted)'}}>YouTube ou Shorts</div></div></button>
                 <button className="vpb-module-btn" onClick={() => addBlock('link')}><LinkIcon className="vpb-module-icon" size={16} /><div><div style={{fontSize:'12px',fontWeight:600,color:'var(--text)'}}>Botão / Link</div><div style={{fontSize:'10px',color:'var(--muted)'}}>Link externo</div></div></button>
@@ -522,13 +527,47 @@ export function ModulesAndContent({ submodule, onSave, onClose }: ModulesAndCont
                       <input id="download-title" className="vpb-input" value={selectedBlock.props.title ?? ''} onChange={e => updateProp('title', e.target.value)} />
                       <label className="vpb-label" htmlFor="download-content">Descrição (opcional)</label>
                       <textarea id="download-content" className="vpb-textarea" rows={3} value={selectedBlock.props.content ?? ''} onChange={e => updateProp('content', e.target.value)} />
-                      <label className="vpb-label" htmlFor="download-url">Link HTTPS do arquivo</label>
+                      <label className="vpb-label" htmlFor="download-pdf">PDF local (até 15 MB)</label>
+                      <input id="download-pdf" className="vpb-input" type="file" accept=".pdf,application/pdf" disabled={!storageProjectId || !projectService.isDesktop()} onChange={async e => {
+                        const file=e.target.files?.[0]; e.target.value=''; if(!file || !storageProjectId) return;
+                        const blockId=selectedBlock.id; setMaterialImportStatus({blockId,message:'Validando PDF…',kind:'loading'});
+                        try { const bytes=await readPdfMaterial(file); const saved=await projectService.writeMaterial(storageProjectId,file.name,bytes); updateProp('url',`assets/documents/${saved.filename}`); setMaterialImportStatus({blockId,message:'PDF incorporado ao projeto e pronto para acompanhar o PWA.',kind:'success'}); }
+                        catch(error){ setMaterialImportStatus({blockId,message:error instanceof Error?error.message:'Não foi possível importar o PDF.',kind:'error'}); }
+                      }} />
+                      {packagedMaterialFilename(selectedBlock.props.url) && <p className="vpb-html-help">PDF incorporado: {packagedMaterialFilename(selectedBlock.props.url)} <button type="button" className="btn-ghost" onClick={() => { updateProp('url',''); setMaterialImportStatus(null); }}>Remover referência</button></p>}
+                      {materialImportStatus?.blockId===selectedBlock.id && <p className="vpb-html-help" role={materialImportStatus.kind==='error'?'alert':'status'} style={{color:materialImportStatus.kind==='error'?'#f87171':undefined,fontWeight:600}}>{materialImportStatus.message}</p>}
+                      {!projectService.isDesktop() && <p className="vpb-html-help">O upload local de PDF está disponível no Appify Desktop. Você ainda pode usar um link HTTPS.</p>}
+                      <label className="vpb-label" htmlFor="download-url">Ou use um link HTTPS do arquivo</label>
                       <input id="download-url" className="vpb-input" placeholder="https://seusite.com/material.pdf" value={selectedBlock.props.url ?? ''} onChange={e => updateProp('url', e.target.value)} />
                       {!builderDownloadUrl(selectedBlock.props.url) && <p className="vpb-html-help" role="status">Informe um link HTTPS válido para disponibilizar o botão.</p>}
-                      <button type="button" className="btn-ghost" disabled={!builderDownloadUrl(selectedBlock.props.url)} onClick={() => openExternalLink(builderDownloadUrl(selectedBlock.props.url))}>Testar arquivo no navegador</button>
+                      <button type="button" className="btn-ghost" disabled={!builderDownloadUrl(selectedBlock.props.url) || Boolean(packagedMaterialFilename(selectedBlock.props.url))} onClick={() => openExternalLink(builderDownloadUrl(selectedBlock.props.url))}>Testar arquivo no navegador</button>
                       <label className="vpb-label" htmlFor="download-button">Texto do botão</label>
                       <input id="download-button" className="vpb-input" placeholder="Baixar material" value={selectedBlock.props.buttonText ?? ''} onChange={e => updateProp('buttonText', e.target.value)} />
                       <p className="vpb-html-help">O arquivo será aberto no navegador. O serviço de hospedagem determina se ele será baixado ou exibido para leitura. Use um link acessível ao seu público.</p>
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'copyAction' && (
+                    <>
+                      <label className="vpb-label" htmlFor="copy-title">Título (opcional)</label>
+                      <input id="copy-title" className="vpb-input" value={selectedBlock.props.title ?? ''} onChange={e=>updateProp('title',e.target.value)} />
+                      <label className="vpb-label" htmlFor="copy-value">Conteúdo que será copiado</label>
+                      <textarea id="copy-value" className="vpb-textarea" rows={7} maxLength={20000} value={selectedBlock.props.content ?? ''} onChange={e=>updateProp('content',e.target.value)} />
+                      <label className="vpb-label" htmlFor="copy-button">Texto do botão</label>
+                      <input id="copy-button" className="vpb-input" value={selectedBlock.props.buttonText ?? ''} onChange={e=>updateProp('buttonText',e.target.value)} />
+                      <p className="vpb-html-help">O cliente copia somente o texto configurado neste bloco. O HTML da aula não recebe acesso direto ao clipboard.</p>
+                    </>
+                  )}
+
+                  {selectedBlock.type === 'printAction' && (
+                    <>
+                      <label className="vpb-label" htmlFor="print-title">Título (opcional)</label>
+                      <input id="print-title" className="vpb-input" value={selectedBlock.props.title ?? ''} onChange={e=>updateProp('title',e.target.value)} />
+                      <label className="vpb-label" htmlFor="print-help">Descrição (opcional)</label>
+                      <textarea id="print-help" className="vpb-textarea" rows={3} value={selectedBlock.props.content ?? ''} onChange={e=>updateProp('content',e.target.value)} />
+                      <label className="vpb-label" htmlFor="print-button">Texto do botão</label>
+                      <input id="print-button" className="vpb-input" value={selectedBlock.props.buttonText ?? ''} onChange={e=>updateProp('buttonText',e.target.value)} />
+                      <p className="vpb-html-help">Abre a impressão do navegador/sistema. O cliente pode imprimir ou escolher “Salvar como PDF”, quando o dispositivo oferecer essa opção.</p>
                     </>
                   )}
 
