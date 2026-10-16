@@ -1,0 +1,259 @@
+name: One-time customer state migration
+
+on:
+  push:
+    branches:
+      - feature/pwa-runtime-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-customer-state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/pwa-runtime-hardening
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Align first visit, progress and preview reset
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f'Anchor not found in {path}: {old[:120]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          # One shared customer scope for progress/activity/profile/entry.
+          replace_once(
+              'src/utils/lessonProgress.ts',
+              "import type { Module, PwaConfig } from '../types';\n",
+              "import type { Module, PwaConfig } from '../types';\nimport { customerStorageScope } from './customerStorage';\n",
+          )
+          replace_once(
+              'src/utils/lessonProgress.ts',
+              "export function progressStorageKey(config:PwaConfig,preview:boolean,projectId:number|null) {\n  const identity=config.productId || (preview ? `local-${projectId ?? config.appName}` : `legacy-${config.appName}`);\n  return `appify-lesson-progress:v1:${preview ? 'preview' : 'customer'}:${encodeURIComponent(identity)}`;\n}\n",
+              "export function progressStorageKey(config:PwaConfig,preview:boolean,projectId:number|null) {\n  return `appify-lesson-progress:v1:${customerStorageScope(config,preview,projectId)}`;\n}\n",
+          )
+
+          # CustomerEntry: use scoped v2 key in both runtime and preview, while migrating old runtime state.
+          replace_once(
+              'src/components/CustomerEntry.tsx',
+              "import { SplashArtwork } from './SplashArtwork';\n",
+              "import { SplashArtwork } from './SplashArtwork';\nimport { customerEntryStorageKey } from '../utils/customerStorage';\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.tsx',
+              "export function CustomerEntry({ config, children, preview = false }: { config:PwaConfig; children:React.ReactNode; preview?:boolean }) {\n",
+              "export function CustomerEntry({ config, children, preview = false, projectId = null, onReady }: { config:PwaConfig; children:React.ReactNode; preview?:boolean; projectId?:number|null; onReady?:()=>void }) {\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.tsx',
+              "  const {isStandalone} = usePWAInstall();\n  const completed = () => { try { return !preview && localStorage.getItem(entryStorageKey(name)) === 'done'; } catch { return false; } };\n",
+              "  const {isStandalone} = usePWAInstall();\n  const storageKey=customerEntryStorageKey(config,preview,projectId);\n  const completed = () => {\n    try {\n      if(localStorage.getItem(storageKey) === 'done') return true;\n      if(!preview && localStorage.getItem(entryStorageKey(name)) === 'done') {\n        localStorage.setItem(storageKey,'done');\n        localStorage.removeItem(entryStorageKey(name));\n        return true;\n      }\n      return false;\n    } catch { return false; }\n  };\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.tsx',
+              "  useEffect(()=>{ if(step==='ready' && !splash && !preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Content remains accessible without storage. */}} },[step,splash,preview,name]);\n  const finish=()=>{ if(!preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Continue when storage is unavailable. */}}setEmail('');setStep('ready'); };\n",
+              "  useEffect(()=>{ if(step==='ready' && !splash){try{localStorage.setItem(storageKey,'done');}catch{/* Content remains accessible without storage. */}onReady?.();} },[step,splash,storageKey,onReady]);\n  const finish=()=>{ try{localStorage.setItem(storageKey,'done');}catch{/* Continue when storage is unavailable. */}setEmail('');setStep('ready'); };\n",
+          )
+
+          # Profile preview gets a scoped, explicit reset tool; exported/runtime profile remains unchanged.
+          replace_once(
+              'src/components/CustomerProfilePanel.tsx',
+              "import { CheckCircle2, User, XCircle } from 'lucide-react';\n",
+              "import { CheckCircle2, RotateCcw, User, XCircle } from 'lucide-react';\n",
+          )
+          replace_once(
+              'src/components/CustomerProfilePanel.tsx',
+              "import { customerProfileStorageKey, readCustomerProfile, writeCustomerProfile } from '../utils/customerStorage';\n",
+              "import { customerProfileStorageKey, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from '../utils/customerStorage';\n",
+          )
+          replace_once(
+              'src/components/CustomerProfilePanel.tsx',
+              "  themeColor,\n}: {\n  config: PwaConfig;\n  projectId: number | null;\n  preview: boolean;\n  dark: boolean;\n  themeColor: string;\n}) {\n",
+              "  themeColor,\n  onResetPreview,\n}: {\n  config: PwaConfig;\n  projectId: number | null;\n  preview: boolean;\n  dark: boolean;\n  themeColor: string;\n  onResetPreview?: () => void;\n}) {\n",
+          )
+          replace_once(
+              'src/components/CustomerProfilePanel.tsx',
+              "  const save = async () => {\n",
+              "  const resetPreview = async () => {\n    if (!preview || !onResetPreview) return;\n    try {\n      const desktop = projectId ? previewProfileApi() : undefined;\n      if (desktop?.writePreviewProfile && projectId) await desktop.writePreviewProfile(projectId, { name: '', email: '' });\n      resetCustomerProductData(window.localStorage, config, true, projectId);\n      setName('');\n      setEmail('');\n      setStatus('idle');\n      window.dispatchEvent(new window.StorageEvent('storage', { key: null }));\n      onResetPreview();\n    } catch {\n      setStatus('error');\n    }\n  };\n\n  const save = async () => {\n",
+          )
+          replace_once(
+              'src/components/CustomerProfilePanel.tsx',
+              "      {status !== 'idle' && (\n        <div role={status === 'error' ? 'alert' : 'status'} className={`w-full flex items-center gap-2 rounded-2xl px-4 py-3 mt-4 text-sm font-bold ${status === 'saved' ? (dark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700') : (dark ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-700')}`}>\n          {status === 'saved' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}\n          <span>{status === 'saved' ? t('app.profile.saved') : t('app.profile.saveError')}</span>\n        </div>\n      )}\n",
+              "      {status !== 'idle' && (\n        <div role={status === 'error' ? 'alert' : 'status'} className={`w-full flex items-center gap-2 rounded-2xl px-4 py-3 mt-4 text-sm font-bold ${status === 'saved' ? (dark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700') : (dark ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-700')}`}>\n          {status === 'saved' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}\n          <span>{status === 'saved' ? t('app.profile.saved') : t('app.profile.saveError')}</span>\n        </div>\n      )}\n      {preview && onResetPreview && (\n        <div className={`w-full mt-8 pt-5 border-t ${dark ? 'border-white/10' : 'border-black/10'}`}>\n          <p className={`text-xs leading-relaxed mb-3 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('app.profile.resetPreviewNote')}</p>\n          <button type=\"button\" onClick={() => { void resetPreview(); }} className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border ${dark ? 'border-red-400/30 text-red-300 bg-red-500/5' : 'border-red-200 text-red-700 bg-red-50'}`}>\n            <RotateCcw size={17} /> {t('app.profile.resetPreview')}\n          </button>\n        </div>\n      )}\n",
+          )
+
+          # Phone preview: first-visit state is project-scoped and independent from the Builder step.
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "import { engagementIsEnabled } from '../utils/projectFeatures';\n",
+              "import { engagementIsEnabled } from '../utils/projectFeatures';\nimport { customerEntryStorageKey } from '../utils/customerStorage';\n",
+          )
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "  const currentProjectId = useAppStore(state => state.currentProjectId);\n\n  const [entryFinished,setEntryFinished] = useState(false);\n",
+              "  const currentProjectId = useAppStore(state => state.currentProjectId);\n  const previewEntryKey = customerEntryStorageKey(pwaConfig,true,currentProjectId);\n\n  const [entryFinished,setEntryFinished] = useState(() => { try { return localStorage.getItem(previewEntryKey) === 'done'; } catch { return false; } });\n",
+          )
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "  // Reset states when project changes\n  useEffect(() => {\n    setEntryFinished(false);\n    setSelectedMockupModuleId(null);\n    setSelectedMockupSubmoduleId(null);\n    setActiveTab('inicio');\n  }, [currentProjectId]);\n",
+              "  // Reset navigation and reload the isolated customer-entry state when the project changes.\n  useEffect(() => {\n    try { setEntryFinished(localStorage.getItem(previewEntryKey) === 'done'); } catch { setEntryFinished(false); }\n    setSelectedMockupModuleId(null);\n    setSelectedMockupSubmoduleId(null);\n    setActiveTab('inicio');\n  }, [currentProjectId, previewEntryKey]);\n",
+          )
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "            {activeStep === 0 && !entryFinished ? (\n              <div key=\"customer-entry\" className=\"absolute inset-0\"><CustomerEntry config={pwaConfig} preview><div className=\"customer-screen\"><h2>{t('experience.previewReady')}</h2><button className=\"customer-primary\" style={{background:themeColor}} onClick={()=>setEntryFinished(true)}>{t('experience.continue')}</button></div></CustomerEntry></div>\n",
+              "            {!entryFinished ? (\n              <div key=\"customer-entry\" className=\"absolute inset-0\"><CustomerEntry config={pwaConfig} preview projectId={currentProjectId} onReady={()=>setEntryFinished(true)}><div className=\"customer-screen\"><h2>{t('experience.previewReady')}</h2></div></CustomerEntry></div>\n",
+          )
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} />\n",
+              "                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} onResetPreview={()=>{setSelectedMockupModuleId(null);setSelectedMockupSubmoduleId(null);setActiveTab('inicio');setEntryFinished(false);}} />\n",
+          )
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "        <CustomerBottomNavigation items={[\n",
+              "        {entryFinished && <CustomerBottomNavigation items={[\n",
+          )
+          replace_once(
+              'src/components/PhoneMockup.tsx',
+              "        }} />\n      </div>\n    </div>\n  );\n}\n",
+              "        }} />}\n      </div>\n    </div>\n  );\n}\n",
+          )
+
+          # Keep the published wrapper on the same entry identity API.
+          replace_once(
+              'src/App.tsx',
+              "      <CustomerEntry config={useAppStore.getState().pwaConfig}><PWARuntime analyticsLive isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>\n",
+              "      <CustomerEntry config={useAppStore.getState().pwaConfig} projectId={useAppStore.getState().currentProjectId}><PWARuntime analyticsLive isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>\n",
+          )
+
+          # Compact Continue card in standard mode; comfortable mode retains larger touch spacing.
+          replace_once(
+              'src/index.css',
+              ".cx-continue { background: var(--cx-surface); border: 1px solid var(--cx-border); border-left: 4px solid; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; flex-shrink: 0; }\n",
+              ".cx-continue { background: var(--cx-surface); border: 1px solid var(--cx-border); border-left: 4px solid; border-radius: 12px; padding: 9px 11px; margin-bottom: 14px; flex-shrink: 0; }\n",
+          )
+          replace_once(
+              'src/index.css',
+              ".cx-continue-location { margin: 6px 0 10px; font-size: 13px; line-height: 1.45; color: var(--cx-muted); overflow-wrap: anywhere; }\n",
+              ".cx-continue-location { margin: 4px 0 7px; font-size: 12px; line-height: 1.4; color: var(--cx-muted); overflow-wrap: anywhere; }\n",
+          )
+          replace_once(
+              'src/index.css',
+              ".cx-continue button { display: block; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 8px; font-size: 14px; font-weight: 700; line-height: 1.4; cursor: pointer; }\n",
+              ".cx-continue button { display: block; width: 100%; min-height: 40px; padding: 7px 10px; border: 0; border-radius: 8px; font-size: 13px; font-weight: 700; line-height: 1.35; cursor: pointer; }\n[data-customer-layout=\"comfortable\"] .cx-continue { padding: 12px 14px; margin-bottom: 16px; }\n[data-customer-layout=\"comfortable\"] .cx-continue-location { margin: 6px 0 10px; font-size: 13px; line-height: 1.45; }\n[data-customer-layout=\"comfortable\"] .cx-continue button { min-height: 44px; padding: 8px 12px; font-size: 14px; }\n",
+          )
+          replace_once(
+              'src/index.css',
+              ".cx-continue h2 { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }\n",
+              ".cx-continue h2 { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }\n[data-customer-layout=\"comfortable\"] .cx-continue h2 { font-size: 16px; line-height: 1.35; }\n",
+          )
+
+          # Localized preview-only reset copy.
+          translations = {
+              'pt': ('Resetar dados de teste', 'Apaga o perfil, o progresso, as atividades e o estado de primeira visita desta prévia.'),
+              'en': ('Reset test data', "Clears this preview's profile, progress, activities, and first-visit state."),
+              'es': ('Restablecer datos de prueba', 'Borra el perfil, el progreso, las actividades y el estado de primera visita de esta vista previa.'),
+              'fr': ('Réinitialiser les données de test', 'Efface le profil, la progression, les activités et l’état de première visite de cet aperçu.'),
+          }
+          for lang, (label, note) in translations.items():
+              path = Path(f'src/locales/{lang}.json')
+              data = json.loads(path.read_text(encoding='utf-8'))
+              data['app']['profile']['resetPreview'] = label
+              data['app']['profile']['resetPreviewNote'] = note
+              path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+          # Tests: keys must share the same preview project scope and reset must clear all four state families.
+          replace_once(
+              'src/utils/customerStorage.test.ts',
+              "import { clearCustomerProfile, customerEntryStorageKey, customerProfileStorageKey, customerStorageScope, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from './customerStorage';\n",
+              "import { clearCustomerProfile, customerEntryStorageKey, customerProfileStorageKey, customerStorageScope, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from './customerStorage';\nimport { progressStorageKey } from './lessonProgress';\nimport { activityStorageKey } from './activityStorage';\n",
+          )
+          marker = "test('customer profile survives reload-like reads and trims bounded fields', () => {\n"
+          extra = "test('preview progress and activities share the same project scope used by reset', () => {\n  storage.clear();\n  const config = { ...INITIAL_PWA_CONFIG, appName: 'Preview', productId: 'generated-a' };\n  const changed = { ...config, productId: 'generated-b' };\n  const projectId = 77;\n  const scope = customerStorageScope(config, true, projectId);\n  const progress = progressStorageKey(config, true, projectId);\n  const activity = activityStorageKey(config, true, projectId, 1, 2);\n  assert.equal(progress, `appify-lesson-progress:v1:${scope}`);\n  assert.equal(progress, progressStorageKey(changed, true, projectId));\n  assert.equal(activity, `appify-activity:v1:${scope}:1:2`);\n  storage.setItem(customerProfileStorageKey(config, true, projectId), '{}');\n  storage.setItem(customerEntryStorageKey(config, true, projectId), 'done');\n  storage.setItem(progress, '{}');\n  storage.setItem(activity, '{}');\n  assert.equal(resetCustomerProductData(storage, config, true, projectId), 4);\n  assert.equal(storage.getItem(customerProfileStorageKey(config, true, projectId)), null);\n  assert.equal(storage.getItem(customerEntryStorageKey(config, true, projectId)), null);\n  assert.equal(storage.getItem(progress), null);\n  assert.equal(storage.getItem(activity), null);\n});\n\n"
+          p = Path('src/utils/customerStorage.test.ts')
+          text = p.read_text(encoding='utf-8')
+          if extra not in text:
+              if marker not in text: raise SystemExit('customerStorage test marker missing')
+              p.write_text(text.replace(marker, extra + marker, 1), encoding='utf-8')
+
+          # CustomerEntry tests assert scoped v2 persistence and preview isolation.
+          replace_once(
+              'src/components/CustomerEntry.test.ts',
+              "import { TEST_SPLASH_MP4, TEST_SPLASH_GIF, TEST_SPLASH_WEBP } from '../utils/fixtures/splashMedia';\n",
+              "import { TEST_SPLASH_MP4, TEST_SPLASH_GIF, TEST_SPLASH_WEBP } from '../utils/fixtures/splashMedia';\nimport { customerEntryStorageKey } from '../utils/customerStorage';\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.test.ts',
+              "  await act(async()=>root.render(React.createElement(CustomerEntry,{config:settings},React.createElement('div',{'data-testid':'library'},'Aulas'))));\n",
+              "  await act(async()=>root.render(React.createElement(CustomerEntry,{config:settings,projectId:42},React.createElement('div',{'data-testid':'library'},'Aulas'))));\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.test.ts',
+              "  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),'done');\n",
+              "  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,customerAccessMode:'demo'},false,42)),'done');\n  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),null);\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.test.ts',
+              "  await act(async()=>root.render(React.createElement(CustomerEntry,{config:{...config,customerAccessMode:'demo'},preview:true},React.createElement('div',{'data-testid':'library'},'Aulas'))));\n",
+              "  await act(async()=>root.render(React.createElement(CustomerEntry,{config:{...config,customerAccessMode:'demo'},preview:true,projectId:42},React.createElement('div',{'data-testid':'library'},'Aulas'))));\n",
+          )
+          replace_once(
+              'src/components/CustomerEntry.test.ts',
+              "  assert.equal(localStorage.length,0);\n",
+              "  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,customerAccessMode:'demo'},true,42)),'done');\n  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,customerAccessMode:'demo'},false,null)),null);\n  assert.equal(JSON.stringify({...localStorage}).includes('test@example.com'),false);\n",
+          )
+
+          # Profile reset test validates local state clearing and callback without exposing reset in runtime.
+          p = Path('src/components/CustomerProfilePanel.test.ts')
+          text = p.read_text(encoding='utf-8')
+          extra = "\ntest('preview reset clears local customer state and returns to first visit',async()=>{\n  localStorage.clear();\n  const { customerEntryStorageKey, customerProfileStorageKey }=await import('../utils/customerStorage');\n  const { progressStorageKey }=await import('../utils/lessonProgress');\n  const { activityStorageKey }=await import('../utils/activityStorage');\n  const projectId=42;\n  localStorage.setItem(customerProfileStorageKey(config,true,projectId),'{}');\n  localStorage.setItem(customerEntryStorageKey(config,true,projectId),'done');\n  localStorage.setItem(progressStorageKey(config,true,projectId),JSON.stringify({completed:['1:1'],last:{moduleId:1,lessonId:1}}));\n  localStorage.setItem(activityStorageKey(config,true,projectId,1,1),JSON.stringify({note:'saved'}));\n  let resets=0;\n  const host=document.getElementById('root')!;\n  const root=createRoot(host);\n  await act(async()=>root.render(React.createElement(CustomerProfilePanel,{config,projectId,preview:true,dark:false,themeColor:'#334455',onResetPreview:()=>{resets++;}})));\n  const reset=[...document.querySelectorAll('button')].find(node=>node.textContent?.includes('Reset test data'))!;\n  assert.ok(reset);\n  await act(async()=>reset.click());\n  assert.equal(resets,1);\n  assert.equal(localStorage.getItem(customerProfileStorageKey(config,true,projectId)),null);\n  assert.equal(localStorage.getItem(customerEntryStorageKey(config,true,projectId)),null);\n  assert.equal(localStorage.getItem(progressStorageKey(config,true,projectId)),null);\n  assert.equal(localStorage.getItem(activityStorageKey(config,true,projectId,1,1)),null);\n  await act(async()=>root.unmount());\n});\n"
+          if extra not in text:
+              p.write_text(text + extra, encoding='utf-8')
+
+          # Safety checks: no legacy preview-only entry gate, shared reset is wired, translations stay complete.
+          phone = Path('src/components/PhoneMockup.tsx').read_text(encoding='utf-8')
+          if "activeStep === 0 && !entryFinished" in phone: raise SystemExit('Legacy activeStep entry gate remains')
+          if "onResetPreview" not in phone: raise SystemExit('Preview reset callback missing')
+          if "{entryFinished && <CustomerBottomNavigation" not in phone: raise SystemExit('Preview navigation is not hidden during first visit')
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Verify changes
+        run: |
+          npm run check:secrets
+          npm run lint
+          npm test
+          npm run build:pwa
+          npm run build
+
+      - name: Commit verified customer-state changes
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to change"
+            exit 0
+          fi
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/App.tsx src/components/CustomerEntry.tsx src/components/CustomerEntry.test.ts src/components/CustomerProfilePanel.tsx src/components/CustomerProfilePanel.test.ts src/components/PhoneMockup.tsx src/index.css src/locales/pt.json src/locales/en.json src/locales/es.json src/locales/fr.json src/utils/lessonProgress.ts src/utils/customerStorage.test.ts
+          git commit -m "Unify preview customer state and reset data"
+          git push origin HEAD:feature/pwa-runtime-hardening
