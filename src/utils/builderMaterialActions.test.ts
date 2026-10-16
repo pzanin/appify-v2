@@ -38,7 +38,10 @@ test('visual builder emits declared host actions for download, copy and print',(
 });
 
 test('new action defaults follow the product language',()=>{
-  assert.equal(getDefaultProps('copyAction','', 'en-US').buttonText,'Copy content');
-  assert.equal(getDefaultProps('printAction','', 'es').buttonText,'Imprimir / Guardar PDF');
-  assert.equal(getDefaultProps('copyAction','', 'fr').buttonText,'Copier le contenu');
+  const en=getDefaultProps('copyAction','', 'en-US') as Record<string,unknown>;
+  const es=getDefaultProps('printAction','', 'es') as Record<string,unknown>;
+  const fr=getDefaultProps('copyAction','', 'fr') as Record<string,unknown>;
+  assert.equal(en.buttonText,'Copy content');
+  assert.equal(es.buttonText,'Imprimir / Guardar PDF');
+  assert.equal(fr.buttonText,'Copier le contenu');
 });
