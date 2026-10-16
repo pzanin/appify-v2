@@ -10,6 +10,7 @@ import { ProjectRepository } from './projectRepository';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const interactiveContent = new InteractiveContentStore();
+const PREVIEW_PROFILE_FILE = '.appify-preview-profile.json';
 protocol.registerSchemesAsPrivileged([
   {scheme:'appify-content',privileges:{standard:true,secure:true}},
   {scheme:'appify-asset',privileges:{standard:true,secure:true,supportFetchAPI:true,stream:true,corsEnabled:true}},
@@ -62,6 +63,43 @@ function requireAudioFilename(value: unknown) {
   return value;
 }
 
+function normalizePreviewProfile(value: unknown) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return {
+    name: typeof source.name === 'string' ? source.name.trim().slice(0, 120) : '',
+    email: typeof source.email === 'string' ? source.email.trim().slice(0, 254) : '',
+    updatedAt: typeof source.updatedAt === 'number' && Number.isFinite(source.updatedAt) && source.updatedAt >= 0 ? source.updatedAt : 0,
+  };
+}
+
+async function readPreviewProfile(projectId: number) {
+  const directory = await repository.remove(projectId);
+  const target = path.join(directory, PREVIEW_PROFILE_FILE);
+  try {
+    const stats = await fs.stat(target);
+    if (!stats.isFile() || stats.size > 4096) return normalizePreviewProfile(null);
+    return normalizePreviewProfile(JSON.parse(await fs.readFile(target, 'utf8')));
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') return normalizePreviewProfile(null);
+    throw error;
+  }
+}
+
+async function writePreviewProfile(projectId: number, value: unknown) {
+  const directory = await repository.remove(projectId);
+  const target = path.join(directory, PREVIEW_PROFILE_FILE);
+  const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+  const profile = normalizePreviewProfile({ ...(value && typeof value === 'object' ? value as Record<string, unknown> : {}), updatedAt: Date.now() });
+  await fs.writeFile(temporary, `${JSON.stringify(profile, null, 2)}\n`, 'utf8');
+  await fs.copyFile(temporary, target);
+  await fs.rm(temporary, { force: true });
+  const confirmed = await readPreviewProfile(projectId);
+  if (confirmed.name !== profile.name || confirmed.email !== profile.email || confirmed.updatedAt !== profile.updatedAt) {
+    throw new Error('Falha ao verificar dados do perfil de prévia.');
+  }
+  return confirmed;
+}
+
 async function serveProjectAudio(request:Request) {
   if(request.method!=='GET' && request.method!=='HEAD') return new Response('Método não permitido.',{status:405});
   try {
@@ -108,14 +146,14 @@ async function serveProjectAudio(request:Request) {
       if(!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start<0 || end<start || start>=stats.size) return new Response(null,{status:416,headers:{...baseHeaders,'Content-Range':`bytes */${stats.size}`}});
       end=Math.min(end,stats.size-1);
       const length=end-start+1;
-      const handle=await fs.open(target,'r');
+      const fileHandle=await fs.open(target,'r');
       try {
         const bytes=Buffer.alloc(length);
-        await handle.read(bytes,0,length,start);
+        await fileHandle.read(bytes,0,length,start);
         console.log(`[Appify Audio] resposta parcial 206: ${start}-${end}/${stats.size}`);
         return new Response(request.method==='HEAD'?null:bytes,{status:206,headers:{...baseHeaders,'Content-Length':String(length),'Content-Range':`bytes ${start}-${end}/${stats.size}`}});
       } finally {
-        await handle.close();
+        await fileHandle.close();
       }
     }
 
@@ -151,6 +189,8 @@ function registerProjectHandlers() {
     const directory = await repository.remove(requireProjectId(payload?.id));
     await shell.trashItem(directory);
   });
+  handle('projects:read-preview-profile', (_event, payload: { id?: unknown }) => readPreviewProfile(requireProjectId(payload?.id)));
+  handle('projects:write-preview-profile', (_event, payload: { id?: unknown; profile?: unknown }) => writePreviewProfile(requireProjectId(payload?.id), payload?.profile));
   handle('projects:export-backup', async (_event, payload: { id?: unknown }) => {
     const document = await repository.readBackup(requireProjectId(payload?.id));
     const result = await dialog.showSaveDialog({
