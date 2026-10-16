@@ -21,7 +21,9 @@
       "saveButton": "Guardar Cambios",
       "saved": "Tus datos se guardaron en este dispositivo.",
       "saveError": "No se pudieron guardar tus datos en este dispositivo.",
-      "localNote": "Tu perfil se guarda solo en este dispositivo y para este producto."
+      "localNote": "Tu perfil se guarda solo en este dispositivo y para este producto.",
+      "resetPreview": "Restablecer datos de prueba",
+      "resetPreviewNote": "Borra el perfil, el progreso, las actividades y el estado de primera visita de esta vista previa."
     },
     "community": {
       "title": "Comunidad",

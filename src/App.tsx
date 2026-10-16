@@ -60,7 +60,7 @@ export function PWABootstrap({ isPhoneDark, setIsPhoneDark }: { isPhoneDark: boo
 
   return (
     <Suspense fallback={<Loader2 className="animate-spin text-white" size={32} />}>
-      <CustomerEntry config={useAppStore.getState().pwaConfig}><PWARuntime analyticsLive isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>
+      <CustomerEntry config={useAppStore.getState().pwaConfig} projectId={useAppStore.getState().currentProjectId}><PWARuntime analyticsLive isPhoneDark={isPhoneDark} setIsPhoneDark={setIsPhoneDark} /></CustomerEntry>
     </Suspense>
   );
 }

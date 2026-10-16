@@ -10,6 +10,7 @@ import { HtmlFrame } from './HtmlFrame';
 import { safeEmbedUrl } from '../utils/htmlSecurity';
 import { openExternalLink } from '../utils/externalLinks';
 import { engagementIsEnabled } from '../utils/projectFeatures';
+import { customerEntryStorageKey } from '../utils/customerStorage';
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Bell, Download, LayoutGrid, Grid, PackageOpen, ArrowLeft, Home, Rss, Users, User, Lock, Smartphone, Share, Plus, Headset, MessageCircle, Mail, Copy, Check, Trophy, CheckCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -54,8 +55,9 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const feedPosts = useAppStore(state => state.feedPosts) || [];
   const pushNotifications = useAppStore(state => state.pushNotifications) || [];
   const currentProjectId = useAppStore(state => state.currentProjectId);
+  const previewEntryKey = customerEntryStorageKey(pwaConfig,true,currentProjectId);
 
-  const [entryFinished,setEntryFinished] = useState(false);
+  const [entryFinished,setEntryFinished] = useState(() => { try { return localStorage.getItem(previewEntryKey) === 'done'; } catch { return false; } });
   const [onboardingStep, setOnboardingStep] = useState<number>(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -70,13 +72,13 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
   const [selectedMockupModuleId, setSelectedMockupModuleId] = useState<number | null>(null);
   const [selectedMockupSubmoduleId, setSelectedMockupSubmoduleId] = useState<number | null>(null);
 
-  // Reset states when project changes
+  // Reset navigation and reload the isolated customer-entry state when the project changes.
   useEffect(() => {
-    setEntryFinished(false);
+    try { setEntryFinished(localStorage.getItem(previewEntryKey) === 'done'); } catch { setEntryFinished(false); }
     setSelectedMockupModuleId(null);
     setSelectedMockupSubmoduleId(null);
     setActiveTab('inicio');
-  }, [currentProjectId]);
+  }, [currentProjectId, previewEntryKey]);
   const awards = pwaConfig.gamification?.awardsConfig || [];
   const mockEarnedBadges = awards.length > 0 ? [awards[0].id] : [];
   const mockTotalPoints = awards.length > 0 ? awards[0].points : 0;
@@ -549,11 +551,11 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
           display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative'
         }}>
           <AnimatePresence mode="wait">
-            {activeStep === 0 && !entryFinished ? (
-              <div key="customer-entry" className="absolute inset-0"><CustomerEntry config={pwaConfig} preview><div className="customer-screen"><h2>{t('experience.previewReady')}</h2><button className="customer-primary" style={{background:themeColor}} onClick={()=>setEntryFinished(true)}>{t('experience.continue')}</button></div></CustomerEntry></div>
+            {!entryFinished ? (
+              <div key="customer-entry" className="absolute inset-0"><CustomerEntry config={pwaConfig} preview projectId={currentProjectId} onReady={()=>setEntryFinished(true)}><div className="customer-screen"><h2>{t('experience.previewReady')}</h2></div></CustomerEntry></div>
             ) : activeTab === 'perfil' ? (
               <motion.div key="perfil" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex min-h-0">
-                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} />
+                <CustomerProfilePanel config={pwaConfig} projectId={currentProjectId} preview={true} dark={isPhoneDark} themeColor={themeColor} onResetPreview={()=>{setSelectedMockupModuleId(null);setSelectedMockupSubmoduleId(null);setActiveTab('inicio');setEntryFinished(false);}} />
               </motion.div>
             ) : activeTab === 'suporte' ? (
               <motion.div key="suporte" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 flex flex-col items-center overflow-y-auto no-scrollbar" style={{ padding: '32px 24px 80px 24px' }}>
@@ -819,7 +821,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
           </AnimatePresence>
         </div>
 
-        <CustomerBottomNavigation items={[
+        {entryFinished && <CustomerBottomNavigation items={[
           {id:'inicio',icon:Home,label:t('nav.home')},
           ...(engagementEnabled ? [{id:'conteudo',icon:Rss,label:t('nav.content')},{id:'comunidade',icon:Users,label:t('nav.community')}] : []),
           {id:'perfil',icon:User,label:t('nav.profile')},
@@ -831,7 +833,7 @@ export function PhoneMockup({ isPhoneDark, setIsPhoneDark }: PhoneMockupProps) {
             localStorage.setItem('last_viewed_announcement', String(Date.now()));
             setHasNewAnnouncement(false);
           }
-        }} />
+        }} />}
       </div>
     </div>
   );

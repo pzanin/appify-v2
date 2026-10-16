@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import type { PwaConfig } from '../types';
 import { INITIAL_PWA_CONFIG } from '../constants';
 import { TEST_SPLASH_MP4, TEST_SPLASH_GIF, TEST_SPLASH_WEBP } from '../utils/fixtures/splashMedia';
+import { customerEntryStorageKey } from '../utils/customerStorage';
 const dom=new JSDOM('<div id="root"></div>',{url:'https://appify.test/'});
 Object.defineProperty(dom.window.navigator,'userAgent',{value:'Mozilla Android Chrome'});
 Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,IS_REACT_ACT_ENVIRONMENT:true});
@@ -18,7 +19,7 @@ const button=(text:string)=>[...document.querySelectorAll('button')].find(b=>b.t
 const click=(node:HTMLElement)=>node.click();
 async function render(settings=config) {
   const root=createRoot(document.getElementById('root')!);
-  await act(async()=>root.render(React.createElement(CustomerEntry,{config:settings},React.createElement('div',{'data-testid':'library'},'Aulas'))));
+  await act(async()=>root.render(React.createElement(CustomerEntry,{config:settings,projectId:42},React.createElement('div',{'data-testid':'library'},'Aulas'))));
   return root;
 }
 test('published product opens content directly without demo or email even with legacy demo settings, and returning users skip entry',async()=>{
@@ -29,7 +30,8 @@ test('published product opens content directly without demo or email even with l
   assert.doesNotMatch(document.body.textContent || '',/Demonstração|Experimente a tela/);
   await act(async()=>click(button('Acessar conteúdo')));
   assert.ok(document.querySelector('[data-testid="library"]'));
-  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),'done');
+  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,customerAccessMode:'demo'},false,42)),'done');
+  assert.equal(localStorage.getItem(entryStorageKey(config.appName)),null);
   assert.equal(JSON.stringify({...localStorage}).includes('test@example.com'),false);
   await act(async()=>root.unmount());
   const reopened=await render();assert.ok(document.querySelector('[data-testid="library"]'));await act(async()=>reopened.unmount());
@@ -37,14 +39,16 @@ test('published product opens content directly without demo or email even with l
 test('login simulation is confined to preview and never stores the test email or marks real onboarding complete',async()=>{
   localStorage.clear();
   const root=createRoot(document.getElementById('root')!);
-  await act(async()=>root.render(React.createElement(CustomerEntry,{config:{...config,customerAccessMode:'demo'},preview:true},React.createElement('div',{'data-testid':'library'},'Aulas'))));
+  await act(async()=>root.render(React.createElement(CustomerEntry,{config:{...config,customerAccessMode:'demo'},preview:true,projectId:42},React.createElement('div',{'data-testid':'library'},'Aulas'))));
   await act(async()=>click(button('Acessar conteúdo')));
   assert.match(document.body.textContent || '',/Não verifica compras/);
   const email=document.querySelector('input[type="email"]') as HTMLInputElement;
   await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(email,'test@example.com');email.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
   await act(async()=>click(button('Entrar na demonstração')));
   assert.ok(document.querySelector('[data-testid="library"]'));
-  assert.equal(localStorage.length,0);
+  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,customerAccessMode:'demo'},true,42)),'done');
+  assert.equal(localStorage.getItem(customerEntryStorageKey({...config,customerAccessMode:'demo'},false,null)),null);
+  assert.equal(JSON.stringify({...localStorage}).includes('test@example.com'),false);
   await act(async()=>root.unmount());
 });
 test('first opening honors configured brand duration and animation, can be skipped, and does not repeat after entry',async(t)=>{

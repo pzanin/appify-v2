@@ -3,6 +3,8 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { INITIAL_PWA_CONFIG } from '../constants';
 import { clearCustomerProfile, customerEntryStorageKey, customerProfileStorageKey, customerStorageScope, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from './customerStorage';
+import { progressStorageKey } from './lessonProgress';
+import { activityStorageKey } from './activityStorage';
 
 const dom = new JSDOM('', { url: 'https://appify.test/' });
 const storage = dom.window.localStorage;
@@ -27,6 +29,28 @@ test('desktop preview identity stays stable even when a legacy project receives 
   const after = { ...before, productId: 'generated-b' };
   assert.equal(customerProfileStorageKey(before, true, 123), customerProfileStorageKey(after, true, 123));
   assert.notEqual(customerProfileStorageKey(before, false, null), customerProfileStorageKey(after, false, null));
+});
+
+test('preview progress and activities share the same project scope used by reset', () => {
+  storage.clear();
+  const config = { ...INITIAL_PWA_CONFIG, appName: 'Preview', productId: 'generated-a' };
+  const changed = { ...config, productId: 'generated-b' };
+  const projectId = 77;
+  const scope = customerStorageScope(config, true, projectId);
+  const progress = progressStorageKey(config, true, projectId);
+  const activity = activityStorageKey(config, true, projectId, 1, 2);
+  assert.equal(progress, `appify-lesson-progress:v1:${scope}`);
+  assert.equal(progress, progressStorageKey(changed, true, projectId));
+  assert.equal(activity, `appify-activity:v1:${scope}:1:2`);
+  storage.setItem(customerProfileStorageKey(config, true, projectId), '{}');
+  storage.setItem(customerEntryStorageKey(config, true, projectId), 'done');
+  storage.setItem(progress, '{}');
+  storage.setItem(activity, '{}');
+  assert.equal(resetCustomerProductData(storage, config, true, projectId), 4);
+  assert.equal(storage.getItem(customerProfileStorageKey(config, true, projectId)), null);
+  assert.equal(storage.getItem(customerEntryStorageKey(config, true, projectId)), null);
+  assert.equal(storage.getItem(progress), null);
+  assert.equal(storage.getItem(activity), null);
 });
 
 test('customer profile survives reload-like reads and trims bounded fields', () => {

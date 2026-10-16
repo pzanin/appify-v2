@@ -21,7 +21,9 @@
       "saveButton": "Save Changes",
       "saved": "Your details were saved on this device.",
       "saveError": "Your details could not be saved on this device.",
-      "localNote": "Your profile is stored only on this device and for this product."
+      "localNote": "Your profile is stored only on this device and for this product.",
+      "resetPreview": "Reset test data",
+      "resetPreviewNote": "Clears this preview's profile, progress, activities, and first-visit state."
     },
     "community": {
       "title": "Community",

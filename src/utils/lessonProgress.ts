@@ -1,12 +1,12 @@
 import type { Module, PwaConfig } from '../types';
+import { customerStorageScope } from './customerStorage';
 export interface LessonLocation { moduleId:number; lessonId:number; }
 export interface LessonProgress { completed:string[]; last:LessonLocation|null; }
 export const emptyLessonProgress = ():LessonProgress => ({completed:[],last:null});
 export const lessonKey = (moduleId:number,lessonId:number) => `${moduleId}:${lessonId}`;
 const validId = (value:unknown):value is number => typeof value==='number' && Number.isSafeInteger(value) && value>=0;
 export function progressStorageKey(config:PwaConfig,preview:boolean,projectId:number|null) {
-  const identity=config.productId || (preview ? `local-${projectId ?? config.appName}` : `legacy-${config.appName}`);
-  return `appify-lesson-progress:v1:${preview ? 'preview' : 'customer'}:${encodeURIComponent(identity)}`;
+  return `appify-lesson-progress:v1:${customerStorageScope(config,preview,projectId)}`;
 }
 export function readLessonProgress(key:string):LessonProgress {
   try {

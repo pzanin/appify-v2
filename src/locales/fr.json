@@ -21,7 +21,9 @@
       "saveButton": "Enregistrer",
       "saved": "Vos informations ont été enregistrées sur cet appareil.",
       "saveError": "Vos informations n’ont pas pu être enregistrées sur cet appareil.",
-      "localNote": "Votre profil est enregistré uniquement sur cet appareil et pour ce produit."
+      "localNote": "Votre profil est enregistré uniquement sur cet appareil et pour ce produit.",
+      "resetPreview": "Réinitialiser les données de test",
+      "resetPreviewNote": "Efface le profil, la progression, les activités et l’état de première visite de cet aperçu."
     },
     "community": {
       "title": "Communauté",

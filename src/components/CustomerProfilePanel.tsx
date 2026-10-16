@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, User, XCircle } from 'lucide-react';
+import { CheckCircle2, RotateCcw, User, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { PwaConfig } from '../types';
-import { customerProfileStorageKey, readCustomerProfile, writeCustomerProfile } from '../utils/customerStorage';
+import { customerProfileStorageKey, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from '../utils/customerStorage';
 
 type PreviewProfile = { name: string; email: string; updatedAt: number };
 type PreviewProfileProjectsApi = {
@@ -20,12 +20,14 @@ export function CustomerProfilePanel({
   preview,
   dark,
   themeColor,
+  onResetPreview,
 }: {
   config: PwaConfig;
   projectId: number | null;
   preview: boolean;
   dark: boolean;
   themeColor: string;
+  onResetPreview?: () => void;
 }) {
   const { i18n } = useTranslation();
   const language = config.language || 'pt-BR';
@@ -54,6 +56,22 @@ export function CustomerProfilePanel({
     void load();
     return () => { cancelled = true; };
   }, [preview, projectId, storageKey]);
+
+  const resetPreview = async () => {
+    if (!preview || !onResetPreview) return;
+    try {
+      const desktop = projectId ? previewProfileApi() : undefined;
+      if (desktop?.writePreviewProfile && projectId) await desktop.writePreviewProfile(projectId, { name: '', email: '' });
+      resetCustomerProductData(window.localStorage, config, true, projectId);
+      setName('');
+      setEmail('');
+      setStatus('idle');
+      window.dispatchEvent(new window.StorageEvent('storage', { key: null }));
+      onResetPreview();
+    } catch {
+      setStatus('error');
+    }
+  };
 
   const save = async () => {
     try {
@@ -111,6 +129,14 @@ export function CustomerProfilePanel({
         <div role={status === 'error' ? 'alert' : 'status'} className={`w-full flex items-center gap-2 rounded-2xl px-4 py-3 mt-4 text-sm font-bold ${status === 'saved' ? (dark ? 'bg-emerald-500/10 text-emerald-300' : 'bg-emerald-50 text-emerald-700') : (dark ? 'bg-red-500/10 text-red-300' : 'bg-red-50 text-red-700')}`}>
           {status === 'saved' ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
           <span>{status === 'saved' ? t('app.profile.saved') : t('app.profile.saveError')}</span>
+        </div>
+      )}
+      {preview && onResetPreview && (
+        <div className={`w-full mt-8 pt-5 border-t ${dark ? 'border-white/10' : 'border-black/10'}`}>
+          <p className={`text-xs leading-relaxed mb-3 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('app.profile.resetPreviewNote')}</p>
+          <button type="button" onClick={() => { void resetPreview(); }} className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border ${dark ? 'border-red-400/30 text-red-300 bg-red-500/5' : 'border-red-200 text-red-700 bg-red-50'}`}>
+            <RotateCcw size={17} /> {t('app.profile.resetPreview')}
+          </button>
         </div>
       )}
     </div>

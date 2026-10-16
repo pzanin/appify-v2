@@ -21,7 +21,9 @@
       "saveButton": "Salvar Alterações",
       "saved": "Dados salvos neste aparelho.",
       "saveError": "Não foi possível salvar os dados neste aparelho.",
-      "localNote": "Seu perfil fica salvo somente neste aparelho e neste produto."
+      "localNote": "Seu perfil fica salvo somente neste aparelho e neste produto.",
+      "resetPreview": "Resetar dados de teste",
+      "resetPreviewNote": "Apaga o perfil, o progresso, as atividades e o estado de primeira visita desta prévia."
     },
     "community": {
       "title": "Comunidade",

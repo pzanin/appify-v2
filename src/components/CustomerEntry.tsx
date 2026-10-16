@@ -8,15 +8,27 @@ import { InstallGuide } from './InstallGuide';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { MAX_SPLASH_VIDEO_MS, splashMediaSource } from '../utils/splashMedia';
 import { SplashArtwork } from './SplashArtwork';
+import { customerEntryStorageKey } from '../utils/customerStorage';
 
 export function entryStorageKey(name:string) { return `appify-entry-v1:${window.location.pathname}:${name}`; }
 export function splashDuration(config:PwaConfig) { const value=Number(config.splashDurationMs ?? 2500); return Number.isFinite(value) ? Math.max(1000,Math.min(5000,value)) : 2500; }
-export function CustomerEntry({ config, children, preview = false }: { config:PwaConfig; children:React.ReactNode; preview?:boolean }) {
+export function CustomerEntry({ config, children, preview = false, projectId = null, onReady }: { config:PwaConfig; children:React.ReactNode; preview?:boolean; projectId?:number|null; onReady?:()=>void }) {
   const {i18n} = useTranslation();
   const t=i18n.getFixedT((config.language || 'pt-BR').split('-')[0]);
   const name=productName(config.appName || document.title,config.language || 'pt-BR');
   const {isStandalone} = usePWAInstall();
-  const completed = () => { try { return !preview && localStorage.getItem(entryStorageKey(name)) === 'done'; } catch { return false; } };
+  const storageKey=customerEntryStorageKey(config,preview,projectId);
+  const completed = () => {
+    try {
+      if(localStorage.getItem(storageKey) === 'done') return true;
+      if(!preview && localStorage.getItem(entryStorageKey(name)) === 'done') {
+        localStorage.setItem(storageKey,'done');
+        localStorage.removeItem(entryStorageKey(name));
+        return true;
+      }
+      return false;
+    } catch { return false; }
+  };
   const mode=preview && config.customerAccessMode === 'demo' ? 'demo' : 'open';
   const [step,setStep] = useState<'welcome'|'access'|'install'|'ready'>(()=>completed() ? 'ready' : config.welcomeEnabled === false ? (mode === 'demo' ? 'access' : 'ready') : 'welcome');
   const [splash,setSplash] = useState(!completed() && config.customSplash !== false);
@@ -26,8 +38,8 @@ export function CustomerEntry({ config, children, preview = false }: { config:Pw
   useEffect(()=>setMediaFailed(false),[config.splashMediaMode,config.splashMediaData]);
   const color=config.themeColor || '#7c6fff';
   useEffect(()=>{ if(!splash)return; const timer=window.setTimeout(()=>setSplash(false),media?.kind === 'video' && !mediaFailed ? MAX_SPLASH_VIDEO_MS : splashDuration(config));return ()=>window.clearTimeout(timer); },[splash,config.splashDurationMs,media,mediaFailed]);
-  useEffect(()=>{ if(step==='ready' && !splash && !preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Content remains accessible without storage. */}} },[step,splash,preview,name]);
-  const finish=()=>{ if(!preview){try{localStorage.setItem(entryStorageKey(name),'done');}catch{/* Continue when storage is unavailable. */}}setEmail('');setStep('ready'); };
+  useEffect(()=>{ if(step==='ready' && !splash){try{localStorage.setItem(storageKey,'done');}catch{/* Content remains accessible without storage. */}onReady?.();} },[step,splash,storageKey,onReady]);
+  const finish=()=>{ try{localStorage.setItem(storageKey,'done');}catch{/* Continue when storage is unavailable. */}setEmail('');setStep('ready'); };
   const next=finish;
   if(step==='ready' && !splash)return <>{children}</>;
   if(splash && media && !mediaFailed) return <div lang={config.language} className="customer-screen customer-media-screen" style={{background:/^#[a-f0-9]{6}$/i.test(config.splashMediaBackground || '') ? config.splashMediaBackground : '#f7f9fc'}}>

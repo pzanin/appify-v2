@@ -45,3 +45,28 @@ test('profile save shows localized success and survives remount',async()=>{
   assert.equal(restored[1].value,'jane@example.com');
   await act(async()=>root.unmount());
 });
+
+test('preview reset clears local customer state and returns to first visit',async()=>{
+  localStorage.clear();
+  const { customerEntryStorageKey, customerProfileStorageKey }=await import('../utils/customerStorage');
+  const { progressStorageKey }=await import('../utils/lessonProgress');
+  const { activityStorageKey }=await import('../utils/activityStorage');
+  const projectId=42;
+  localStorage.setItem(customerProfileStorageKey(config,true,projectId),'{}');
+  localStorage.setItem(customerEntryStorageKey(config,true,projectId),'done');
+  localStorage.setItem(progressStorageKey(config,true,projectId),JSON.stringify({completed:['1:1'],last:{moduleId:1,lessonId:1}}));
+  localStorage.setItem(activityStorageKey(config,true,projectId,1,1),JSON.stringify({note:'saved'}));
+  let resets=0;
+  const host=document.getElementById('root')!;
+  const root=createRoot(host);
+  await act(async()=>root.render(React.createElement(CustomerProfilePanel,{config,projectId,preview:true,dark:false,themeColor:'#334455',onResetPreview:()=>{resets++;}})));
+  const reset=[...document.querySelectorAll('button')].find(node=>node.textContent?.includes('Reset test data'))!;
+  assert.ok(reset);
+  await act(async()=>reset.click());
+  assert.equal(resets,1);
+  assert.equal(localStorage.getItem(customerProfileStorageKey(config,true,projectId)),null);
+  assert.equal(localStorage.getItem(customerEntryStorageKey(config,true,projectId)),null);
+  assert.equal(localStorage.getItem(progressStorageKey(config,true,projectId)),null);
+  assert.equal(localStorage.getItem(activityStorageKey(config,true,projectId,1,1)),null);
+  await act(async()=>root.unmount());
+});
