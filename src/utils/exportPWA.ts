@@ -10,6 +10,7 @@ import { generateServiceWorker } from './serviceWorker';
 import { prepareInteractiveHtml, INTERACTIVE_CSP } from './interactiveHtml';
 import { IMPORTED_HTML_CSP } from './htmlSecurity';
 import { prepareResponsiveHtml } from './htmlContent';
+import { createProtectedContentPackage } from './protectedContentPackage';
 
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, character => ({
@@ -22,6 +23,14 @@ function audioFilenames(html: string) {
 }
 function materialFilenames(html:string) {
   return [...html.matchAll(/(?:\.\.\/|\.\/)?assets\/documents\/([A-Za-z0-9][A-Za-z0-9._-]{0,158}\.pdf)/gi)].map(match=>match[1]);
+}
+
+function validSupabaseProjectUrl(value:string) {
+  try {
+    const url=new URL(value.trim());
+    return url.protocol==='https:' && /^[a-z0-9-]+\.supabase\.co$/i.test(url.hostname)
+      && (url.pathname==='/' || url.pathname==='') && !url.username && !url.password && !url.search && !url.hash;
+  } catch { return false; }
 }
 
 async function createPwaIcon(source: string | null | undefined, size: number, background: string, appName: string) {
@@ -65,6 +74,17 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
   try {
     if (!useAppStore.getState().pwaConfig.productId) useAppStore.getState().updatePwaConfig({productId:crypto.randomUUID()});
     const state = useAppStore.getState();
+    const buyerAccessEnabled = state.pwaConfig.buyerAccessEnabled === true;
+    if (buyerAccessEnabled) {
+      const productId = state.pwaConfig.productId || '';
+      const supabaseUrl = state.pwaConfig.buyerAccessSupabaseUrl || state.pwaConfig.supabaseUrl || '';
+      const anonKey = state.pwaConfig.buyerAccessSupabaseAnonKey || state.pwaConfig.supabaseAnonKey || '';
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(productId)
+        || !validSupabaseProjectUrl(supabaseUrl)
+        || !anonKey.trim()) {
+        throw new Error('Configure a identidade do produto e as credenciais públicas do Supabase antes de exportar com acesso de compradores.');
+      }
+    }
     const engagementData = engagementIsEnabled(state.pwaConfig)
       ? { feedPosts: state.feedPosts || [], pushNotifications: state.pushNotifications || [] }
       : { feedPosts: [], pushNotifications: [] };
@@ -73,13 +93,27 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     const appName = productName(state.appName,pwaLanguage);
     
     const { description, noIndex, showAdvanced, exportHistory, publishedUrl, ...cleanPwaConfig } = publicFeatureConfig(state.pwaConfig);
+    const exportedPwaConfig = buyerAccessEnabled
+      ? {
+          ...cleanPwaConfig,
+          banners: [],
+          customSplash: false,
+          splashMediaMode: 'brand' as const,
+          splashMediaData: undefined,
+          splashMediaFileName: undefined,
+          changelogNotes: '',
+          gamification: { ...cleanPwaConfig.gamification, awardsConfig: [] },
+        }
+      : cleanPwaConfig;
     
     const appData = {
       appName: state.appName,
-      modules: state.modules,
-      pwaConfig: cleanPwaConfig,
+      // Protected products publish only the shell. Their lessons and assets are
+      // delivered after the backend validates the buyer's active entitlement.
+      modules: buyerAccessEnabled ? [] : state.modules,
+      pwaConfig: exportedPwaConfig,
       activeLocale: pwaLanguage,
-      ...engagementData,
+      ...(buyerAccessEnabled ? { feedPosts: [], pushNotifications: [] } : engagementData),
     };
 
     const zip = new JSZip();
@@ -91,7 +125,7 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
     zip.file('app-data.json', JSON.stringify(appData, null, 2));
 
     zip.folder('pages');
-    for (const module of state.modules) {
+    for (const module of buyerAccessEnabled ? [] : state.modules) {
       for (const lesson of module.subs || []) {
         if (lesson.contentType !== 'html') continue;
         const html = lessonHtml(lesson,pwaLanguage);
@@ -271,6 +305,52 @@ export const handleExportZIP = async (showToast?: (msg: string, type: 'success' 
   } catch (error) {
     console.error('Erro ao gerar o ZIP do PWA:');
     if (showToast) showToast(error instanceof Error && error.message === EXPORT_SECURITY_MESSAGE ? EXPORT_SECURITY_MESSAGE : 'Erro ao exportar PWA. Verifique se o template está completo e tente novamente.', 'error');
+    return false;
+  }
+};
+
+export const handleExportProtectedContentZIP = async (showToast?: (msg: string, type: 'success' | 'error' | 'loading') => void) => {
+  try {
+    let state = useAppStore.getState();
+    if (!state.pwaConfig.productId) {
+      useAppStore.getState().updatePwaConfig({ productId: crypto.randomUUID() });
+      state = useAppStore.getState();
+    }
+    const engagementData = engagementIsEnabled(state.pwaConfig)
+      ? { feedPosts: state.feedPosts || [], pushNotifications: state.pushNotifications || [] }
+      : { feedPosts: [], pushNotifications: [] };
+    const input = {
+      productId: state.pwaConfig.productId!,
+      version: state.pwaConfig.version || '1.0.0',
+      language: state.pwaConfig.language || 'pt-BR',
+      modules: state.modules,
+      banners: state.pwaConfig.banners || [],
+      gamificationAwards: state.pwaConfig.gamification?.awardsConfig || [],
+      ...engagementData,
+      readAudio: async (filename: string) => {
+        if (!state.currentProjectId || !projectService.isDesktop()) throw new Error('Assets locais indisponíveis');
+        return projectService.readAudio(state.currentProjectId, filename);
+      },
+      readMaterial: async (filename: string) => {
+        if (!state.currentProjectId || !projectService.isDesktop()) throw new Error('Assets locais indisponíveis');
+        return projectService.readMaterial(state.currentProjectId, filename);
+      },
+    };
+    const content = await createProtectedContentPackage(input);
+    const filename = `${state.appName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-protected-content.zip`;
+    if (projectService.isDesktop() && state.currentProjectId) {
+      try {
+        await projectService.saveBuild(state.currentProjectId, filename, new Uint8Array(await content.arrayBuffer()));
+      } catch { /* The download remains available if the local build copy fails. */ }
+    }
+    FileSaver.saveAs(content, filename);
+    showToast?.('Pacote privado de conteúdo gerado.', 'success');
+    return true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    showToast?.(message === EXPORT_SECURITY_MESSAGE || message.includes('50 MB')
+      ? message
+      : 'Não foi possível preparar o pacote privado. Confira os materiais locais e tente novamente.', 'error');
     return false;
   }
 };

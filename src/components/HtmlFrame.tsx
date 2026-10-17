@@ -8,6 +8,7 @@ import { projectService } from '../services/projectService';
 import { customerDesktopAssetUrl, customerWebAssetUrl } from '../utils/customerAssets';
 import { copyCustomerText, launchCustomerDownload, parseHostActionRequest, printCustomerHtml } from '../utils/hostActions';
 import { packagedMaterialFilename } from '../utils/builderMaterial';
+import { useProtectedContentAssets } from './ProtectedContentAssets';
 
 type Props = Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc' | 'sandbox'> & { html: string; interactive?:boolean; activityPath?:string; storageKey?:string; uiLanguage?:string; onMaterialClick?:(targetId:string)=>void };
 type VideoOverlay = { id:string; title:string; rect:{ top:number; left:number; width:number; height:number } };
@@ -37,11 +38,19 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
   const t=i18n.getFixedT(language.split('-')[0]);
   const currentProjectId=projectService.getCurrentProjectId();
   const audioFilename=!interactive ? projectAudioFilename(html) : undefined;
-  const audioUrl=audioFilename
+  const protectedAssets=useProtectedContentAssets();
+  const protectedAudio=audioFilename ? protectedAssets?.get(`assets/audio/${audioFilename}`) : undefined;
+  const [protectedAudioUrl,setProtectedAudioUrl]=useState<string>();
+  useEffect(()=>{
+    if(!protectedAudio){setProtectedAudioUrl(undefined);return;}
+    const url=URL.createObjectURL(protectedAudio);setProtectedAudioUrl(url);
+    return ()=>URL.revokeObjectURL(url);
+  },[protectedAudio]);
+  const audioUrl=protectedAudioUrl || (audioFilename
     ? (projectService.isDesktop()
         ? customerDesktopAssetUrl('audio',audioFilename,currentProjectId)
         : customerWebAssetUrl('audio',audioFilename,document.baseURI))
-    : undefined;
+    : undefined);
   const previewHtml=audioUrl ? removeEmbeddedAudio(html) : html;
   const [storageRevision]=useState(0);
   const [storageFailed,setStorageFailed]=useState(false);
@@ -62,6 +71,11 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
     const api=window.appifyDesktop?.content;
     setActivity(null);
     if(!api) {
+      const protectedPage=activityPath ? protectedAssets?.get(activityPath) : undefined;
+      if(protectedPage) {
+        url=URL.createObjectURL(protectedPage);setActivity({source:html,url});
+        return ()=>{if(url)URL.revokeObjectURL(url);};
+      }
       setActivity(/^pages\/lesson-\d+-\d+\.html$/.test(activityPath || '') ? {source:html,url:activityPath} : {source:html,error:t('app.errors.activityUnavailable')});
       return;
     }
@@ -72,7 +86,7 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
       setActivity({source:html,url});
     }).catch(()=>{if(!canceled)setActivity({source:html,error:t('app.errors.activityUnavailable')});});
     return ()=>{canceled=true;if(url){void api.release(url);}};
-  }, [html,interactive,activityPath,uiLanguage]);
+  }, [html,interactive,activityPath,uiLanguage,protectedAssets]);
 
   useEffect(() => {
     let writes=0;let reads=0;let windowStart=Date.now();
@@ -92,6 +106,11 @@ export function HtmlFrame({ html, interactive=false, activityPath, storageKey, u
           return;
         }
         const packaged=packagedMaterialFilename(hostAction.value);
+        const protectedMaterial=packaged ? protectedAssets?.get(`assets/documents/${packaged}`) : undefined;
+        if(protectedMaterial) {
+          const url=URL.createObjectURL(protectedMaterial);const link=document.createElement('a');link.href=url;link.download=packaged!;link.style.display='none';document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+          if(/^[a-zA-Z0-9._:-]{1,80}$/.test(hostAction.targetId)) onMaterialClick?.(hostAction.targetId);reply(true);return;
+        }
         if(packaged && projectService.isDesktop() && currentProjectId) {
           void projectService.readMaterial(currentProjectId,packaged).then(bytes=>{
             const blob=new Blob([bytes],{type:'application/pdf'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=packaged;link.style.display='none';document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
