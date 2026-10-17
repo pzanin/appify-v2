@@ -2,8 +2,8 @@ import type { PwaConfig } from '../types';
 import { progressStorageKey } from './lessonProgress';
 export const ACTIVITY_STORAGE_LIMIT = 256000;
 export type ActivityData = Record<string,string>;
-export function activityStorageKey(config:PwaConfig,preview:boolean,projectId:number|null,moduleId:number,lessonId:number) {
-  return `${progressStorageKey(config,preview,projectId).replace('appify-lesson-progress','appify-activity')}:${moduleId}:${lessonId}`;
+export function activityStorageKey(config:PwaConfig,preview:boolean,projectId:number|null,moduleId:number,lessonId:number,buyerAccountId?:string|null) {
+  return `${progressStorageKey(config,preview,projectId,buyerAccountId).replace('appify-lesson-progress','appify-activity')}:${moduleId}:${lessonId}`;
 }
 export function validActivityData(value:unknown):value is ActivityData {
   return !!value && typeof value==='object' && !Array.isArray(value)

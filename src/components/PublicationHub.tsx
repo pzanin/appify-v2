@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Download, ExternalLink, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Download, ExternalLink, Copy, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
 import { DeployInstructions } from './DeployInstructions';
 import { useAppStore } from '../store/useAppStore';
 import { ToastType } from '../types';
-import { handleExportZIP } from '../utils/exportPWA';
+import { handleExportProtectedContentZIP, handleExportZIP } from '../utils/exportPWA';
 import { openExternalLink } from '../utils/externalLinks';
 import { normalizePublishedUrl } from '../utils/publication';
 
@@ -16,6 +16,7 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
   const updateConfig = useAppStore(state => state.updatePwaConfig);
   const setStep = useAppStore(state => state.setStep);
   const [exporting, setExporting] = useState(false);
+  const [exportingPrivateContent, setExportingPrivateContent] = useState(false);
   const [showMobileTools, setShowMobileTools] = useState(false);
   const requirements = [
     { label: 'Nome do aplicativo definido', ok: !!config.appName.trim() && config.appName !== 'Meu App', step: 0 },
@@ -39,6 +40,13 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
     } catch {
       showToast('Não foi possível concluir a exportação.', 'error');
     } finally { setExporting(false); }
+  };
+  const exportProtectedContent = async () => {
+    if (exporting || exportingPrivateContent || !ready) return;
+    setExportingPrivateContent(true);
+    try { await handleExportProtectedContentZIP(showToast); }
+    catch { showToast('Não foi possível preparar o pacote privado.', 'error'); }
+    finally { setExportingPrivateContent(false); }
   };
   const copyUrl = async () => {
     if (!publishedUrl) return;
@@ -64,7 +72,18 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
           {ready ? 'Projeto pronto para exportar. Confira o conteúdo antes de entregar aos clientes.' : 'Complete os itens acima para exportar.'}
         </p>
         {(!config.iconBase64 && !config.logoBase64) && <p style={{ color: 'var(--muted)', fontSize: 13 }}>Recomendado: envie um ícone em Identidade. Sem ele, será gerado um ícone com a inicial do aplicativo.</p>}
-        <p style={{ color: 'var(--muted)', fontSize: 13 }}>Domínio próprio e Supabase são opcionais. O PWA atual oferece acesso aberto; a validação de compradores ainda não está implementada.</p>
+        <p style={{ color: 'var(--muted)', fontSize: 13 }}>O produto começa com acesso aberto. A validação de compradores é opcional e usa o e-mail confirmado pelo Supabase.</p>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14 }}>
+          <input id="buyer-access-enabled" type="checkbox" checked={config.buyerAccessEnabled === true} onChange={event => updateConfig({ buyerAccessEnabled: event.target.checked })} />
+          <span><strong>Exigir validação do comprador</strong><br/><span style={{ color: 'var(--muted)', fontSize: 13 }}>Quando ativado, as aulas saem do ZIP público e são carregadas depois da validação.</span></span>
+        </label>
+        {config.buyerAccessEnabled === true && <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+          <label className="vpb-label" htmlFor="buyer-access-supabase-url">URL do Supabase para acesso de compradores</label>
+          <input id="buyer-access-supabase-url" className="vpb-input" type="url" autoComplete="url" placeholder="https://seu-projeto.supabase.co" value={config.buyerAccessSupabaseUrl || config.supabaseUrl || ''} onChange={event => updateConfig({ buyerAccessSupabaseUrl: event.target.value })} />
+          <label className="vpb-label" htmlFor="buyer-access-supabase-key">Chave pública publishable / anon</label>
+          <input id="buyer-access-supabase-key" className="vpb-input" type="password" autoComplete="off" placeholder="Chave pública do Supabase" value={config.buyerAccessSupabaseAnonKey || config.supabaseAnonKey || ''} onChange={event => updateConfig({ buyerAccessSupabaseAnonKey: event.target.value })} />
+          <p role="status" style={{ color: 'var(--muted)', fontSize: 13 }}>Use a chave pública do projeto. Nunca coloque service_role ou outra chave secreta aqui. Em projetos antigos, os campos de Analytics continuam sendo usados enquanto estes campos estiverem vazios. Antes de liberar: ative o produto no backend e envie o pacote privado ao bucket Supabase.</p>
+        </div>}
       </section>
       <section className="eng-card" style={cardStyle}>
         <h3>2. Exportar o PWA</h3>
@@ -79,6 +98,12 @@ export function PublicationHub({ showToast }: PublicationHubProps) {
         </div>
         <button className="btn-primary" style={{ alignSelf: 'flex-start', width: 'auto', maxWidth: '100%', padding: '8px 16px' }} disabled={!ready || exporting} onClick={exportZip}><Download size={18} /> {exporting ? 'Gerando ZIP…' : 'Gerar e baixar ZIP'}</button>
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>Exportar gera os arquivos no computador. Para disponibilizar o app, publique-os no provedor abaixo.</p>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border, #ddd)' }}>
+        <p style={{ color: 'var(--muted)', fontSize: 13 }}>Gere este pacote e envie-o ao bucket privado <code>appify-protected-products</code> no caminho <code>products/{config.productId || 'productId'}/protected-content.zip</code>. Nunca compartilhe este arquivo com compradores.</p>
+          <button className="btn-ghost" style={{ alignSelf: 'flex-start' }} disabled={!ready || exporting || exportingPrivateContent} onClick={exportProtectedContent}>
+            <Lock size={16} /> {exportingPrivateContent ? 'Preparando pacote…' : 'Gerar pacote privado de conteúdo'}
+          </button>
+        </div>
       </section>
       <section className="eng-card" style={cardStyle}>
         <h3>3. Hospedar o aplicativo</h3>

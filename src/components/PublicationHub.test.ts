@@ -70,6 +70,49 @@ test('private credentials in engagement content block export before icon generat
   assert.equal(download.mock.calls.length,0);
 });
 
+test('buyer-protected export keeps lessons, feed and lesson pages out of the public archive', async t => {
+  const { default: FileSaver } = await import('file-saver');
+  const { default: JSZip } = await import('jszip');
+  const downloads: Blob[] = [];
+  Object.assign(globalThis, { FileReader: class {
+    onload?: (event: {target: {result: ArrayBuffer}}) => void;
+    readAsArrayBuffer(blob: Blob) { void blob.arrayBuffer().then(result => this.onload?.({target:{result}})); }
+  } });
+  t.mock.method(FileSaver, 'saveAs', (blob: Blob) => { downloads.push(blob); });
+  t.mock.method(dom.window.HTMLCanvasElement.prototype, 'getContext', () => ({ fillRect() {}, fillText() {} }));
+  t.mock.method(dom.window.HTMLCanvasElement.prototype, 'toBlob', function(callback: BlobCallback) { callback(new Blob(['icon'], { type: 'image/png' })); });
+  t.mock.method(globalThis, 'fetch', async () => new Response('<html><head></head><body></body></html>'));
+  useAppStore.setState({
+    currentProjectId: 1,
+    pwaConfig: { ...INITIAL_PWA_CONFIG, buyerAccessEnabled: true, productId: '2ae26932-ade3-4a2d-9f36-f55d00c057fc', supabaseUrl: 'https://analytics-project.supabase.co', supabaseAnonKey: 'sb_publishable_analytics', buyerAccessSupabaseUrl: 'https://opuemkiihsqrhfysqdcw.supabase.co', buyerAccessSupabaseAnonKey: 'sb_publishable_buyer_access', splashMediaMode: 'file', splashMediaData: 'private-splash-video-data', changelogNotes: 'internal launch notes', banners: [{ id: 7, imageUrl: 'https://example.com/premium.jpg', link: 'https://example.com/premium' }], gamification: { ...INITIAL_PWA_CONFIG.gamification, awardsConfig: [{ id: 'premium-award', title: 'Hidden award', icon: 'Trophy', points: 10, criteria: 'lesson_count', criteriaValue: 1 }] } },
+    modules: [{ id: 4, name: 'Secret module', iconName: 'Book', status: 'Ativo', subs: [{ id: 9, name: 'Secret lesson', type: 'html', contentType: 'html', contentHtml: '<p>Secret lesson body</p>' }] }],
+    feedPosts: [{ id: 1, author: 'Owner', content: 'Private feed post', timestamp: '' }],
+    pushNotifications: [{ id: 1, title: 'Private notice', body: 'Private body', createdAt: 1 }],
+  });
+  const { handleExportZIP } = await import('../utils/exportPWA');
+  assert.equal(await handleExportZIP(), true);
+  assert.equal(downloads.length, 1);
+  const zip = await JSZip.loadAsync(await downloads[0].arrayBuffer());
+  const appDataText = await zip.file('app-data.json')!.async('string');
+  const data = JSON.parse(appDataText);
+  assert.deepEqual(data.modules, []);
+  assert.deepEqual(data.feedPosts, []);
+  assert.deepEqual(data.pushNotifications, []);
+  assert.deepEqual(data.pwaConfig.banners, []);
+  assert.deepEqual(data.pwaConfig.gamification.awardsConfig, []);
+  assert.equal(data.pwaConfig.customSplash, false);
+  assert.equal(data.pwaConfig.splashMediaData, undefined);
+  assert.equal(appDataText.includes('private-splash-video-data'), false);
+  assert.equal(appDataText.includes('internal launch notes'), false);
+  assert.equal(data.pwaConfig.buyerAccessEnabled, true);
+  assert.equal(data.pwaConfig.buyerAccessSupabaseUrl, 'https://opuemkiihsqrhfysqdcw.supabase.co');
+  assert.equal(data.pwaConfig.buyerAccessSupabaseAnonKey, 'sb_publishable_buyer_access');
+  assert.equal(data.pwaConfig.supabaseUrl, 'https://analytics-project.supabase.co');
+  assert.equal(zip.file('pages/lesson-4-9.html'), null);
+  assert.equal(appDataText.includes('Secret lesson'), false);
+  assert.equal(appDataText.includes('Private feed post'), false);
+});
+
 test('successful ZIP exports record the version, preserve history after remount and omit editor history from public data', async t => {
   const { default: FileSaver } = await import('file-saver');
   const { default: JSZip } = await import('jszip');

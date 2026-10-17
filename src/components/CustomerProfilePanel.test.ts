@@ -13,8 +13,20 @@ Object.defineProperty(globalThis,'IS_REACT_ACT_ENVIRONMENT',{value:true,configur
 const { createRoot }=await import('react-dom/client');
 await import('../i18n');
 const { CustomerProfilePanel }=await import('./CustomerProfilePanel');
+const { ProtectedContentAssetsProvider }=await import('./ProtectedContentAssets');
 
 const config={...INITIAL_PWA_CONFIG,productId:'profile-product',language:'en-US' as const};
+
+test('buyer logout is shown only in authenticated product context and invokes session cleanup',async()=>{
+  let loggedOut=0;
+  const root=createRoot(document.getElementById('root')!);
+  await act(async()=>root.render(React.createElement(ProtectedContentAssetsProvider,{assets:new Map(),onLogout:async()=>{loggedOut++;}},React.createElement(CustomerProfilePanel,{config:{...config,buyerAccessEnabled:true},projectId:null,preview:false,dark:false,themeColor:'#334455'}))));
+  const button=[...document.querySelectorAll('button')].find(item=>item.textContent?.includes('Sign out of this product'))!;
+  assert.ok(button);
+  await act(async()=>button.click());
+  assert.equal(loggedOut,1);
+  await act(async()=>root.unmount());
+});
 
 async function setInput(input:HTMLInputElement,value:string) {
   await act(async()=>{

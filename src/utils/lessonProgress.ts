@@ -5,8 +5,8 @@ export interface LessonProgress { completed:string[]; last:LessonLocation|null; 
 export const emptyLessonProgress = ():LessonProgress => ({completed:[],last:null});
 export const lessonKey = (moduleId:number,lessonId:number) => `${moduleId}:${lessonId}`;
 const validId = (value:unknown):value is number => typeof value==='number' && Number.isSafeInteger(value) && value>=0;
-export function progressStorageKey(config:PwaConfig,preview:boolean,projectId:number|null) {
-  return `appify-lesson-progress:v1:${customerStorageScope(config,preview,projectId)}`;
+export function progressStorageKey(config:PwaConfig,preview:boolean,projectId:number|null,buyerAccountId?:string|null) {
+  return `appify-lesson-progress:v1:${customerStorageScope(config,preview,projectId,buyerAccountId)}`;
 }
 export function readLessonProgress(key:string):LessonProgress {
   try {

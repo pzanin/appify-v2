@@ -24,6 +24,25 @@ test('customer profile is isolated by product identity and preview mode', () => 
   assert.equal(readCustomerProfile(storage, secondCustomerKey).name, '');
 });
 
+test('published customer data is scoped by authenticated buyer without using the profile email', () => {
+  storage.clear();
+  const config = { ...INITIAL_PWA_CONFIG, productId: 'shared-product' };
+  const buyerOne = customerProfileStorageKey(config, false, null, 'auth-user-one');
+  const buyerTwo = customerProfileStorageKey(config, false, null, 'auth-user-two');
+  const buyerOneProgress = progressStorageKey(config, false, null, 'auth-user-one');
+  const buyerTwoProgress = progressStorageKey(config, false, null, 'auth-user-two');
+  const buyerOneActivity = activityStorageKey(config, false, null, 4, 9, 'auth-user-one');
+  const buyerTwoActivity = activityStorageKey(config, false, null, 4, 9, 'auth-user-two');
+
+  assert.notEqual(buyerOne, buyerTwo);
+  assert.notEqual(buyerOneProgress, buyerTwoProgress);
+  assert.notEqual(buyerOneActivity, buyerTwoActivity);
+  writeCustomerProfile(storage, buyerOne, { name: 'Buyer One', email: 'profile-contact@example.com' });
+  assert.equal(readCustomerProfile(storage, buyerTwo).name, '');
+  assert.match(buyerOne, /auth-user-one/);
+  assert.doesNotMatch(buyerOne, /profile-contact@example\.com/);
+});
+
 test('desktop preview identity stays stable even when a legacy project receives a regenerated product id', () => {
   const before = { ...INITIAL_PWA_CONFIG, appName: 'Legacy project', productId: 'generated-a' };
   const after = { ...before, productId: 'generated-b' };

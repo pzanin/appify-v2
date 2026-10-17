@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, RotateCcw, User, XCircle } from 'lucide-react';
+import { CheckCircle2, LogOut, RotateCcw, User, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { PwaConfig } from '../types';
 import { customerProfileStorageKey, readCustomerProfile, resetCustomerProductData, writeCustomerProfile } from '../utils/customerStorage';
+import { useBuyerIdentity, useBuyerLogout } from './ProtectedContentAssets';
 
 type PreviewProfile = { name: string; email: string; updatedAt: number };
 type PreviewProfileProjectsApi = {
@@ -32,10 +33,13 @@ export function CustomerProfilePanel({
   const { i18n } = useTranslation();
   const language = config.language || 'pt-BR';
   const t = i18n.getFixedT(language.split('-')[0]);
-  const storageKey = useMemo(() => customerProfileStorageKey(config, preview, projectId), [config.productId, config.appName, preview, projectId]);
+  const buyerAccountId=useBuyerIdentity();
+  const storageKey = useMemo(() => customerProfileStorageKey(config, preview, projectId, buyerAccountId), [config.productId, config.appName, preview, projectId, buyerAccountId]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [logoutError, setLogoutError] = useState(false);
+  const buyerLogout=useBuyerLogout();
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +98,12 @@ export function CustomerProfilePanel({
     }
   };
 
+  const logout = async () => {
+    if(!buyerLogout)return;
+    try { await buyerLogout(); }
+    catch { setLogoutError(true); }
+  };
+
   return (
     <div className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center custom-scrollbar px-6 pt-8 pb-32">
       <div className={`text-2xl font-black mb-8 self-start ${dark ? 'text-white' : 'text-gray-900'}`}>{t('app.profile.title')}</div>
@@ -136,6 +146,14 @@ export function CustomerProfilePanel({
           <p className={`text-xs leading-relaxed mb-3 ${dark ? 'text-gray-400' : 'text-gray-500'}`}>{t('app.profile.resetPreviewNote')}</p>
           <button type="button" onClick={() => { void resetPreview(); }} className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border ${dark ? 'border-red-400/30 text-red-300 bg-red-500/5' : 'border-red-200 text-red-700 bg-red-50'}`}>
             <RotateCcw size={17} /> {t('app.profile.resetPreview')}
+          </button>
+        </div>
+      )}
+      {!preview && config.buyerAccessEnabled === true && buyerLogout && (
+        <div className={`w-full mt-8 pt-5 border-t ${dark ? 'border-white/10' : 'border-black/10'}`}>
+          {logoutError && <p role="alert" className="text-sm mb-3">{t('app.profile.logoutError')}</p>}
+          <button type="button" onClick={() => { void logout(); }} className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 border ${dark ? 'border-white/15 text-gray-200' : 'border-black/10 text-gray-700'}`}>
+            <LogOut size={17} /> {t('app.profile.logout')}
           </button>
         </div>
       )}

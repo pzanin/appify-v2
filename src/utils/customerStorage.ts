@@ -10,21 +10,22 @@ const EMPTY_PROFILE: CustomerProfile = { name: '', email: '', updatedAt: 0 };
 const MAX_NAME_LENGTH = 120;
 const MAX_EMAIL_LENGTH = 254;
 
-export function customerIdentity(config: PwaConfig, preview: boolean, projectId: number | null) {
+export function customerIdentity(config: PwaConfig, preview: boolean, projectId: number | null, buyerAccountId?: string | null) {
   if (preview) return `local-${projectId ?? config.appName}`;
-  return config.productId || `legacy-${config.appName}`;
+  const product = config.productId || `legacy-${config.appName}`;
+  return buyerAccountId ? `${product}:buyer-${buyerAccountId}` : product;
 }
 
-export function customerStorageScope(config: PwaConfig, preview: boolean, projectId: number | null) {
-  return `${preview ? 'preview' : 'customer'}:${encodeURIComponent(customerIdentity(config, preview, projectId))}`;
+export function customerStorageScope(config: PwaConfig, preview: boolean, projectId: number | null, buyerAccountId?: string | null) {
+  return `${preview ? 'preview' : 'customer'}:${encodeURIComponent(customerIdentity(config, preview, projectId, buyerAccountId))}`;
 }
 
-export function customerProfileStorageKey(config: PwaConfig, preview: boolean, projectId: number | null) {
-  return `appify-customer-profile:v1:${customerStorageScope(config, preview, projectId)}`;
+export function customerProfileStorageKey(config: PwaConfig, preview: boolean, projectId: number | null, buyerAccountId?: string | null) {
+  return `appify-customer-profile:v1:${customerStorageScope(config, preview, projectId, buyerAccountId)}`;
 }
 
-export function customerEntryStorageKey(config: PwaConfig, preview: boolean, projectId: number | null) {
-  return `appify-entry:v2:${customerStorageScope(config, preview, projectId)}`;
+export function customerEntryStorageKey(config: PwaConfig, preview: boolean, projectId: number | null, buyerAccountId?: string | null) {
+  return `appify-entry:v2:${customerStorageScope(config, preview, projectId, buyerAccountId)}`;
 }
 
 function normalizedText(value: unknown, max: number) {
@@ -62,8 +63,8 @@ export function clearCustomerProfile(storage: Storage, key: string) {
   storage.removeItem(key);
 }
 
-export function resetCustomerProductData(storage: Storage, config: PwaConfig, preview: boolean, projectId: number | null) {
-  const scope = customerStorageScope(config, preview, projectId);
+export function resetCustomerProductData(storage: Storage, config: PwaConfig, preview: boolean, projectId: number | null, buyerAccountId?: string | null) {
+  const scope = customerStorageScope(config, preview, projectId, buyerAccountId);
   const exact = new Set([
     `appify-customer-profile:v1:${scope}`,
     `appify-entry:v2:${scope}`,

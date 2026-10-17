@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Module, PwaConfig } from '../types';
 import { lessonKey, moduleCompletion, progressStorageKey, readLessonProgress, resumeLesson, type LessonProgress } from '../utils/lessonProgress';
-export function useLessonProgress(config:PwaConfig,modules:Module[],projectId:number|null,preview:boolean) {
-  const key=progressStorageKey(config,preview,projectId);
+export function useLessonProgress(config:PwaConfig,modules:Module[],projectId:number|null,preview:boolean,buyerAccountId?:string|null) {
+  const key=progressStorageKey(config,preview,projectId,buyerAccountId);
   const [state,setState]=useState(()=>({key,value:readLessonProgress(key)}));
   const current=state.key===key ? state : {key,value:readLessonProgress(key)};
   const latest=useRef(current);latest.current=current;

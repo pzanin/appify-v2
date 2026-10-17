@@ -7,7 +7,7 @@ import { globSync } from 'node:fs';
 
 const directory = await mkdtemp(path.join(process.cwd(), 'node_modules', '.appify-tests-'));
 try {
-  const tests = [...globSync('electron/**/*.test.ts'), ...globSync('src/**/*.test.ts')];
+  const tests = [...globSync('electron/**/*.test.ts'), ...globSync('src/**/*.test.ts'), ...globSync('supabase/functions/**/*.test.ts')];
   const outputs = [];
   for (const [index, test] of tests.entries()) {
     const outfile = path.join(directory, `${index}.mjs`);
