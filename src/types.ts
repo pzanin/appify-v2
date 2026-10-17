@@ -64,6 +64,11 @@ export interface PwaConfig {
   splashMediaBackground?: string;
   engagementEnabled?: boolean;
   productId?: string;
+  /** When enabled, lesson data is omitted from the public PWA and loaded after buyer validation. */
+  buyerAccessEnabled?: boolean;
+  /** Public Supabase configuration used only for buyer access; falls back to shared settings on older projects. */
+  buyerAccessSupabaseUrl?: string;
+  buyerAccessSupabaseAnonKey?: string;
   analyticsEnabled?: boolean;
   analyticsProjectId?: string;
   publishedUrl?: string;

@@ -82,7 +82,7 @@ export function AppConfigurator() {
               <option value="fade">Aparecer suavemente</option><option value="zoom">Zoom suave</option><option value="none">Sem animação</option>
             </select>
             <label className="vpb-label"><input type="checkbox" checked={pwaConfig.customerAccessMode === 'demo'} onChange={e=>updateConfig({customerAccessMode:e.target.checked?'demo':'open'})}/> Simular tela de login somente na prévia</label>
-            <p style={{fontSize:13,color:'var(--muted)'}}>O PWA publicado abre o conteúdo sem pedir e-mail. A instalação é opcional nas boas-vindas. A validação de compradores ainda não está implementada; a simulação de login fica restrita à prévia.</p>
+            <p style={{fontSize:13,color:'var(--muted)'}}>{pwaConfig.buyerAccessEnabled === true ? 'Este produto exige validação do comprador por código enviado ao e-mail. O conteúdo protegido só abre após o backend confirmar o acesso.' : 'Este produto está configurado para abrir sem validação de comprador. Para exigir acesso comercial, ative a validação na etapa Publicação.'} A instalação é opcional; a simulação de login continua restrita à prévia.</p>
             <button className="btn-ghost" onClick={()=>setPreviewEntry(true)}>Testar abertura e instalação</button>
           </div></div>
           {previewEntry && <div style={{position:'fixed',inset:0,zIndex:300,background:'rgba(0,0,0,.85)',display:'flex',flexDirection:'column',alignItems:'center',padding:20}}>

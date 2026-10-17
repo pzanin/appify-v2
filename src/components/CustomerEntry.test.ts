@@ -36,6 +36,14 @@ test('published product opens content directly without demo or email even with l
   await act(async()=>root.unmount());
   const reopened=await render();assert.ok(document.querySelector('[data-testid="library"]'));await act(async()=>reopened.unmount());
 });
+test('buyer access stays closed when public Supabase configuration is missing',async()=>{
+  localStorage.clear();
+  const root=await render({...config,buyerAccessEnabled:true,productId:'invalid',supabaseUrl:'',supabaseAnonKey:''});
+  assert.ok(document.querySelector('#buyer-access-email'));
+  assert.equal(document.querySelector('[data-testid="library"]'),null);
+  assert.match(document.body.textContent || '',/Não foi possível confirmar seu acesso/);
+  await act(async()=>root.unmount());
+});
 test('login simulation is confined to preview and never stores the test email or marks real onboarding complete',async()=>{
   localStorage.clear();
   const root=createRoot(document.getElementById('root')!);
