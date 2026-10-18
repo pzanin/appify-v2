@@ -17,7 +17,7 @@ test('protected package separates product lessons and local assets from the publ
     language: 'en-US',
     modules: [{ id: 4, name: 'Module', iconName: 'Book', status: 'Ativo', subs: [{
       id: 9, name: 'Lesson', type: 'html', contentType: 'html',
-      contentHtml: '<h1>Protected lesson</h1><audio controls src="assets/audio/lesson.mp3"></audio><a data-appify-action="download" data-appify-value="assets/documents/guide.pdf">Guide</a>',
+      contentHtml: '<h1>Protected lesson → restart…</h1><audio controls src="assets/audio/lesson.mp3"></audio><a data-appify-action="download" data-appify-value="assets/documents/guide.pdf">Guide</a>',
     }] }],
     feedPosts: [],
     pushNotifications: [],
@@ -29,6 +29,9 @@ test('protected package separates product lessons and local assets from the publ
   assert.equal(content.productId, productId);
   assert.equal(content.modules[0].subs[0].contentHtml.includes('Protected lesson'), true);
   assert.ok(zip.file('pages/lesson-4-9.html'));
+  const exportedPage = await zip.file('pages/lesson-4-9.html')!.async('string');
+  assert.match(exportedPage, /<meta charset="utf-8">/i);
+  assert.match(exportedPage, /Protected lesson → restart…/);
   assert.deepEqual([...await zip.file('assets/audio/lesson.mp3')!.async('uint8array')], [1, 2, 3]);
   assert.deepEqual([...await zip.file('assets/documents/guide.pdf')!.async('uint8array')], [37, 80, 68, 70, 45, 49]);
 });
@@ -64,6 +67,7 @@ test('protected runtime parses a package only for its matching product and valid
   const loaded = await parseProtectedContentPackage(result, productId);
   assert.equal(loaded.modules[0].subs[0].name, 'Lesson');
   assert.ok(loaded.assets.get('pages/lesson-4-9.html'));
+  assert.equal(loaded.assets.get('pages/lesson-4-9.html')?.type, 'text/html;charset=utf-8');
   assert.deepEqual([...new Uint8Array(await loaded.assets.get('assets/audio/lesson.mp3')!.arrayBuffer())], [1, 2, 3]);
   assert.equal(loaded.assets.get('assets/documents/guide.pdf')?.type, 'application/pdf');
   await assert.rejects(parseProtectedContentPackage(result, '11111111-1111-4111-8111-111111111111'), /does not match this product/);

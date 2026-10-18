@@ -58,13 +58,17 @@ const RESPONSIVE_STYLE = `
 </style>`;
 
 const VIEWPORT_META = '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">';
+const UTF8_META = '<meta charset="utf-8">';
 
 export function prepareResponsiveHtml(html: string,language='pt-BR'): string {
   const source = html?.trim() || `<p style="text-align:center;font-family:sans-serif;opacity:.5;padding:20px;">${i18n.getFixedT(language.split('-')[0])('app.modules.emptyContent')}</p>`;
   const doc = new DOMParser().parseFromString(sanitizeImportedHtml(source, true), 'text/html');
   doc.documentElement.lang=language;
   doc.querySelector('#appify-responsive-html')?.remove();
-  doc.head.innerHTML = `<meta http-equiv="Content-Security-Policy" content="${IMPORTED_HTML_CSP}">${VIEWPORT_META}${RESPONSIVE_STYLE}` + doc.head.innerHTML;
+  // Keep the encoding declaration first so file/blob HTML is decoded as UTF-8.
+  // The responsive style is large enough to push a source document's original
+  // charset declaration beyond the browser's HTML encoding sniffing window.
+  doc.head.innerHTML = `${UTF8_META}<meta http-equiv="Content-Security-Policy" content="${IMPORTED_HTML_CSP}">${VIEWPORT_META}${RESPONSIVE_STYLE}` + doc.head.innerHTML;
   const actionScript = doc.createElement('script');
   actionScript.textContent = HOST_ACTION_BRIDGE;
   doc.body.appendChild(actionScript);

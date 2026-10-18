@@ -56,7 +56,7 @@ export async function parseProtectedContentPackage(blob: Blob, expectedProductId
     if (uncompressedBytes > MAX_DOWNLOADED_PROTECTED_CONTENT_BYTES) {
       throw new Error('Protected content package is too large.');
     }
-    const type = isLessonPage ? 'text/html' : PDF_PATH.test(path) ? 'application/pdf' : 'audio/mpeg';
+    const type = isLessonPage ? 'text/html;charset=utf-8' : PDF_PATH.test(path) ? 'application/pdf' : 'audio/mpeg';
     assets.set(path, new Blob([bytes], { type }));
   }
 

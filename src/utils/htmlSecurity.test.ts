@@ -16,6 +16,8 @@ test('imported HTML cannot execute its scripts, access the editor or inject navi
     <a href="javascript:alert(1)">bad</a><a href="https://pay.hotmart.com/ABC">buy</a>
     <iframe src="https://www.youtube.com/embed/test"></iframe><h1 style="color:red">Lesson</h1></body></html>`);
   const doc = new JSDOM(html).window.document;
+  assert.equal(doc.head.firstElementChild?.tagName,'META');
+  assert.equal(doc.head.firstElementChild?.getAttribute('charset')?.toLowerCase(),'utf-8');
   assert.deepEqual([...doc.querySelectorAll('script')].map(script => script.textContent), [HOST_ACTION_BRIDGE, LINK_BRIDGE, VIDEO_BRIDGE]);
   assert.equal(doc.querySelector('script[src]'), null);
   assert.equal(doc.querySelector('base'), null);

@@ -12,6 +12,8 @@ const fixture=readFileSync('docs/examples/interactive-breathing.html','utf8');
 test('interactive activity compiles Tailwind locally and keeps buttons, SVG dimensions and event handlers; static mode remains restricted',async()=>{
   const result=await prepareInteractiveHtml(fixture);
   const parsed=new JSDOM(result).window.document;
+  assert.equal(parsed.head.firstElementChild?.tagName,'META');
+  assert.equal(parsed.head.firstElementChild?.getAttribute('charset')?.toLowerCase(),'utf-8');
   assert.equal(parsed.querySelector('script[src]'),null);
   assert.equal(parsed.querySelector('link'),null);
   assert.equal(parsed.querySelector('#btn-play')?.getAttribute('onclick'),'toggleBreathing()');

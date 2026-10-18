@@ -116,6 +116,7 @@ async function prepare(source: string): Promise<string> {
     doc.head.prepend(style);
   }
   const csp=doc.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content=INTERACTIVE_CSP;doc.head.prepend(csp);
+  const charset=doc.createElement('meta');charset.setAttribute('charset','utf-8');doc.head.prepend(charset);
   const viewport=doc.createElement('meta');viewport.name='viewport';viewport.content='width=device-width,initial-scale=1.0,maximum-scale=5.0';doc.head.append(viewport);
   const responsive=doc.createElement('style');responsive.textContent='html{min-height:100%;overflow-x:hidden}html,body{overflow-y:auto!important}body{min-height:100dvh;height:auto!important}';doc.head.append(responsive);
   if (/\blocalStorage\b/.test(source)) {
