@@ -20,6 +20,8 @@ export function CustomerEntry({ config, children, preview = false, projectId = n
   const {i18n} = useTranslation();
   const t=i18n.getFixedT((config.language || 'pt-BR').split('-')[0]);
   const accessUnavailableMessage=t('experience.accessUnavailable');
+  const buyerContentUnavailableMessage=t('experience.buyerContentUnavailable');
+  const buyerCodeInvalidMessage=t('experience.buyerCodeInvalid');
   const name=productName(config.appName || document.title,config.language || 'pt-BR');
   const {isStandalone} = usePWAInstall();
   const storageKey=customerEntryStorageKey(config,preview,projectId);
@@ -43,7 +45,7 @@ export function CustomerEntry({ config, children, preview = false, projectId = n
   }), [config.productId, config.buyerAccessSupabaseUrl, config.buyerAccessSupabaseAnonKey, config.supabaseUrl, config.supabaseAnonKey]);
   const buyerClient = useMemo(() => requiresBuyerAccess ? createBuyerAccessClient(buyerBackendConfig) : null,
     [requiresBuyerAccess, buyerBackendConfig]);
-  const [step,setStep] = useState<'welcome'|'access'|'install'|'ready'|'buyer-email'|'buyer-code'|'buyer-loading'>(()=>requiresBuyerAccess ? 'buyer-email' : completed() ? 'ready' : config.welcomeEnabled === false ? (mode === 'demo' ? 'access' : 'ready') : 'welcome');
+  const [step,setStep] = useState<'welcome'|'access'|'install'|'ready'|'buyer-email'|'buyer-code'|'buyer-loading'|'buyer-content-error'>(()=>requiresBuyerAccess ? 'buyer-email' : completed() ? 'ready' : config.welcomeEnabled === false ? (mode === 'demo' ? 'access' : 'ready') : 'welcome');
   const [splash,setSplash] = useState(!requiresBuyerAccess && !completed() && config.customSplash !== false);
   const [email,setEmail] = useState('');
   const [emailCode,setEmailCode] = useState('');
@@ -73,18 +75,20 @@ export function CustomerEntry({ config, children, preview = false, projectId = n
         setStep('ready');
       } catch(error) {
         if(canceled)return;
-        // A connectivity failure should not erase a valid session. A denied
-        // entitlement is cleared; either way, protected content stays closed.
         if(error instanceof Error && error.message==='access_denied') {
+          // A denied entitlement is cleared. Other errors keep the session for retry.
           await buyerClient.auth.signOut();
           setBuyerAccountId(null);
+          setBuyerError(accessUnavailableMessage);
+          setStep('buyer-email');
+        } else {
+          setBuyerError(buyerContentUnavailableMessage);
+          setStep('buyer-content-error');
         }
-        setBuyerError(accessUnavailableMessage);
-        setStep('buyer-email');
       }
     }).catch(()=>{if(!canceled){setBuyerError(accessUnavailableMessage);setStep('buyer-email');}});
     return ()=>{canceled=true;};
-  },[requiresBuyerAccess,buyerClient,buyerBackendConfig,accessUnavailableMessage]);
+  },[requiresBuyerAccess,buyerClient,buyerBackendConfig,accessUnavailableMessage,buyerContentUnavailableMessage]);
   useEffect(()=>{ if(step==='ready' && !splash){try{localStorage.setItem(storageKey,'done');}catch{/* Content remains accessible without storage. */}onReady?.();} },[step,splash,storageKey,onReady]);
   const finish=()=>{ try{localStorage.setItem(storageKey,'done');}catch{/* Continue when storage is unavailable. */}setEmail('');setStep('ready'); };
   const logoutBuyer=async()=>{
@@ -153,9 +157,32 @@ export function CustomerEntry({ config, children, preview = false, projectId = n
       useAppStore.setState({modules:content.modules,feedPosts:content.feedPosts,pushNotifications:content.pushNotifications,pwaConfig:{...current,banners:content.banners,gamification:{...current.gamification,awardsConfig:content.gamificationAwards}}});
       setEmailCode('');setStep('install');
     } catch(error) {
-      if(error instanceof Error && error.message==='access_denied') await buyerClient.auth.signOut();
-      setBuyerAccountId(null);
-      setBuyerError(accessUnavailableMessage);setStep('buyer-email');
+      if(error instanceof Error && (error.message==='invalid_code' || error.message==='verification_unavailable')) {
+        setBuyerError(buyerCodeInvalidMessage);setStep('buyer-code');return;
+      }
+      if(error instanceof Error && error.message==='access_denied') {
+        await buyerClient.auth.signOut();setBuyerAccountId(null);
+        setBuyerError(accessUnavailableMessage);setStep('buyer-email');return;
+      }
+      // Keep a verified session so customers can retry loading without asking for another code.
+      setBuyerError(buyerContentUnavailableMessage);setStep('buyer-content-error');
+    }
+  };
+  const retryBuyerContent=async()=>{
+    if(!buyerClient){setBuyerError(buyerContentUnavailableMessage);return;}
+    setBuyerError('');setStep('buyer-loading');
+    try {
+      const content=await fetchEntitledContent(buyerClient,buyerBackendConfig);
+      setProtectedContent(content);
+      const current=useAppStore.getState().pwaConfig;
+      useAppStore.setState({modules:content.modules,feedPosts:content.feedPosts,pushNotifications:content.pushNotifications,pwaConfig:{...current,banners:content.banners,gamification:{...current.gamification,awardsConfig:content.gamificationAwards}}});
+      setEmailCode('');setStep('install');
+    } catch(error) {
+      if(error instanceof Error && error.message==='access_denied') {
+        await buyerClient.auth.signOut();setBuyerAccountId(null);
+        setBuyerError(accessUnavailableMessage);setStep('buyer-email');return;
+      }
+      setBuyerError(buyerContentUnavailableMessage);setStep('buyer-content-error');
     }
   };
   return <div lang={config.language} className="customer-screen" style={{'--customer-accent':color} as React.CSSProperties}>
@@ -177,6 +204,7 @@ export function CustomerEntry({ config, children, preview = false, projectId = n
         <div className="customer-eyebrow">{t('experience.accessTitle')}</div>
         <h1>{t('experience.buyerCodeTitle')}</h1>
         <p>{t('experience.buyerCodeDescription')}</p>
+        <p className="customer-note">{t('experience.buyerCodeHint')}</p>
         <form onSubmit={event=>{event.preventDefault();void confirmBuyerCode();}}>
           <label htmlFor="buyer-access-code">{t('experience.buyerCodeLabel')}</label>
           <div className="customer-input-wrap"><input id="buyer-access-code" type="text" autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6,8}" maxLength={8} required value={emailCode} onChange={event=>setEmailCode(event.target.value.replace(/[^0-9]/g,'').slice(0,8))} /></div>
@@ -184,6 +212,12 @@ export function CustomerEntry({ config, children, preview = false, projectId = n
           <button className="customer-primary" style={{background:color,color:customerButtonTextColor(color)}} type="submit">{t('experience.buyerVerify')}<ArrowRight size={20}/></button>
         </form>
         <button className="customer-secondary" onClick={()=>{setEmailCode('');setStep('buyer-email');}}>{t('experience.back')}</button>
+      </> : step==='buyer-content-error' ? <>
+        <div className="customer-eyebrow">{t('experience.accessTitle')}</div>
+        <h1>{t('experience.buyerContentErrorTitle')}</h1>
+        <p role="alert">{buyerError || buyerContentUnavailableMessage}</p>
+        <button className="customer-primary" style={{background:color,color:customerButtonTextColor(color)}} onClick={()=>void retryBuyerContent()}>{t('experience.buyerRetry')}<ArrowRight size={20}/></button>
+        <button className="customer-secondary" onClick={()=>void logoutBuyer()}>{t('experience.buyerUseAnotherEmail')}</button>
       </> : step==='welcome' ? <>
         <div className="customer-eyebrow">{t('experience.welcome')}</div>
         <h1>{name}</h1>
